@@ -38,6 +38,7 @@ public:
 
         // std::shared_ptr<Ground> ground = std::make_shared<Ground>(0, 960, 1200, 1200, "ground");
         std::shared_ptr<Ground> ground = std::make_shared<Ground>(20, 600, 600, 20);
+        ground->setTag("111");
         world->addObject(ground);
     }
 
@@ -45,7 +46,7 @@ public:
         window->setFramerateLimit(165);
         sf::Clock clock;
         while (window->isOpen()) {
-            sf::Time deltaTime = clock.restart();
+            const sf::Time deltaTime = clock.restart();
             sf::Event event{};
             while (window->pollEvent(event)) {
                 if (event.type == sf::Event::Closed) {

@@ -11,6 +11,7 @@
 #include <iostream>
 
 class GameObject {
+    friend class MoveComponent;
 public:
     GameObject() : position(0, 0), size(0, 0), speed(0, 0), active(true), started(false) {
         this->id = idCounter++;
@@ -92,10 +93,35 @@ public:
         return nullptr;
     }
 
-    virtual void setPosition(float posX, float posY) = 0;
+    virtual void setPosition(const float posX, const float posY) {
+        position = sf::Vector2f(posX, posY);
+    }
 
-public:
-    inline static int idCounter = 0;
+    const sf::Vector2f& getPosition() const {
+        return position;
+    }
+
+    const sf::Vector2f& getSize() const {
+        return size;
+    }
+
+    const sf::Vector2f& getSpeed() const {
+        return speed;
+    }
+
+    const std::string& getTag() const {
+        return tag;
+    }
+
+    bool getMoveAble() const {
+        return moveAble;
+    }
+
+    void setSize(float width, float height) {
+        size = sf::Vector2f(width, height);
+    }
+
+protected:
     sf::Vector2f position;
     sf::Vector2f size;
     sf::Vector2f speed;
@@ -105,6 +131,7 @@ public:
     int id;
     std::string tag;
     std::unordered_map<size_t, std::shared_ptr<Component>> components;
+    inline static int idCounter = 0;
 };
 
 

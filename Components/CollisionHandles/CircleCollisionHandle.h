@@ -23,17 +23,21 @@ public:
         auto& this_ = event.a;
         auto& other = event.b;
 
-        if (!this_->moveAble) return;
+        if (!this_->getMoveAble()) return;
+        const std::shared_ptr<MoveComponent> moveComponent = this_->getComponent<MoveComponent>();
+        if (!moveComponent) return;
         // this_->speed.y = -this_->speed.y;
-        this_->speed.y = -this_->speed.y * 0.28f;
+        // this_->speed.y = -this_->speed.y * 0.28f;
+        moveComponent->setSpeedY(-this_->getSpeed().y * 0.28f);
 
-        if (std::abs(this_->speed.y) <= 2.f) {
-            this_->speed.y = 0;
+        if (std::abs(this_->getSpeed().y) <= 2.f) {
+            moveComponent->setSpeedY(0);
         }
 
         // 防止穿进地面
-        this_->position.y = other->position.y - this_->size.y;
-        this_->setPosition(this_->position.x, this_->position.y);
+        // this_->position.y = other->position.y - this_->size.y;
+        // this_->setPosition(this_->position.x, this_->position.y);
+        moveComponent->setPositionY(other->getPosition().y - this_->getSize().y);
         this_->getComponent<Collision>()->update(sf::Time::Zero);
     }
 

@@ -45,6 +45,10 @@ public:
     void start() override {
         GameObject::start();
     }
+
+    void setTag(const std::string& tag) {
+        this->tag = tag;
+    }
 };
 
 

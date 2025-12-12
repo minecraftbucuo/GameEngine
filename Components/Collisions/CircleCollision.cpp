@@ -17,7 +17,7 @@ CircleCollision::CircleCollision(float x, float y, float radius) {
 void CircleCollision::update(sf::Time deltaTime) {
     // this->posX = owner->posX + owner->width / 2;
     // this->posY = owner->posY + owner->height / 2;
-    this->position = owner->position + owner->size * 0.5f;
+    this->position = owner->getPosition() + owner->getSize() * 0.5f;
 }
 
 void CircleCollision::render(sf::RenderWindow *window) {

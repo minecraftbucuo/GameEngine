@@ -62,6 +62,7 @@ public:
     }
     void setPosition(const float x, const float y) override {
         // std::cout << "Player setPosition:" << x << " " << y << std::endl;
+        GameObject::setPosition(x, y);
         shape.setPosition(x, y);
     }
 

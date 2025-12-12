@@ -33,8 +33,8 @@ public:
                 // std::cout << a->height + b->height << ' ' << maxY - minY << std::endl;
 
                 if (auto b_c = b->getComponent<Collision>(); a_c->checkCollision(*b_c)) {
-                    EventBus::getInstance().publish("onCollision" + a->tag, CollisionEvent{ a, b });
-                    EventBus::getInstance().publish("onCollision" + b->tag, CollisionEvent{ b, a });
+                    EventBus::getInstance().publish("onCollision" + a->getTag(), CollisionEvent{ a, b });
+                    EventBus::getInstance().publish("onCollision" + b->getTag(), CollisionEvent{ b, a });
                 }
             }
         }
