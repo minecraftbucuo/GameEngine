@@ -24,6 +24,7 @@ public:
     void handleEvent(sf::Event& event) override {
 
     }
+    virtual void setPosition(const sf::Vector2f& position) = 0;
     [[nodiscard]] virtual bool checkCollision(const Collision& other) const = 0;
     [[nodiscard]] virtual bool checkCollisionWithCircle(const CircleCollision& other) const = 0;
     [[nodiscard]] virtual bool checkCollisionWithBox(const BoxCollision& other) const = 0;

@@ -26,7 +26,7 @@ set(SOURCES
         Components/GravityComponent.h
         GameObjects/Ground.h
         GameObjects/Player.h
-        GameObjects/World.h
+        World.h
         WorldContext.h
         Components/Collisions/Collision.h
         Components/Collisions/CircleCollision.cpp

@@ -11,7 +11,7 @@ public:
         return instance;
     }
 
-    void setWorldSize(float width, float height) {
+    void setWorldSize(const float width, const float height) {
         size.x = width;
         size.y = height;
     }

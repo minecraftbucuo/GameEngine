@@ -6,7 +6,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "GameObject.h"
-#include <iostream>
 #include "EventBus.h"
 #include "Events.h"
 #include <string>

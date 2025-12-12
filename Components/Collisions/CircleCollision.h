@@ -13,6 +13,7 @@ public:
     // void start() override {}
     void update(sf::Time deltaTime) override;
     void render(sf::RenderWindow* window) override;
+    void setPosition(const sf::Vector2f& position) override;
     [[nodiscard]] bool checkCollision(const Collision& other) const override;
     [[nodiscard]] bool checkCollisionWithBox(const BoxCollision& other) const override;
     [[nodiscard]] bool checkCollisionWithCircle(const CircleCollision& other) const override;

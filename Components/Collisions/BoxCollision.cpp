@@ -27,7 +27,7 @@ void BoxCollision::start() {
 void BoxCollision::update(sf::Time deltaTime) {
     // this->posX = owner->posX;
     // this->posY = owner->posY;
-    this->position = owner->getPosition();
+    // this->position = owner->getPosition();
 }
 
 void BoxCollision::render(sf::RenderWindow *window) {
@@ -37,6 +37,10 @@ void BoxCollision::render(sf::RenderWindow *window) {
     rect.setOutlineColor(sf::Color::Red);
     rect.setOutlineThickness(1);
     window->draw(rect);
+}
+
+void BoxCollision::setPosition(const sf::Vector2f &position) {
+    this->position = position;
 }
 
 bool BoxCollision::checkCollision(const Collision &other) const {

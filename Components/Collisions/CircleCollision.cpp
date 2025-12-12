@@ -17,7 +17,7 @@ CircleCollision::CircleCollision(float x, float y, float radius) {
 void CircleCollision::update(sf::Time deltaTime) {
     // this->posX = owner->posX + owner->width / 2;
     // this->posY = owner->posY + owner->height / 2;
-    this->position = owner->getPosition() + owner->getSize() * 0.5f;
+    // this->position = owner->getPosition() + owner->getSize() * 0.5f;
 }
 
 void CircleCollision::render(sf::RenderWindow *window) {
@@ -27,6 +27,10 @@ void CircleCollision::render(sf::RenderWindow *window) {
     shape.setOutlineColor(sf::Color::Red);
     shape.setOutlineThickness(1.f);
     window->draw(shape);
+}
+
+void CircleCollision::setPosition(const sf::Vector2f &position) {
+    this->position = owner->getPosition() + owner->getSize() * 0.5f;
 }
 
 bool CircleCollision::checkCollision(const Collision &other) const {
