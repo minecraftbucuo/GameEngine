@@ -24,6 +24,8 @@ public:
         auto& this_ = event.a;
         auto& other = event.b;
 
+        std::cout << this_->getTag() << ' ' << other->getTag() << std::endl;
+
         if (!this_->getMoveAble()) return;
         std::shared_ptr<MoveComponent> moveComponent = this_->getComponent<MoveComponent>();
         if (!moveComponent) return;

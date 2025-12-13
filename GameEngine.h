@@ -6,7 +6,7 @@
 #include <memory>
 #include "World.h"
 #include "Player.h"
-
+#include "BoxGameObject.h"
 #include "Ground.h"
 
 
@@ -35,9 +35,7 @@ public:
         //     world->addObject(player);
         // }
 
-        // std::shared_ptr<Ground> ground = std::make_shared<Ground>(0, 960, 1200, 1200, "ground");
-        std::shared_ptr<Ground> box = std::make_shared<Ground>(800, 800, 300, 80, "box");
-        box->setMoveAble(true);
+        std::shared_ptr<BoxGameObject> box = std::make_shared<BoxGameObject>(800, 800, 300, 80);
         const auto move = box->addComponent<MoveComponent>();
         move->setSpeedX(-200);
         world->addObject(box);

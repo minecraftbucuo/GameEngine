@@ -37,7 +37,8 @@ set(SOURCES
         Components/Controller.h
         Components/CollisionHandles/CollisionHandle.h
         Components/CollisionHandles/BoxCollisionHandle.h
-        Components/CollisionHandles/CircleCollisionHandle.h)
+        Components/CollisionHandles/CircleCollisionHandle.h
+        GameObjects/BoxGameObject.h)
 
 if(WIN32)
     # Windows 下需区分 Debug/Release 后缀（如 sfml-graphics-d.lib）

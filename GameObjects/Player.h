@@ -18,7 +18,7 @@
 
 class Player : public GameObject {
 public:
-    Player(const float x, const float y, const float radius) {
+    Player(const float x, const float y, const float radius, const std::string& tag = "player") {
         shape.setRadius(radius);
         this->position = sf::Vector2f(x, y);
         this->size = sf::Vector2f(radius * 2, radius * 2);
@@ -31,24 +31,18 @@ public:
 
         this->addComponent<MoveComponent>();
         this->addComponent<GravityComponent>();
-        this->tag = "player" + std::to_string(this->id);
+        this->tag = tag + ":" + std::to_string(this->id);
     }
     ~Player() override = default;
     void update(sf::Time deltaTime) override {
-        for (const auto&[fst, snd] : components) {
-            snd->update(deltaTime);
-        }
+        updateComponents(deltaTime);
     }
     void render(sf::RenderWindow* window) override {
-        for (const auto&[fst, snd] : components) {
-            snd->render(window);
-        }
+        renderComponents(window);
         window->draw(shape);
     }
     void handleEvent(sf::Event& e) override {
-        for (const auto&[fst, snd] : components) {
-            snd->handleEvent(e);
-        }
+        handleComponents(e);
     }
     void start() override {
         GameObject::start();
@@ -59,6 +53,8 @@ public:
             }
         });
     }
+
+private:
     void setPosition(const float x, const float y) override {
         // std::cout << "Player setPosition:" << x << " " << y << std::endl;
         GameObject::setPosition(x, y);
@@ -70,7 +66,6 @@ public:
         this->speed.y = y;
     }
 
-private:
     sf::CircleShape shape;
 };
 

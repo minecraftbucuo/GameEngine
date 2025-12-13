@@ -16,10 +16,9 @@ public:
     GameObject() : position(0, 0), size(0, 0), speed(0, 0), active(true), started(false) {
         this->id = idCounter++;
     }
-    GameObject(float posX, float posY, float width, float height, const std::string& tag = "game_object") {
+    GameObject(float posX, float posY, float width, float height) {
         this->position = sf::Vector2f(posX, posY);
         this->size = sf::Vector2f(width, height);
-        this->tag = tag;
         this->speed = sf::Vector2f(0, 0);
         this->started = false;
         this->active = true;
@@ -93,10 +92,6 @@ public:
         return nullptr;
     }
 
-    virtual void setPosition(const float posX, const float posY) {
-        position = sf::Vector2f(posX, posY);
-    }
-
     const sf::Vector2f& getPosition() const {
         return position;
     }
@@ -121,7 +116,29 @@ public:
         size = sf::Vector2f(width, height);
     }
 
+    void updateComponents(sf::Time deltaTime) {
+        for (const auto&[fst, snd] : components) {
+            snd->update(deltaTime);
+        }
+    }
+
+    void renderComponents(sf::RenderWindow* window) {
+        for (const auto&[fst, snd] : components) {
+            snd->render(window);
+        }
+    }
+
+    void handleComponents(sf::Event& e) {
+        for (const auto&[fst, snd] : components) {
+            snd->handleEvent(e);
+        }
+    }
+
 protected:
+    virtual void setPosition(const float posX, const float posY) {
+        position = sf::Vector2f(posX, posY);
+    }
+
     sf::Vector2f position;
     sf::Vector2f size;
     sf::Vector2f speed;
@@ -129,7 +146,7 @@ protected:
     bool moveAble{true};
     bool started;
     int id;
-    std::string tag;
+    std::string tag = "game_object:";
     std::unordered_map<size_t, std::shared_ptr<Component>> components;
     inline static int idCounter = 0;
 };
