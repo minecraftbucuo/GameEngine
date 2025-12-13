@@ -27,6 +27,10 @@ public:
         for (const auto& obj : game_objects) {
             obj->handleEvent(event);
         }
+        if (event.type == sf::Event::Resized) {
+            this->setWorldSize(static_cast<float>(event.size.width), static_cast<float>(event.size.height));
+            this->setWorldContext();
+        }
     }
 
     void update(const sf::Time deltaTime) {
@@ -60,11 +64,8 @@ public:
         WorldContext::getInstance().setWorldSize(size.x, size.y);
         for (const auto& obj : game_objects) {
             if (obj->getTag().substr(0, 6) == "ground") {
-                obj->setPosition(0.f, size.y);
-                obj->setSize(size.x, 2000.f);
-                const auto boxCollision = obj->getComponent<Collision, BoxCollision>();
-                boxCollision->setPosition(0.f, size.y);
-                boxCollision->setSize(size.x, 2000.f);
+                obj->setSize(size.x, size.y);
+                obj->setPosition(0.f, size.y - 20.f);
                 break;
             }
         }

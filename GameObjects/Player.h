@@ -24,10 +24,10 @@ public:
         this->size = sf::Vector2f(radius * 2, radius * 2);
         shape.setPosition(x, y);
 
-        this->addComponent<Collision, CircleCollision>(this->position.x + radius, this->position.y + radius, this->size.x / 2);
-        this->addComponent<CollisionHandle, CircleCollisionHandle>();
-        // this->addComponent<Collision, BoxCollision, true>();
-        // this->addComponent<CollisionHandle, BoxCollisionHandle>();
+        // this->addComponent<Collision, CircleCollision>(this->position.x + radius, this->position.y + radius, this->size.x / 2);
+        // this->addComponent<CollisionHandle, CircleCollisionHandle>();
+        this->addComponent<Collision, BoxCollision, true>();
+        this->addComponent<CollisionHandle, BoxCollisionHandle>();
 
         this->addComponent<MoveComponent>();
         this->addComponent<GravityComponent>();

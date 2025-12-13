@@ -26,8 +26,6 @@ public:
 
 private:
     WorldContext() : size(0, 0) {}
-
-private:
     sf::Vector2f size;
 };
 

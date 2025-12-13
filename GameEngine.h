@@ -8,8 +8,6 @@
 #include "Player.h"
 
 #include "Ground.h"
-#include "Collision.h"
-#include "BoxCollision.h"
 
 
 class GameEngine {
@@ -24,7 +22,8 @@ public:
         window = new sf::RenderWindow(sf::VideoMode(1200, 960), "GameEngine");
         world = new World(1200, 960);
         world->setWorldContext();
-        std::shared_ptr<Player> player = std::make_shared<Player>(100, 100, 20);
+
+        std::shared_ptr<Player> player = std::make_shared<Player>(100, 100, 40);
         player->addComponent<Controller>();
         world->addObject(player);
 
@@ -37,8 +36,23 @@ public:
         // }
 
         // std::shared_ptr<Ground> ground = std::make_shared<Ground>(0, 960, 1200, 1200, "ground");
-        std::shared_ptr<Ground> ground = std::make_shared<Ground>(20, 600, 600, 20);
-        ground->setTag("111");
+        std::shared_ptr<Ground> box = std::make_shared<Ground>(800, 800, 300, 80, "box");
+        box->setMoveAble(true);
+        const auto move = box->addComponent<MoveComponent>();
+        move->setSpeedX(-200);
+        world->addObject(box);
+
+        // 左墙
+        std::shared_ptr<Ground> wall1 = std::make_shared<Ground>(0, 0, 10, 960, "wall1");
+        world->addObject(wall1);
+        // 右墙
+        std::shared_ptr<Ground> wall2 = std::make_shared<Ground>(1190, 0, 10, 960, "wall2");
+        world->addObject(wall2);
+        // 天花板
+        std::shared_ptr<Ground> wall3 = std::make_shared<Ground>(0, 0, 1200, 10, "wall3");
+        world->addObject(wall3);
+        //
+        std::shared_ptr<Ground> ground = std::make_shared<Ground>(0, 940, 1200, 80);
         world->addObject(ground);
     }
 
@@ -56,8 +70,6 @@ public:
                     // 处理窗口大小改变引起的缩放问题
                     window->setView(sf::View(sf::FloatRect(0, 0,
                         static_cast<float>(event.size.width), static_cast<float>(event.size.height))));
-                    world->setWorldSize(static_cast<float>(event.size.width), static_cast<float>(event.size.height));
-                    world->setWorldContext();
                 }
                 world->handleEvent(event);
             }

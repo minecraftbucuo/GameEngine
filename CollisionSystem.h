@@ -33,8 +33,14 @@ public:
                 // std::cout << a->height + b->height << ' ' << maxY - minY << std::endl;
 
                 if (auto b_c = b->getComponent<Collision>(); a_c->checkCollision(*b_c)) {
-                    EventBus::getInstance().publish("onCollision" + a->getTag(), CollisionEvent{ a, b });
-                    EventBus::getInstance().publish("onCollision" + b->getTag(), CollisionEvent{ b, a });
+                    const sf::Vector2f a_speed = a->getSpeed();
+                    const sf::Vector2f b_speed = b->getSpeed();
+                    const sf::Vector2f a_position = a->getPosition();
+                    const sf::Vector2f b_position = b->getPosition();
+                    EventBus::getInstance().publish("onCollision" + a->getTag(),
+                        CollisionEvent{ a, b, a_speed, b_speed, a_position, b_position });
+                    EventBus::getInstance().publish("onCollision" + b->getTag(),
+                        CollisionEvent{ b, a, b_speed, a_speed, b_position, a_position });
                 }
             }
         }

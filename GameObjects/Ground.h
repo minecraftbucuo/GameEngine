@@ -9,9 +9,9 @@
 
 class Ground : public GameObject {
 public:
-    Ground(const float x, const float y, const float width, const float height)
+    Ground(const float x, const float y, const float width, const float height, const std::string& tag = "ground")
             : GameObject(x, y, width, height) {
-        this->tag = "ground" + std::to_string(id);
+        this->tag = tag + std::to_string(id);
         this->moveAble = false;
         this->addComponent<Collision, BoxCollision, true>();
         this->addComponent<CollisionHandle, BoxCollisionHandle>();
@@ -41,13 +41,16 @@ public:
     }
     void setPosition(const float posX, const float posY) override {
         this->position = sf::Vector2f(posX, posY);
+        const auto boxCollision = this->getComponent<Collision, BoxCollision>();
+        boxCollision->setPosition(posX, posY);
+        boxCollision->setSize(size.x, size.y);
     }
     void start() override {
         GameObject::start();
     }
 
-    void setTag(const std::string& tag) {
-        this->tag = tag;
+    void setMoveAble(const bool state) {
+        this->moveAble = state;
     }
 };
 
