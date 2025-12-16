@@ -24,22 +24,23 @@ public:
     }
     void setPosition(const sf::Vector2f& pos) const {
         owner->setPosition(pos.x, pos.y);
-        setCollisionPosition(sf::Vector2f(pos.x, pos.y));
+        setCollisionPosition(pos);
     }
 
     void setPosition(const float posX, const float posY) const {
-        owner->setPosition(posX, posY);
-        setCollisionPosition(sf::Vector2f(posX, posY));
+        setPosition(sf::Vector2f(posX, posY));
     }
 
     void setPositionX(const float posX) const {
-        setPosition(posX, owner->position.y);
-        setCollisionPosition(sf::Vector2f(posX, owner->position.y));
+        setPosition(sf::Vector2f(posX, owner->position.y));
     }
 
     void setPositionY(const float posY) const {
-        setPosition(owner->position.x, posY);
-        setCollisionPosition(sf::Vector2f(owner->position.x, posY));
+        setPosition(sf::Vector2f(owner->position.x, posY));
+    }
+
+    void addPosition(const sf::Vector2f& pos) const {
+        setPosition(owner->position + pos);
     }
 
     void setSpeed(const sf::Vector2f& speed) const {
@@ -56,6 +57,10 @@ public:
 
     void setSpeed(const float speedX, const float speedY) const {
         owner->speed = sf::Vector2f(speedX, speedY);
+    }
+
+    void addSpeed(const sf::Vector2f& speed) const {
+        owner->speed += speed;
     }
 
 private:

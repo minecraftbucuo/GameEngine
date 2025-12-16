@@ -92,6 +92,15 @@ public:
         return nullptr;
     }
 
+    template <typename T>
+    bool removeComponent() {
+        if (components.find(typeid(T).hash_code()) != components.end()) {
+            components.erase(typeid(T).hash_code());
+            return true;
+        }
+        return false;
+    }
+
     const sf::Vector2f& getPosition() const {
         return position;
     }

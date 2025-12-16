@@ -27,6 +27,10 @@ public:
         player->addComponent<Controller>();
         world->addObject(player);
 
+        std::shared_ptr<Player> player2 = std::make_shared<Player>(300, 880, 40);
+        player2->removeComponent<GravityComponent>();
+        world->addObject(player2);
+
         // for (int i = 1; i <= 9; i += 2) {
         //     std::shared_ptr<Player> player = std::make_shared<Player>(i * 100, 0, 20);
         //     if (i == 3) {
@@ -38,6 +42,7 @@ public:
         std::shared_ptr<BoxGameObject> box = std::make_shared<BoxGameObject>(800, 800, 300, 80);
         const auto move = box->addComponent<MoveComponent>();
         move->setSpeedX(-200);
+        // box->addComponent<GravityComponent>();
         world->addObject(box);
 
         // 左墙
