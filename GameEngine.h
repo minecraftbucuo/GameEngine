@@ -23,21 +23,14 @@ public:
         world = new World(1200, 960);
         world->setWorldContext();
 
-        std::shared_ptr<Player> player = std::make_shared<Player>(100, 100, 40);
+        std::shared_ptr<Player> player = std::make_shared<Player>(300, 0, 40);
         player->addComponent<Controller>();
         world->addObject(player);
 
-        std::shared_ptr<Player> player2 = std::make_shared<Player>(300, 880, 40);
+        std::shared_ptr<Player> player2 = std::make_shared<Player>(60, 300, 40);
         player2->removeComponent<GravityComponent>();
         world->addObject(player2);
 
-        // for (int i = 1; i <= 9; i += 2) {
-        //     std::shared_ptr<Player> player = std::make_shared<Player>(i * 100, 0, 20);
-        //     if (i == 3) {
-        //         player->addComponent<Controller>();
-        //     }
-        //     world->addObject(player);
-        // }
 
         std::shared_ptr<BoxGameObject> box = std::make_shared<BoxGameObject>(800, 800, 300, 80);
         const auto move = box->addComponent<MoveComponent>();

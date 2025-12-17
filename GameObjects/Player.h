@@ -10,7 +10,6 @@
 #include "Events.h"
 #include <string>
 
-#include "BoxCollisionHandle.h"
 #include "CircleCollisionHandle.h"
 #include "CollisionHandle.h"
 #include "GravityComponent.h"

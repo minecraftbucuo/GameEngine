@@ -11,6 +11,7 @@
 #include "BoxCollision.h"
 #include "Controller.h"
 #include "Ground.h"
+#include "Player.h"
 
 class World {
 public:
@@ -31,6 +32,12 @@ public:
         if (event.type == sf::Event::Resized) {
             this->setWorldSize(static_cast<float>(event.size.width), static_cast<float>(event.size.height));
             this->setWorldContext();
+        }
+
+        if (event.type == sf::Event::MouseButtonPressed) {
+            if (event.mouseButton.button == sf::Mouse::Left) {
+                addObject(std::make_shared<Player>(event.mouseButton.x - 20, event.mouseButton.y - 20, 20));
+            }
         }
     }
 
