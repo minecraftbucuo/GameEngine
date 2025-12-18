@@ -1,38 +1,102 @@
 # GameEngine
 
-#### 介绍
-简易的C++游戏引擎
-仿照Unity的面向组件开发
+## 项目简介
 
-#### 软件架构
-软件架构说明
+这是一个基于 C++ 和 SFML 开发的简易 2D 游戏引擎，采用类似于 Unity 的组件化架构设计。
 
+## 功能特性
 
-#### 安装教程
+- 组件化的游戏对象系统（类似 Unity）
+- 碰撞检测系统（支持圆形和矩形碰撞体）
+- 事件总线机制用于组件间通信
+- 基础物理系统（重力、移动控制）
+- 相机跟随功能
+- 可扩展的游戏世界管理
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## 技术栈
 
-#### 使用说明
+- **编程语言**: C++17
+- **图形库**: SFML 2.6.1
+- **构建工具**: CMake 3.30+
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## 架构设计
 
-#### 参与贡献
+### 核心类
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+- [GameObject](): 游戏对象基类，可添加各种组件
+- [Component](): 组件基类，为游戏对象提供功能
+- [World](): 游戏世界管理器，负责更新和渲染所有游戏对象
+- [GameEngine](): 主引擎类，协调整个游戏流程
 
+### 主要组件
 
-#### 特技
+- [MoveComponent](): 控制物体移动
+- [GravityComponent](): 实现重力效果
+- [Controller](): 键盘输入控制器
+- [CameraComponent](): 相机跟随功能
+- [Collision](): 碰撞体基类
+    - [BoxCollision](): 矩形碰撞体
+    - [CircleCollision](): 圆形碰撞体
+- [CollisionHandle](): 碰撞处理基类
+    - [BoxCollisionHandle](): 矩形碰撞处理
+    - [CircleCollisionHandle](): 圆形碰撞处理
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+## 快速开始
+
+### 环境要求
+
+- C++17 编译器
+- SFML 2.6.1
+- CMake 3.30 或更高版本
+
+### 构建步骤
+
+1. 克隆项目仓库
+2. 修改 [CMakeLists.txt]() 中的 SFML 路径：
+   ```cmake
+   set(SFML_ROOT "你的SFML安装路径")
+   ```
+
+3. 使用 CMake 配置并生成项目文件
+4. 编译项目
+
+### 运行示例
+
+项目包含一个基本示例，展示了以下内容：
+
+- 玩家控制的角色（圆形）
+- 可移动的平台（矩形）
+- 四周墙壁和地面
+- 碰撞检测与响应
+- 相机跟随效果
+
+运行程序后，使用 WASD 键控制玩家角色移动。
+
+## 使用说明
+
+1. 创建自定义游戏对象继承自 [GameObject]()
+2. 添加所需组件使用 `addComponent<T>()` 方法
+3. 在 [World]() 中注册游戏对象
+4. 实现相应的碰撞处理器处理交互逻辑
+
+## 扩展功能
+
+- 支持添加新的碰撞形状
+- 可通过事件总线实现复杂的游戏逻辑
+- 易于扩展的组件系统允许添加新功能
+
+## 注意事项
+
+- 确保 SFML 正确安装并在 CMake 中正确配置路径
+- 确保项目依赖库正确安装并配置
+
+## 未来计划
+
+- 添加更多类型的碰撞体
+- 增强物理系统功能
+- 支持精灵渲染和动画系统
+- 添加音频支持
+
+---
+
+*该项目仅供学习和参考用途*
