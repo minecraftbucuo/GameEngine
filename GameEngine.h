@@ -7,6 +7,7 @@
 #include "World.h"
 #include "Player.h"
 #include "BoxGameObject.h"
+#include "CameraComponent.h"
 #include "Ground.h"
 
 
@@ -21,14 +22,17 @@ public:
     void init() {
         window = new sf::RenderWindow(sf::VideoMode(1200, 960), "GameEngine");
         world = new World(1200, 960);
+        world->setCamera(window);
         world->setWorldContext();
 
         std::shared_ptr<Player> player = std::make_shared<Player>(300, 0, 40);
         player->addComponent<Controller>();
+        player->addComponent<CameraComponent>();
         world->addObject(player);
 
         std::shared_ptr<Player> player2 = std::make_shared<Player>(60, 300, 40);
         player2->removeComponent<GravityComponent>();
+        // player2->addComponent<CameraComponent>();
         world->addObject(player2);
 
 
@@ -48,7 +52,7 @@ public:
         std::shared_ptr<Ground> wall3 = std::make_shared<Ground>(0, 0, 1200, 10, "wall3");
         world->addObject(wall3);
         //
-        std::shared_ptr<Ground> ground = std::make_shared<Ground>(0, 940, 1200, 80);
+        std::shared_ptr<Ground> ground = std::make_shared<Ground>(-10000, 940, 120000, 80);
         world->addObject(ground);
     }
 
@@ -61,11 +65,6 @@ public:
             while (window->pollEvent(event)) {
                 if (event.type == sf::Event::Closed) {
                     window->close();
-                }
-                if (event.type == sf::Event::Resized) {
-                    // 处理窗口大小改变引起的缩放问题
-                    window->setView(sf::View(sf::FloatRect(0, 0,
-                        static_cast<float>(event.size.width), static_cast<float>(event.size.height))));
                 }
                 world->handleEvent(event);
             }

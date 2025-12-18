@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Camera.h"
 
 class WorldContext {
 public:
@@ -16,6 +17,14 @@ public:
         size.y = height;
     }
 
+    void setCamera(Camera* camera) {
+        this->camera = camera;
+    }
+
+    [[nodiscard]] Camera* getCamera() const {
+        return camera;
+    }
+
     [[nodiscard]] float getWorldWidth() const {
         return size.x;
     }
@@ -27,5 +36,6 @@ public:
 private:
     WorldContext() : size(0, 0) {}
     sf::Vector2f size;
+    Camera* camera{};
 };
 

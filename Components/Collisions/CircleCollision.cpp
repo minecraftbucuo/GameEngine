@@ -25,7 +25,7 @@ void CircleCollision::render(sf::RenderWindow *window) {
     shape.setPosition(position - sf::Vector2f(radius, radius));
     shape.setFillColor(sf::Color::Transparent);
     shape.setOutlineColor(sf::Color::Red);
-    shape.setOutlineThickness(1.f);
+    shape.setOutlineThickness(2);
     window->draw(shape);
 }
 

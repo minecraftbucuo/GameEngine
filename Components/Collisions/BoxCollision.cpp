@@ -35,7 +35,7 @@ void BoxCollision::render(sf::RenderWindow *window) {
     rect.setPosition(this->position);
     rect.setFillColor(sf::Color::Transparent);
     rect.setOutlineColor(sf::Color::Red);
-    rect.setOutlineThickness(1);
+    rect.setOutlineThickness(2);
     window->draw(rect);
 }
 

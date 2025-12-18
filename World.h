@@ -9,6 +9,7 @@
 #include "CollisionSystem.h"
 #include "GameObject.h"
 #include "BoxCollision.h"
+#include "Camera.h"
 #include "Controller.h"
 #include "Ground.h"
 #include "Player.h"
@@ -25,7 +26,12 @@ public:
         return game_objects;
     }
 
+    void setCamera(sf::RenderWindow* window) {
+        camera = new Camera(window);
+    }
+
     void handleEvent(sf::Event& event) {
+        if (camera) camera->handleEvent(event);
         for (const auto& obj : game_objects) {
             obj->handleEvent(event);
         }
@@ -34,11 +40,13 @@ public:
             this->setWorldContext();
         }
 
-        if (event.type == sf::Event::MouseButtonPressed) {
-            if (event.mouseButton.button == sf::Mouse::Left) {
-                addObject(std::make_shared<Player>(event.mouseButton.x - 20, event.mouseButton.y - 20, 20));
-            }
-        }
+        // if (event.type == sf::Event::MouseButtonPressed) {
+        //     if (event.mouseButton.button == sf::Mouse::Left) {
+        //         auto obj = std::make_shared<Player>(event.mouseButton.x - 20, event.mouseButton.y - 20, 20);
+        //         obj->removeComponent<GravityComponent>();
+        //         addObject(obj);
+        //     }
+        // }
     }
 
     void update(const sf::Time deltaTime) {
@@ -70,9 +78,13 @@ public:
 
     void setWorldContext() {
         WorldContext::getInstance().setWorldSize(size.x, size.y);
+        if (camera) {
+            camera->setSize(size.x, size.y);
+            WorldContext::getInstance().setCamera(camera);
+        }
         for (const auto& obj : game_objects) {
             if (obj->getTag().substr(0, 6) == "ground") {
-                obj->setSize(size.x, size.y);
+                // obj->setSize(size.x, size.y);
                 const std::shared_ptr<Ground> obj_ground = std::dynamic_pointer_cast<Ground>(obj);
                 obj_ground->setPosition(0.f, size.y - 20.f);
                 break;
@@ -89,6 +101,7 @@ private:
     std::vector<std::shared_ptr<GameObject>> game_objects;
     sf::Vector2f size;
     CollisionSystem* collisionSystem;
+    Camera* camera{};
 };
 
 
