@@ -5,6 +5,7 @@
 #pragma once
 
 #include "BoxCollisionHandle.h"
+#include "EventBus.h"
 #include "GameObject.h"
 
 class BoxGameObject : public GameObject {

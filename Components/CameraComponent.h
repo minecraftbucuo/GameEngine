@@ -4,7 +4,7 @@
 
 #pragma once
 #include "Component.h"
-#include "WorldContext.h"
+#include "SceneContext.h"
 #include "Camera.h"
 #include "GameObject.h"
 
@@ -15,7 +15,7 @@ public:
 
     }
     void update(sf::Time deltaTime) override {
-        if (Camera* camera = WorldContext::getInstance().getCamera()) {
+        if (Camera* camera = SceneContext::getInstance().getCamera()) {
             camera->setPosition(owner->getPosition().x - 400, owner->getPosition().y - 600);
         }
     }

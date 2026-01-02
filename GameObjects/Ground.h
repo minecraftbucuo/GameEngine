@@ -28,7 +28,6 @@ public:
         this->position = sf::Vector2f(posX, posY);
         const auto boxCollision = this->getComponent<Collision, BoxCollision>();
         boxCollision->setPosition(posX, posY);
-        boxCollision->setSize(size.x, size.y);
     }
     void start() override {
         GameObject::start();

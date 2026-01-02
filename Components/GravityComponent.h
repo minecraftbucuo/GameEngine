@@ -6,14 +6,15 @@
 
 #include "Component.h"
 #include "GameObject.h"
-#include "WorldContext.h"
+#include "SceneContext.h"
+#include "MoveComponent.h"
 
 class GravityComponent : public Component {
 public:
     GravityComponent() = default;
     void start() override {}
     void update(sf::Time deltaTime) override {
-        float worldHeight = WorldContext::getInstance().getWorldHeight();
+        float worldHeight = SceneContext::getInstance().getWindowHeight();
 
         if (std::abs(this->owner->getPosition().y + this->owner->getSize().y - worldHeight) < 0.1f
             && std::abs(owner->getSpeed().y) <= 1.f) return;

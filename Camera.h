@@ -21,6 +21,12 @@ public:
         window->setView(view);
     }
 
+    void resize() {
+        this->floatRect.width = static_cast<float>(window->getSize().x);
+        this->floatRect.height = static_cast<float>(window->getSize().y);
+        updateView();
+    }
+
     void setSize(const float width, const float height) {
         this->floatRect.width = width;
         this->floatRect.height = height;

@@ -3,8 +3,14 @@
 //
 
 #pragma once
+#include <functional>
+#include <unordered_map>
 #include "Component.h"
 #include "Events.h"
+#include <iostream>
+#include "Collision.h"
+#include "GameObject.h"
+#include "MoveComponent.h"
 
 class CollisionHandle : public Component {
 public:

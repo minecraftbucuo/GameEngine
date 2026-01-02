@@ -26,8 +26,7 @@ set(SOURCES
         Components/GravityComponent.h
         GameObjects/Ground.h
         GameObjects/Player.h
-        World.h
-        WorldContext.h
+        SceneContext.h
         Components/Collisions/Collision.h
         Components/Collisions/CircleCollision.cpp
         Components/Collisions/CircleCollision.h
@@ -40,7 +39,9 @@ set(SOURCES
         Components/CollisionHandles/CircleCollisionHandle.h
         GameObjects/BoxGameObject.h
         Camera.h
-        Components/CameraComponent.h)
+        Components/CameraComponent.h
+        Scene.h
+        GameScene.h)
 
 if(WIN32)
     # Windows 下需区分 Debug/Release 后缀（如 sfml-graphics-d.lib）

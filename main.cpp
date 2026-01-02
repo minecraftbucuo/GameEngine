@@ -1,8 +1,8 @@
 #include "GameEngine.h"
 
 int main() {
-    auto* game = new GameEngine();
-    game->init();
-    game->start();
+    GameEngine engine;
+    engine.init();
+    engine.start();
     return 0;
 }
