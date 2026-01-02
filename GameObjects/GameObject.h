@@ -25,9 +25,15 @@ public:
         this->id = idCounter++;
     }
     virtual ~GameObject() = default;
-    virtual void handleEvent(sf::Event& e) = 0;
-    virtual void update(sf::Time deltaTime) = 0;
-    virtual void render(sf::RenderWindow* window) = 0;
+    virtual void handleEvent(sf::Event& e) {
+        handleComponents(e);
+    }
+    virtual void update(sf::Time deltaTime) {
+        updateComponents(deltaTime);
+    }
+    virtual void render(sf::RenderWindow* window) {
+        renderComponents(window);
+    }
     virtual void start() {
         started = true;
     }

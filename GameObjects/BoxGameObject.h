@@ -18,18 +18,6 @@ public:
         this->addComponent<CollisionHandle, BoxCollisionHandle>();
     }
 
-    void update(sf::Time deltaTime) override {
-        updateComponents(deltaTime);
-    }
-
-    void render(sf::RenderWindow* window) override {
-        renderComponents(window);
-    }
-
-    void handleEvent(sf::Event& e) override {
-        handleComponents(e);
-    }
-
     void start() override {
         GameObject::start();
         EventBus::getInstance().subscribe<CollisionEvent>("onCollision" + this->tag,

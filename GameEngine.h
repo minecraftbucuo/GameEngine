@@ -4,7 +4,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <memory>
-#include "World.h"
 #include "GameScene.h"
 #include "Scene.h"
 

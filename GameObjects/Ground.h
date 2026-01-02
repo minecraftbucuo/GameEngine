@@ -15,15 +15,7 @@ public:
         this->tag = tag + ":" + std::to_string(id);
         this->moveAble = false;
     }
-    void update(const sf::Time deltaTime) override {
-        updateComponents(deltaTime);
-    }
-    void render(sf::RenderWindow* window) override {
-        renderComponents(window);
-    }
-    void handleEvent(sf::Event& e) override {
-        handleComponents(e);
-    }
+
     void setPosition(const float posX, const float posY) override {
         this->position = sf::Vector2f(posX, posY);
         const auto boxCollision = this->getComponent<Collision, BoxCollision>();

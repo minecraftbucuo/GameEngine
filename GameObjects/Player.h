@@ -33,15 +33,9 @@ public:
         this->tag = tag + ":" + std::to_string(this->id);
     }
     ~Player() override = default;
-    void update(sf::Time deltaTime) override {
-        updateComponents(deltaTime);
-    }
     void render(sf::RenderWindow* window) override {
         renderComponents(window);
         window->draw(shape);
-    }
-    void handleEvent(sf::Event& e) override {
-        handleComponents(e);
     }
     void start() override {
         GameObject::start();

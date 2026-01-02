@@ -27,7 +27,7 @@ public:
     void initScene() {
         std::shared_ptr<Player> player = std::make_shared<Player>(300, 0, 40);
         player->addComponent<Controller>();
-        player->addComponent<CameraComponent>();
+        // player->addComponent<CameraComponent>();
         this->addObject(player);
 
         std::shared_ptr<Player> player2 = std::make_shared<Player>(60, 300, 40);
@@ -77,7 +77,6 @@ public:
                 if (obj->getTag().substr(0, 6) == "ground") {
                     // obj->setSize(size.x, size.y);
                     const std::shared_ptr<Ground> obj_ground = std::dynamic_pointer_cast<Ground>(obj);
-                    std::cout << window->getSize().y << std::endl;
                     obj_ground->setPosition(0.f, window->getSize().y - 20.f);
                     break;
                 }
