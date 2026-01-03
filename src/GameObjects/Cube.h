@@ -10,17 +10,11 @@
 class Cube : public GameObject {
 public:
     void render(sf::RenderWindow* window) override {
-        for (const auto& point : points) {
-            drawPoint(window, transform(project(addZ(rotateXZ(point, angle), z))));
-        }
-        for (const auto& edge : edges) {
-            const auto p1 = project(addZ(rotateXZ(points[edge.first], angle), z));
-            const auto p2 = project(addZ(rotateXZ(points[edge.second], angle), z));
-            drawEdge(window, transform(p1), transform(p2));
-        }
+        drawPoints(window);
+        drawFaces(window);
     }
 
-    void update(sf::Time deltaTime) override {
+    void update(const sf::Time deltaTime) override {
         for (auto& point : points) {
             point = rotateXY(point, deltaTime.asSeconds());
         }
@@ -31,6 +25,24 @@ public:
     }
 
 private:
+    void drawPoints(sf::RenderWindow* window) const {
+        for (const auto& point : points) {
+            drawPoint(window, transform(project(addZ(rotateXZ(point, angle), z))));
+        }
+    }
+
+    void drawFaces(sf::RenderWindow* window) const {
+        for (const auto& face : faces) {
+            const int len = static_cast<int>(face.size());
+            for (int i = 0; i < len; i++) {
+                const int x = i, y = (i + 1) % len;
+                const auto p1 = project(addZ(rotateXZ(points[face[x]], angle), z));
+                const auto p2 = project(addZ(rotateXZ(points[face[y]], angle), z));
+                drawEdge(window, transform(p1), transform(p2));
+            }
+        }
+    }
+
     static sf::Vector2f transform(const sf::Vector2f& pos) {
         const auto scene_context = SceneContext::getInstance();
         const unsigned width = scene_context.getWindowWidth();
@@ -79,31 +91,22 @@ private:
         return {pos.x, pos.y, pos.z + dz};
     }
 
-    std::array<sf::Vector3f, 8> points = {
-        sf::Vector3f(-0.5f, 0.5f, -0.5f),
-        sf::Vector3f(0.5f, 0.5f, -0.5f),
-        sf::Vector3f(0.5f, -0.5f, -0.5f),
-        sf::Vector3f(-0.5f, -0.5f, -0.5f),
-        sf::Vector3f(-0.5f, 0.5f, 0.5f),
-        sf::Vector3f(0.5f, 0.5f, 0.5f),
-        sf::Vector3f(0.5f, -0.5f, 0.5f),
-        sf::Vector3f(-0.5f, -0.5f, 0.5f)
+    std::vector<sf::Vector3f> points = {
+        {-0.5f, 0.5f, -0.5f},
+        {0.5f, 0.5f, -0.5f},
+        {0.5f, -0.5f, -0.5f},
+        {-0.5f, -0.5f, -0.5f},
+        {-0.5f, 0.5f, 0.5f},
+        {0.5f, 0.5f, 0.5f},
+        {0.5f, -0.5f, 0.5f},
+        {-0.5f, -0.5f, 0.5f}
     };
-    std::array<std::pair<int, int>, 12> edges = {
-        std::make_pair(0, 1),
-        std::make_pair(0, 4),
-        std::make_pair(0, 3),
-        std::make_pair(1, 2),
-        std::make_pair(1, 5),
-        std::make_pair(2, 3),
-        std::make_pair(2, 6),
-        std::make_pair(3, 7),
-        std::make_pair(4, 5),
-        std::make_pair(4, 7),
-        std::make_pair(5, 6),
-        std::make_pair(6, 7)
+    std::vector<std::vector<int>> faces = {
+        {0, 1, 2 ,3},
+        {1, 5, 6, 2},
+        {4, 5, 6, 7},
+        {0, 3, 7, 4}
     };
-    sf::Vector3f position;
     float z = 3.0f;
     float angle = 0.0f;
     float sign = 1.0f;

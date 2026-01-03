@@ -12,8 +12,8 @@ public:
         init(window);
     }
 
-    void init(sf::RenderWindow* window) {
-        this->window = window;
+    void init(sf::RenderWindow* _window) {
+        this->window = _window;
         this->floatRect = sf::FloatRect(0, 0,
                         static_cast<float>(window->getSize().x),
                         static_cast<float>(window->getSize().y));
@@ -43,6 +43,12 @@ public:
         updateView();
     }
 
+    void addPosition(const sf::Vector2i& pos) {
+        this->floatRect.left += static_cast<float>(pos.x);
+        this->floatRect.top += static_cast<float>(pos.y);
+        updateView();
+    }
+
     void handleEvent(const sf::Event& event) {
         if (event.type == sf::Event::KeyPressed) {
             if (event.key.code == sf::Keyboard::Up) {
@@ -69,12 +75,28 @@ public:
             floatRect.height *= scale;
             updateView();
         }
+
+        if (mouseControl && event.type == sf::Event::MouseButtonPressed) {
+            isPressed = true;
+            mousePos = sf::Mouse::getPosition(*window);
+        }
+        if (mouseControl && event.type == sf::Event::MouseButtonReleased) {
+            isPressed = false;
+        }
+        if (mouseControl && isPressed && event.type == sf::Event::MouseMoved) {
+            const auto pos = sf::Mouse::getPosition(*window);
+            addPosition(mousePos - pos);
+            mousePos = pos;
+        }
     }
 
 private:
     sf::FloatRect floatRect;
     sf::View view;
     sf::RenderWindow* window{};
+    bool mouseControl = true;
+    sf::Vector2i mousePos;
+    bool isPressed = false;
 
     void updateView() {
         view = sf::View(floatRect);

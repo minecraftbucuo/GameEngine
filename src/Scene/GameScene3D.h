@@ -6,6 +6,7 @@
 
 #include "Scene.h"
 #include "Cube.h"
+#include "Model.h"
 
 class GameScene3D : public Scene {
 public:
@@ -16,6 +17,6 @@ public:
         window->setSize(sf::Vector2u(800, 800));
         this->setCamera(window);
         this->setSceneContext();
-        this->addObject(std::make_shared<Cube>());
+        this->addObject(std::make_shared<Model>());
     }
 };
