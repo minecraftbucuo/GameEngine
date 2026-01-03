@@ -15,6 +15,7 @@ public:
 
     void setCamera(Camera* _camera) {
         this->camera = _camera;
+        this->camera->init();
     }
 
     void setWindow(sf::RenderWindow* _window) {

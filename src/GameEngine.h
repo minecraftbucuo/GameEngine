@@ -6,6 +6,7 @@
 #include <memory>
 #include "GameScene.h"
 #include "Scene.h"
+#include "GameScene3D.h"
 
 
 class GameEngine {
@@ -16,6 +17,7 @@ public:
     void init() {
         window = new sf::RenderWindow(sf::VideoMode(1200, 960), "GameEngine");
         loadScene<GameScene>(window);
+        loadScene<GameScene3D>(window);
     }
 
     void start() {

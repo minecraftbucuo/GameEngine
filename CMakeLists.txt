@@ -8,40 +8,17 @@ set(SFML_ROOT "E:/Document/SFML/SFML-2.6.1-gcc")
 
 # 包含头文件
 include_directories(${SFML_ROOT}/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Components)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Components/Collisions)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Components/CollisionHandles)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/GameObjects)
+include_directories(src)
+include_directories(src/Components)
+include_directories(src/Components/Collisions)
+include_directories(src/Components/CollisionHandles)
+include_directories(src/GameObjects)
+include_directories(src/Scene)
 
 # 定义源文件列表
-set(SOURCES
-        main.cpp
-        CollisionSystem.h
-        Components/Component.h
-        EventBus.h
-        Events.h
-        GameEngine.h
-        GameObjects/GameObject.h
-        Components/GravityComponent.h
-        GameObjects/Ground.h
-        GameObjects/Player.h
-        SceneContext.h
-        Components/Collisions/Collision.h
-        Components/Collisions/CircleCollision.cpp
-        Components/Collisions/CircleCollision.h
-        Components/Collisions/BoxCollision.cpp
-        Components/Collisions/BoxCollision.h
-        Components/MoveComponent.h
-        Components/Controller.h
-        Components/CollisionHandles/CollisionHandle.h
-        Components/CollisionHandles/BoxCollisionHandle.h
-        Components/CollisionHandles/CircleCollisionHandle.h
-        GameObjects/BoxGameObject.h
-        Camera.h
-        Components/CameraComponent.h
-        Scene.h
-        GameScene.h)
+file(GLOB_RECURSE SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+)
 
 if(WIN32)
     # Windows 下需区分 Debug/Release 后缀（如 sfml-graphics-d.lib）

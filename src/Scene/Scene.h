@@ -42,7 +42,7 @@ public:
         for (const auto& obj : game_objects) {
             obj->handleEvent(event);
         }
-        if (event.type == sf::Event::Resized) {
+        if (camera && event.type == sf::Event::Resized) {
             camera->resize();
         }
     }
@@ -67,8 +67,8 @@ public:
 
     // 场景大小和上下文管理
     void setSceneContext() const {
-        if (camera) SceneContext::getInstance().setCamera(camera.get());
         if (window) SceneContext::getInstance().setWindow(window);
+        if (camera) SceneContext::getInstance().setCamera(camera.get());
     }
 
     [[nodiscard]] sf::Vector2u getWindowSize() const {

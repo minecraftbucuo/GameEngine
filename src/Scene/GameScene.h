@@ -27,7 +27,7 @@ public:
     void initScene() {
         std::shared_ptr<Player> player = std::make_shared<Player>(300, 0, 40);
         player->addComponent<Controller>();
-        // player->addComponent<CameraComponent>();
+        player->addComponent<CameraComponent>();
         this->addObject(player);
 
         std::shared_ptr<Player> player2 = std::make_shared<Player>(60, 300, 40);
