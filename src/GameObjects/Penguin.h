@@ -6,32 +6,26 @@
 
 #include "GameObject.h"
 #include "SceneContext.h"
-#include "ModelManager.h"
 
-class Cube : public GameObject {
+class Penguin : public GameObject {
 public:
-    Cube() {
-        Model* p = ModelManager::getInstance().getModel("cube");
+    Penguin() {
+        Model* p = ModelManager::getInstance().getModel("penguin");
         if (p == nullptr) {
-            ModelManager::getInstance().loadModel("../src/Asset/cube.obj", "cube");
-            this->model = ModelManager::getInstance().getModel("cube");
+            ModelManager::getInstance().loadModel("../src/Asset/penguin.obj", "penguin");
+            this->model = ModelManager::getInstance().getModel("penguin");
         } else {
             this->model = p;
         }
     }
+
     void render(sf::RenderWindow* window) override {
-        drawPoints(window);
+        // drawPoints(window);
         drawFaces(window);
     }
 
     void update(const sf::Time deltaTime) override {
-        for (auto& point : model->points) {
-            point = rotateXY(point, deltaTime.asSeconds());
-        }
         angle += deltaTime.asSeconds();
-        if (z > 10.f) sign = -1.0f;
-        else if (z < 1.f) sign = 1.0f;
-        z += 0.01f * sign;
     }
 
 private:
@@ -102,7 +96,7 @@ private:
     }
 
     Model* model;
-    float z = 3.0f;
+    float z = 1.0f;
     float angle = 0.0f;
     float sign = 1.0f;
 };

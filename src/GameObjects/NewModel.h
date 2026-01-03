@@ -1,5 +1,5 @@
 //
-// Created by MINEC on 2026/1/3.
+// Created by MINEC on 2026/1/4.
 //
 
 #pragma once
@@ -7,14 +7,15 @@
 #include "GameObject.h"
 #include "SceneContext.h"
 #include "ModelManager.h"
+#include "cmath"
 
-class Cube : public GameObject {
+class NewModel : public GameObject {
 public:
-    Cube() {
-        Model* p = ModelManager::getInstance().getModel("cube");
+    NewModel() {
+        Model* p = ModelManager::getInstance().getModel("new_model");
         if (p == nullptr) {
-            ModelManager::getInstance().loadModel("../src/Asset/cube.obj", "cube");
-            this->model = ModelManager::getInstance().getModel("cube");
+            ModelManager::getInstance().loadModel("../src/Asset/new_model.obj", "new_model");
+            this->model = ModelManager::getInstance().getModel("new_model");
         } else {
             this->model = p;
         }
@@ -25,13 +26,13 @@ public:
     }
 
     void update(const sf::Time deltaTime) override {
-        for (auto& point : model->points) {
-            point = rotateXY(point, deltaTime.asSeconds());
-        }
+        // for (auto& point : model->points) {
+        //     point = rotateXY(point, deltaTime.asSeconds());
+        // }
         angle += deltaTime.asSeconds();
-        if (z > 10.f) sign = -1.0f;
-        else if (z < 1.f) sign = 1.0f;
-        z += 0.01f * sign;
+        // if (z > 10.f) sign = -1.0f;
+        // else if (z < 1.f) sign = 1.0f;
+        // z += 0.01f * sign;
     }
 
 private:
@@ -66,7 +67,7 @@ private:
 
     static void drawPoint(sf::RenderWindow* window, const sf::Vector2f& pos) {
         sf::CircleShape circle_shape;
-        circle_shape.setRadius(4.0f);
+        circle_shape.setRadius(2.0f);
         circle_shape.setOrigin(circle_shape.getRadius(), circle_shape.getRadius());
         circle_shape.setPosition(pos);
         window->draw(circle_shape);
@@ -102,7 +103,7 @@ private:
     }
 
     Model* model;
-    float z = 3.0f;
+    float z = 1.0f;
     float angle = 0.0f;
     float sign = 1.0f;
 };
