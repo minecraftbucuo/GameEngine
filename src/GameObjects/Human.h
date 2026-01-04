@@ -7,19 +7,18 @@
 #include "GameObject.h"
 #include "SceneContext.h"
 #include "ModelManager.h"
-#include "cmath"
 
-class NewModel : public GameObject {
+class Human : public GameObject {
 public:
-    NewModel() {
-        Model* p = ModelManager::getInstance().getModel("new_model");
+    Human() {
+        Model* p = ModelManager::getInstance().getModel("human");
         if (p == nullptr) {
-            ModelManager::getInstance().loadModel("./Asset/new_model.obj", "new_model");
-            this->model = ModelManager::getInstance().getModel("new_model");
+            ModelManager::getInstance().loadModel("./Asset/human.obj", "human");
+            this->model = ModelManager::getInstance().getModel("human");
         } else {
             this->model = p;
         }
-        position = {0.f, -0.6f, 1.f};
+        position = {0.0f, -3.0f, 5.0f};
     }
     void render(sf::RenderWindow* window) override {
         // drawPoints(window);

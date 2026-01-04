@@ -31,6 +31,7 @@ public:
                 int cnt = 0;
                 for (int i = 2; i < line.size(); i++) {
                     std::string num;
+                    while (i < line.size() && line[i] == ' ') i++;
                     while (i < line.size() && line[i] != ' ') {
                         num += line[i];
                         i++;

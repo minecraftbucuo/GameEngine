@@ -12,11 +12,12 @@ public:
     Penguin() {
         Model* p = ModelManager::getInstance().getModel("penguin");
         if (p == nullptr) {
-            ModelManager::getInstance().loadModel("../src/Asset/penguin.obj", "penguin");
+            ModelManager::getInstance().loadModel("./Asset/penguin.obj", "penguin");
             this->model = ModelManager::getInstance().getModel("penguin");
         } else {
             this->model = p;
         }
+        position = {0.0f, -0.5f, 1.0f};
     }
 
     void render(sf::RenderWindow* window) override {
@@ -31,7 +32,7 @@ public:
 private:
     void drawPoints(sf::RenderWindow* window) const {
         for (const auto& point : model->points) {
-            drawPoint(window, transform(project(addZ(rotateXZ(point, angle), z))));
+            drawPoint(window, trans(point, position));
         }
     }
 
@@ -40,9 +41,9 @@ private:
             const int len = static_cast<int>(face.size());
             for (int i = 0; i < len; i++) {
                 const int x = i, y = (i + 1) % len;
-                const auto p1 = project(addZ(rotateXZ(model->points[face[x]], angle), z));
-                const auto p2 = project(addZ(rotateXZ(model->points[face[y]], angle), z));
-                drawEdge(window, transform(p1), transform(p2));
+                const auto p1 = trans(model->points[face[x]], position);
+                const auto p2 = trans(model->points[face[y]], position);
+                drawEdge(window, p1, p2);
             }
         }
     }
@@ -91,12 +92,11 @@ private:
         return pos;
     }
 
-    static sf::Vector3f addZ(const sf::Vector3f& pos, const float dz) {
-        return {pos.x, pos.y, pos.z + dz};
+    sf::Vector2f trans(const sf::Vector3f& point, const sf::Vector3f& pos) const {
+        return transform(project(rotateXZ(point, angle) + pos));
     }
 
     Model* model;
-    float z = 1.0f;
     float angle = 0.0f;
-    float sign = 1.0f;
+    sf::Vector3f position;
 };
