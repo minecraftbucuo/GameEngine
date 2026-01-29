@@ -12,7 +12,7 @@ public:
     BoxCollision(float x, float y, float width, float height);
     BoxCollision();
     void start() override;
-    void update(sf::Time deltaTime) override;
+    void update(const sf::Time& deltaTime) override;
     void render(sf::RenderWindow* window) override;
     void setPosition(const sf::Vector2f& position) override;
 

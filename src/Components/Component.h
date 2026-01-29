@@ -9,12 +9,14 @@
 class GameObject;
 class Component {
 public:
+    Component() = default;
+    explicit Component(GameObject* owner) : owner(owner) {}
     virtual ~Component() = default;
 
-    virtual void start() = 0;
-    virtual void update(sf::Time deltaTime) = 0;
-    virtual void render(sf::RenderWindow* window) = 0;
-    virtual void handleEvent(sf::Event& event) = 0;
+    virtual void start() {}
+    virtual void update(const sf::Time& deltaTime) {}
+    virtual void render(sf::RenderWindow* window) {}
+    virtual void handleEvent(const sf::Event& event) {}
     void setOwner(GameObject* obj) {
         owner = obj;
     }

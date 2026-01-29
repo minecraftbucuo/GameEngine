@@ -14,7 +14,7 @@ public:
     void start() override {
 
     }
-    void update(sf::Time deltaTime) override {
+    void update(const sf::Time& deltaTime) override {
         if (Camera* camera = SceneContext::getInstance().getCamera()) {
             camera->setPosition(owner->getPosition().x - 400, owner->getPosition().y - 600);
         }
@@ -22,7 +22,7 @@ public:
     void render(sf::RenderWindow* window) override {
 
     }
-    void handleEvent(sf::Event& event) override {
+    void handleEvent(const sf::Event& event) override {
 
     }
 };

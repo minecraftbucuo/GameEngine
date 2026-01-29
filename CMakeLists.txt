@@ -14,6 +14,7 @@ include_directories(src/Components/Collisions)
 include_directories(src/Components/CollisionHandles)
 include_directories(src/GameObjects)
 include_directories(src/Scene)
+include_directories(src/State)
 
 # 定义源文件列表
 file(GLOB_RECURSE SOURCES

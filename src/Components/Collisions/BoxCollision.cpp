@@ -24,7 +24,7 @@ void BoxCollision::start() {
     this->size.y = owner->getSize().y;
 }
 
-void BoxCollision::update(sf::Time deltaTime) {
+void BoxCollision::update(const sf::Time& deltaTime) {
     // this->posX = owner->posX;
     // this->posY = owner->posY;
     // this->position = owner->getPosition();
@@ -84,11 +84,11 @@ float BoxCollision::getPosY() const {
     return this->position.y;
 }
 
-void BoxCollision::setPosition(float x, float y) {
+void BoxCollision::setPosition(const float x, const float y) {
     this->position = sf::Vector2f(x, y);
 }
 
-void BoxCollision::setSize(float width, float height) {
-    this->size = sf::Vector2f(width, height);
+void BoxCollision::setSize(const float width_, const float height_) {
+    this->size = sf::Vector2f(width_, height_);
 }
 

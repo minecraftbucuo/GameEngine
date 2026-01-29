@@ -7,20 +7,24 @@
 #include "GameScene.h"
 #include "Scene.h"
 #include "GameScene3D.h"
+#include "SuperMarioScene.h"
 
 
 class GameEngine {
 public:
     GameEngine() = default;
-    ~GameEngine() = default;
+    ~GameEngine() {
+        delete window;
+    }
 
     void init() {
         window = new sf::RenderWindow(sf::VideoMode(1200, 960), "GameEngine");
         // loadScene<GameScene>(window);
-        loadScene<GameScene3D>(window);
+        // loadScene<GameScene3D>(window);
+        loadScene<SuperMarioScene>(window);
     }
 
-    void start() {
+    void start() const {
         window->setFramerateLimit(165);
         sf::Clock clock;
         while (window->isOpen()) {

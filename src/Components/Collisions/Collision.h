@@ -15,13 +15,13 @@ public:
     void start() override {
 
     }
-    void update(sf::Time deltaTime) override {
+    void update(const sf::Time& deltaTime) override {
 
     }
     void render(sf::RenderWindow* window) override {
 
     }
-    void handleEvent(sf::Event& event) override {
+    void handleEvent(const sf::Event& event) override {
 
     }
     virtual void setPosition(const sf::Vector2f& position) = 0;

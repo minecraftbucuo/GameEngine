@@ -11,7 +11,7 @@ class MoveComponent : public Component {
 public:
     MoveComponent() = default;
     void start() override {}
-    void update(sf::Time deltaTime) override {
+    void update(const sf::Time& deltaTime) override {
         owner->position += owner->speed * deltaTime.asSeconds();
         setPosition(owner->position.x, owner->position.y);
     }
@@ -19,7 +19,7 @@ public:
 
     }
 
-    void handleEvent(sf::Event& event) override {
+    void handleEvent(const sf::Event& event) override {
 
     }
     void setPosition(const sf::Vector2f& pos) const {

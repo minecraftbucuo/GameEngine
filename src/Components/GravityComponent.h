@@ -13,7 +13,7 @@ class GravityComponent : public Component {
 public:
     GravityComponent() = default;
     void start() override {}
-    void update(sf::Time deltaTime) override {
+    void update(const sf::Time& deltaTime) override {
         float worldHeight = SceneContext::getInstance().getWindowHeight();
 
         if (std::abs(this->owner->getPosition().y + this->owner->getSize().y - worldHeight) < 0.1f
@@ -27,7 +27,7 @@ public:
     void render(sf::RenderWindow* window) override {
 
     }
-    void handleEvent(sf::Event& event) override {
+    void handleEvent(const sf::Event& event) override {
 
     }
     std::string getName() {

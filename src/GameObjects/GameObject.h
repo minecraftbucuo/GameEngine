@@ -12,6 +12,7 @@
 
 class GameObject {
     friend class MoveComponent;
+    friend class StateMachine;
 public:
     GameObject() : position(0, 0), size(0, 0), speed(0, 0), active(true), started(false) {
         this->id = idCounter++;
