@@ -29,6 +29,13 @@ public:
             if (event.key.code == sf::Keyboard::W) {
                 moveComponent->setSpeedY(-900.f);
             }
+        } else if (event.type == sf::Event::KeyReleased) {
+            if (event.key.code == sf::Keyboard::A) {
+                moveComponent->setSpeedX(0.f);
+            }
+            if (event.key.code == sf::Keyboard::D) {
+                moveComponent->setSpeedX(0.f);
+            }
         }
     }
 

@@ -8,25 +8,38 @@
 #include "AnimationManager.h"
 #include "BaseState.h"
 #include "GameObject.h"
+#include "StateMachine.h"
 
 class MarioRunState : public BaseState {
 public:
-    explicit MarioRunState() : BaseState("MarioRunState") {};
-    ~MarioRunState() override = default;
-
-    void start() override {
+    explicit MarioRunState() : BaseState("MarioRunState") {
         animation_right = AnimationManager::getInstance().getAnimation("right_small_normal");
         animation_left = AnimationManager::getInstance().getAnimation("left_small_normal");
     }
+    ~MarioRunState() override = default;
+
+
     void update(const sf::Time& deltaTime) override {
-        if (isLeft) {
+        if (owner->getSpeed().x == 0.f) {
+            owner->getComponent<StateMachine>()->setState("MarioIdleState");
+            return;
+        }
+
+        const float speedX = owner->getSpeed().x;
+        if (speedX > 0.f) {
+            setIsLeft(false);
+        } else if (speedX < 0.f) {
+            setIsLeft(true);
+        }
+
+        if (getIsLeft()) {
             animation_left.update(deltaTime);
         } else {
             animation_right.update(deltaTime);
         }
 
         sf::Sprite* sprite;
-        if (isLeft) {
+        if (getIsLeft()) {
             sprite = &animation_left.getSprite();
         } else {
             sprite = &animation_right.getSprite();
@@ -40,15 +53,17 @@ public:
     void handleEvent(const sf::Event& event) override {
         if (event.type == sf::Event::KeyPressed) {
             if (event.key.code == sf::Keyboard::A) {
-                isLeft = true;
+                setIsLeft(true);
             } else if (event.key.code == sf::Keyboard::D) {
-                isLeft = false;
+                setIsLeft(false);
+            } else if (event.key.code == sf::Keyboard::W) {
+                owner->getComponent<StateMachine>()->setState("MarioJumpState");
             }
         }
     }
     void render(sf::RenderWindow* window) override {
         sf::Sprite* sprite;
-        if (isLeft) {
+        if (getIsLeft()) {
             sprite = &animation_left.getSprite();
         } else {
             sprite = &animation_right.getSprite();
@@ -59,8 +74,15 @@ public:
         window->draw(*sprite);
     }
 
+    bool getIsLeft() const {
+        return owner->getComponent<StateMachine>()->getIsLeft();
+    }
+
+    void setIsLeft(const bool value) const {
+        owner->getComponent<StateMachine>()->setIsLeft(value);
+    }
+
 private:
     Animation animation_right;
     Animation animation_left;
-    bool isLeft = true;
 };

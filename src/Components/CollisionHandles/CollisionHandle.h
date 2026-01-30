@@ -75,6 +75,7 @@ public:
             } else {
                 moveComponent->setPositionY(event.b_position.y + other->getSize().y);
             }
+            moveComponent->setSpeedY(0.f);
         }
     }
 

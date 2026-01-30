@@ -8,6 +8,8 @@
 
 #include "AnimationManager.h"
 #include "AssetManager.h"
+#include "MarioIdleState.h"
+#include "MarioJumpState.h"
 #include "MarioRunState.h"
 #include "StateMachine.h"
 
@@ -21,8 +23,11 @@ public:
         this->addComponent<GravityComponent>();
         this->addComponent<MoveComponent>();
         this->addComponent<Controller>();
+        this->addComponent<CameraComponent>();
         const auto stateMachine = this->addComponent<StateMachine>();
         stateMachine->addState<MarioRunState>();
+        stateMachine->addState<MarioIdleState>();
+        stateMachine->addState<MarioJumpState>();
         stateMachine->setState("MarioRunState");
 
         this->tag = tag + ":" + std::to_string(this->id);

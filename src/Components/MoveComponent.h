@@ -10,18 +10,11 @@
 class MoveComponent : public Component {
 public:
     MoveComponent() = default;
-    void start() override {}
     void update(const sf::Time& deltaTime) override {
         owner->position += owner->speed * deltaTime.asSeconds();
         setPosition(owner->position.x, owner->position.y);
     }
-    void render(sf::RenderWindow* window) override {
 
-    }
-
-    void handleEvent(const sf::Event& event) override {
-
-    }
     void setPosition(const sf::Vector2f& pos) const {
         owner->setPosition(pos.x, pos.y);
         setCollisionPosition(pos);

@@ -17,6 +17,7 @@ public:
         if (currentState) {
             currentState->update(deltaTime);
         }
+        // std::cout << "current state: " << currentState->getName() << std::endl;
     }
 
     void render(sf::RenderWindow* window) override {
@@ -39,6 +40,10 @@ public:
     }
 
     void setState(const std::string& stateName) {
+        if (states.find(stateName) == states.end()) {
+            std::cout << "StateMachine: state " << stateName << " does not exist!" << std::endl;
+            return;
+        }
         if (currentState) {
             currentState->stop();
         }
@@ -46,7 +51,16 @@ public:
         currentState->start();
     }
 
+    bool getIsLeft() const {
+        return isLeft;
+    }
+
+    void setIsLeft(const bool value) {
+        this->isLeft = value;
+    }
+
 private:
     std::shared_ptr<BaseState> currentState{};
     std::unordered_map<std::string, std::shared_ptr<BaseState>> states;
+    bool isLeft = false;
 };

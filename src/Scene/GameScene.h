@@ -81,6 +81,10 @@ public:
                     break;
                 }
             }
+        } else if (event.type == sf::Event::MouseButtonPressed) {
+            int x = event.mouseButton.x;
+            int y = event.mouseButton.y;
+            addObject(std::make_shared<Player>(x, y, 20.f));
         }
     }
 

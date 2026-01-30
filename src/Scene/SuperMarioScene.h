@@ -28,6 +28,28 @@ public:
         std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
         this->addObject(mario);
 
+        std::shared_ptr<Player> player2 = std::make_shared<Player>(60, 300, 40);
+        player2->removeComponent<GravityComponent>();
+        // player2->addComponent<CameraComponent>();
+        this->addObject(player2);
+
+
+        std::shared_ptr<BoxGameObject> box = std::make_shared<BoxGameObject>(800, 800, 300, 80);
+        const auto move = box->addComponent<MoveComponent>();
+        move->setSpeedX(-200);
+        // box->addComponent<GravityComponent>();
+        this->addObject(box);
+
+        // 左墙
+        std::shared_ptr<Ground> wall1 = std::make_shared<Ground>(0, 0, 10, 960, "wall1");
+        this->addObject(wall1);
+        // 右墙
+        std::shared_ptr<Ground> wall2 = std::make_shared<Ground>(1190, 0, 10, 960, "wall2");
+        this->addObject(wall2);
+        // 天花板
+        std::shared_ptr<Ground> wall3 = std::make_shared<Ground>(0, 0, 1200, 10, "wall3");
+        this->addObject(wall3);
+        //
         std::shared_ptr<Ground> ground = std::make_shared<Ground>(-10000, 940, 120000, 80);
         this->addObject(ground);
     }
