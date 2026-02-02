@@ -24,6 +24,5 @@ public:
 private:
     float radius;
     // float posX, posY;
-    sf::Vector2f position;
 };
 

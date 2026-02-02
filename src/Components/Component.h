@@ -23,8 +23,15 @@ public:
     [[nodiscard]] GameObject* getOwner() const {
         return owner;
     }
+    void setActive(const bool value) {
+        active = value;
+    }
+    [[nodiscard]] bool getActive() const {
+        return active;
+    }
 
 protected:
     GameObject* owner{};
+    bool active = true;
 };
 

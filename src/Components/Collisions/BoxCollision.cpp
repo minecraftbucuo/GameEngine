@@ -39,10 +39,6 @@ void BoxCollision::render(sf::RenderWindow *window) {
     window->draw(rect);
 }
 
-void BoxCollision::setPosition(const sf::Vector2f &position) {
-    this->position = position;
-}
-
 bool BoxCollision::checkCollision(const Collision &other) const {
     return other.checkCollisionWithBox(*this);
 }

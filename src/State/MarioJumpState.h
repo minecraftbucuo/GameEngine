@@ -31,12 +31,13 @@ public:
         float h = left_sprite.getGlobalBounds().height;
         box_collision->setSize(w, h);
         owner->setSize(w, h);
+        owner->getComponent<GravityComponent>()->setActive(true);
     }
 
     void update(const sf::Time& deltaTime) override {
-        if (std::abs(owner->getSpeed().y) <= 1.f) {
-            owner->getComponent<StateMachine>()->setState("MarioIdleState");
-        }
+        // if (std::abs(owner->getSpeed().y) <= 1.f) {
+        //     owner->getComponent<StateMachine>()->setState("MarioIdleState");
+        // }
     }
 
     void handleEvent(const sf::Event& event) override {

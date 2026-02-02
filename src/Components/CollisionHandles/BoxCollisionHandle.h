@@ -18,7 +18,7 @@ public:
             this->handleCollisionWithCircle(event);
         };
     }
-
+    // 目前两种处理都是一样的
     void handleCollisionWithBox(const CollisionEvent &event) override {
         handle(event);
     }

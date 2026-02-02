@@ -49,16 +49,20 @@ public:
     }
     template <typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args) {
+        const size_t componentId = typeid(T).hash_code();
         std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
-        components[typeid(T).hash_code()] = component;
+        components[componentId] = component;
+        components_vector.emplace_back(componentId);
         component->setOwner(this);
         return component;
     }
 
     template <typename T, bool Start, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args) {
+        const size_t componentId = typeid(T).hash_code();
         std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
-        components[typeid(T).hash_code()] = component;
+        components[componentId] = component;
+        components_vector.emplace_back(componentId);
         component->setOwner(this);
         if constexpr (Start) component->start();
         return component;
@@ -66,16 +70,20 @@ public:
 
     template <typename IT, typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args) {
+        const size_t componentId = typeid(IT).hash_code();
         std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
-        components[typeid(IT).hash_code()] = component;
+        components[componentId] = component;
+        components_vector.emplace_back(componentId);
         component->setOwner(this);
         return component;
     }
 
     template <typename IT, typename T, bool Start, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args) {
+        const size_t componentId = typeid(IT).hash_code();
         std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
-        components[typeid(IT).hash_code()] = component;
+        components[componentId] = component;
+        components_vector.emplace_back(componentId);
         component->setOwner(this);
         if constexpr (Start) component->start();
         return component;
@@ -101,8 +109,15 @@ public:
 
     template <typename T>
     bool removeComponent() {
-        if (components.find(typeid(T).hash_code()) != components.end()) {
-            components.erase(typeid(T).hash_code());
+        if (const size_t componentId = typeid(T).hash_code();
+            components.find(componentId) != components.end()) {
+            components.erase(componentId);
+            for (int i = 0; i < components_vector.size(); i++) {
+                if (components_vector[i] == componentId) {
+                    components_vector.erase(components_vector.begin() + i);
+                    break;
+                }
+            }
             return true;
         }
         return false;
@@ -133,20 +148,38 @@ public:
     }
 
     void updateComponents(sf::Time deltaTime) {
-        for (const auto&[fst, snd] : components) {
-            snd->update(deltaTime);
+        for (const auto key : components_vector) {
+            auto it = components.find(key);
+            if (it == components.end()) {
+                std::cerr << "Component not found: " << key << std::endl;
+                continue;
+            }
+            if (components[key]->getActive())
+                components[key]->update(deltaTime);
         }
     }
 
     void renderComponents(sf::RenderWindow* window) {
-        for (const auto&[fst, snd] : components) {
-            snd->render(window);
+        for (const auto key : components_vector) {
+            auto it = components.find(key);
+            if (it == components.end()) {
+                std::cerr << "Component not found: " << key << std::endl;
+                continue;
+            }
+            if (components[key]->getActive())
+                components[key]->render(window);
         }
     }
 
     void handleComponents(sf::Event& e) {
-        for (const auto&[fst, snd] : components) {
-            snd->handleEvent(e);
+        for (const auto key : components_vector) {
+            auto it = components.find(key);
+            if (it == components.end()) {
+                std::cerr << "Component not found: " << key << std::endl;
+                continue;
+            }
+            if (components[key]->getActive())
+                components[key]->handleEvent(e);
         }
     }
 
@@ -164,6 +197,7 @@ protected:
     int id;
     std::string tag = "game_object:";
     std::unordered_map<size_t, std::shared_ptr<Component>> components;
+    std::vector<size_t> components_vector;
     inline static int idCounter = 0;
 };
 

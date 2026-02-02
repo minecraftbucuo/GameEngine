@@ -14,7 +14,6 @@ public:
     void start() override;
     void update(const sf::Time& deltaTime) override;
     void render(sf::RenderWindow* window) override;
-    void setPosition(const sf::Vector2f& position) override;
 
     [[nodiscard]] bool checkCollision(const Collision& other) const override;
 
@@ -37,7 +36,6 @@ public:
 
 private:
     sf::Vector2f size;
-    sf::Vector2f position;
 };
 
 

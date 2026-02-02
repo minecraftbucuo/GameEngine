@@ -59,6 +59,13 @@ public:
         this->isLeft = value;
     }
 
+    const std::string& getCurrentStateName() const {
+        if (currentState) {
+            return currentState->getName();
+        }
+        return "null";
+    }
+
 private:
     std::shared_ptr<BaseState> currentState{};
     std::unordered_map<std::string, std::shared_ptr<BaseState>> states;

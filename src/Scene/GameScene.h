@@ -31,7 +31,8 @@ public:
         this->addObject(player);
 
         std::shared_ptr<Player> player2 = std::make_shared<Player>(60, 300, 40);
-        player2->removeComponent<GravityComponent>();
+        // player2->removeComponent<GravityComponent>();
+        player2->getComponent<GravityComponent>()->setActive(false);
         // player2->addComponent<CameraComponent>();
         this->addObject(player2);
 

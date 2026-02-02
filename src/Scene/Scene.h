@@ -69,6 +69,7 @@ public:
     void setSceneContext() const {
         if (window) SceneContext::getInstance().setWindow(window);
         if (camera) SceneContext::getInstance().setCamera(camera.get());
+        SceneContext::getInstance().setGameObjects(&game_objects);
     }
 
     [[nodiscard]] sf::Vector2u getWindowSize() const {

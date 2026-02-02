@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Camera.h"
+#include "GameObject.h"
 #include <SFML/Graphics.hpp>
 
 class SceneContext {
@@ -20,6 +21,10 @@ public:
 
     void setWindow(sf::RenderWindow* _window) {
         this->window = _window;
+    }
+
+    void setGameObjects(const std::vector<std::shared_ptr<GameObject>>* _game_objects) {
+        game_objects = _game_objects;
     }
 
     [[nodiscard]] Camera* getCamera() const {
@@ -40,8 +45,13 @@ public:
         return window;
     }
 
+    [[nodiscard]] const std::vector<std::shared_ptr<GameObject>>* getGameObjects() const {
+        return game_objects;
+    }
+
 private:
     sf::RenderWindow* window{};
     Camera* camera{};
+    const std::vector<std::shared_ptr<GameObject>>* game_objects{};
 };
 
