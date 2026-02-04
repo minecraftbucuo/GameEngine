@@ -19,9 +19,9 @@ public:
 
     void init() {
         window = new sf::RenderWindow(sf::VideoMode(1200, 960), "GameEngine");
-        // loadScene<GameScene>(window);
+        loadScene<GameScene>(window);
         // loadScene<GameScene3D>(window);
-        loadScene<SuperMarioScene>(window);
+        // loadScene<SuperMarioScene>(window);
     }
 
     void start() const {

@@ -32,19 +32,20 @@ public:
         this->addComponent<GravityComponent>();
         this->tag = tag + ":" + std::to_string(this->id);
     }
-    ~Player() override = default;
     void render(sf::RenderWindow* window) override {
         renderComponents(window);
         window->draw(shape);
     }
     void start() override {
         GameObject::start();
-        EventBus::getInstance().subscribe<CollisionEvent>("onCollision" + this->tag,
+        EventBus::getInstance().subscribe<CollisionEvent>(
+            "onCollision" + this->tag,
             [this](const CollisionEvent& collisionEvent) {
-            if (const auto& handler = this->getComponent<CollisionHandle>()) {
-                handler->handleCollision(collisionEvent);
+                if (const auto& handler = this->getComponent<CollisionHandle>()) {
+                    handler->handleCollision(collisionEvent);
+                }
             }
-        });
+        );
     }
 
 private:

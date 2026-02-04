@@ -10,6 +10,7 @@
 #include "Player.h"
 #include "Scene.h"
 #include "CollisionSystem.h"
+#include "Circle.h"
 
 
 class GameScene : public Scene {
@@ -85,7 +86,7 @@ public:
         } else if (event.type == sf::Event::MouseButtonPressed) {
             int x = event.mouseButton.x;
             int y = event.mouseButton.y;
-            addObject(std::make_shared<Player>(x, y, 20.f));
+            addObject(std::make_shared<Circle>(x, y, 20.f));
         }
     }
 
