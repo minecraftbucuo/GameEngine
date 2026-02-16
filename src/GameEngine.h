@@ -19,9 +19,9 @@ public:
 
     void init() {
         window = new sf::RenderWindow(sf::VideoMode(1200, 960), "GameEngine");
-        loadScene<GameScene>(window);
+        // loadScene<GameScene>(window);
         // loadScene<GameScene3D>(window);
-        // loadScene<SuperMarioScene>(window);
+        loadScene<SuperMarioScene>(window);
     }
 
     void start() const {
@@ -49,7 +49,7 @@ public:
         loadScene(std::make_shared<T>(std::forward<Args>(args)...));
     }
 
-    void loadScene(std::shared_ptr<Scene> scene) {
+    void loadScene(std::shared_ptr<Scene>&& scene) {
         currentScene = std::move(scene);
         currentScene->init();
     }

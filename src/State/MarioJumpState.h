@@ -9,6 +9,7 @@
 #include "Collision.h"
 #include "GameObject.h"
 #include "StateMachine.h"
+#include "GravityComponent.h"
 
 
 class MarioJumpState : public BaseState {

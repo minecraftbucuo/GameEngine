@@ -21,6 +21,10 @@ public:
         collisionSystem = std::make_unique<CollisionSystem>();
         AssetManager::getInstance().loadTexture("E:/Project/C++ Program/CLion/GameEngine/src/Asset/SuperMario/resources/graphics");
         AnimationManager::getInstance().loadAnimation();
+
+        bg.setTexture(AssetManager::getInstance().getTexture("level_1"));
+        const float bg_scale = static_cast<float>(window->getSize().y) / bg.getLocalBounds().height;
+        bg.setScale(bg_scale, bg_scale);
         initScene();
     }
 
@@ -43,15 +47,17 @@ public:
         // 左墙
         std::shared_ptr<Ground> wall1 = std::make_shared<Ground>(0, 0, 10, 960, "wall1");
         this->addObject(wall1);
-        // 右墙
-        std::shared_ptr<Ground> wall2 = std::make_shared<Ground>(1190, 0, 10, 960, "wall2");
-        this->addObject(wall2);
-        // 天花板
-        std::shared_ptr<Ground> wall3 = std::make_shared<Ground>(0, 0, 1200, 10, "wall3");
-        this->addObject(wall3);
-        //
-        std::shared_ptr<Ground> ground = std::make_shared<Ground>(-10000, 940, 120000, 80);
+        // 地板
+        std::shared_ptr<Ground> ground = std::make_shared<Ground>(-10000, 857, 120000, 80);
         this->addObject(ground);
+
+        std::shared_ptr<Ground> pipe1 = std::make_shared<Ground>(1927, 720, 124, 137);
+        this->addObject(pipe1);
+    }
+
+    void render(sf::RenderWindow* _window) override {
+        _window->draw(bg);
+        Scene::render(_window);
     }
 
     void update(sf::Time deltaTime) override {
@@ -79,9 +85,14 @@ public:
                     break;
                 }
             }
+        } else if (event.type == sf::Event::MouseButtonPressed) {
+            const sf::Vector2f pos = SceneContext::getInstance().getCamera()->getCenter();
+            // std::cout << pos.x - 600 << " " << pos.y - 480 << std::endl;
+            std::cout << pos.x - 600 + event.mouseButton.x << " " << pos.y - 480 + event.mouseButton.y << std::endl;
         }
     }
 
 private:
     std::unique_ptr<CollisionSystem> collisionSystem;
+    sf::Sprite bg;
 };

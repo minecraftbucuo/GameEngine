@@ -94,11 +94,11 @@ public:
         if (std::abs(dx - dy) <= 0.1f) return;
         // 水平碰撞
         if (dx < dy) {
-            const float relativeSpeedX = event.b_speed.x - event.a_speed.x;
-            moveComponent->setSpeedX(relativeSpeedX * 0.28f);
-            if (std::abs(this_->getSpeed().x) <= 2.f) {
-                moveComponent->setSpeedX(0.f);
-            }
+            // const float relativeSpeedX = event.b_speed.x - event.a_speed.x;
+            // moveComponent->setSpeedX(relativeSpeedX * 0.28f);
+            // if (std::abs(this_->getSpeed().x) <= 2.f) {
+            //     moveComponent->setSpeedX(0.f);
+            // }
             float right_x = std::abs(event.a_position.x + this_->getSize().x - (event.b_position.x + other->getSize().x * 0.5f));
             float left_x = std::abs(event.a_position.x - (event.b_position.x + other->getSize().x * 0.5f));
             if (right_x < left_x) {

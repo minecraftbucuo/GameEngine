@@ -43,6 +43,15 @@ public:
         updateView();
     }
 
+    void setPositionX(const float x) {
+        this->floatRect.left = x;
+        updateView();
+    }
+
+    sf::Vector2f getCenter() const {
+        return view.getCenter();
+    }
+
     void addPosition(const sf::Vector2i& pos) {
         this->floatRect.left += static_cast<float>(pos.x);
         this->floatRect.top += static_cast<float>(pos.y);
