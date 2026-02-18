@@ -25,9 +25,9 @@ public:
     ~MarioIdleState() override = default;
 
     void start() override {
-        auto box_collision = owner->getComponent<Collision, BoxCollision>();
-        float w = left_sprite.getGlobalBounds().width;
-        float h = left_sprite.getGlobalBounds().height;
+        const auto box_collision = owner->getComponent<Collision, BoxCollision>();
+        const float w = left_sprite.getGlobalBounds().width;
+        const float h = left_sprite.getGlobalBounds().height;
         box_collision->setSize(w, h);
         owner->setSize(w, h);
     }

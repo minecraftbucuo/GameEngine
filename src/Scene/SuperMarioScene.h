@@ -19,7 +19,7 @@ public:
         this->setCamera(window);
         this->setSceneContext();
         collisionSystem = std::make_unique<CollisionSystem>();
-        AssetManager::getInstance().loadTexture("E:/Project/C++ Program/CLion/GameEngine/src/Asset/SuperMario/resources/graphics");
+        AssetManager::getInstance().loadTexture("./Asset/SuperMario/resources/graphics");
         FrameManager::getInstance().loadFrame();
 
         bg.setTexture(AssetManager::getInstance().getTexture("level_1"));

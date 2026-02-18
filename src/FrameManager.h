@@ -6,9 +6,12 @@
 #include <string>
 #include <unordered_map>
 #include <Animation.h>
+#include <fstream>
 #include <iostream>
 
 #include "AssetManager.h"
+#include "json.hpp"
+using json = nlohmann::json;
 
 class FrameManager {
 public:
@@ -30,23 +33,29 @@ public:
     }
 
     void loadMarioFrame() {
-        // right_small_normal
-        std::vector<Animation::Frame>& right_small_normal = frames["right_small_normal"];
-        std::vector<Animation::Frame>& left_small_normal = frames["left_small_normal"];
-        sf::Texture* mario_texture = &AssetManager::getInstance().getTexture("mario_bros");
-        right_small_normal.push_back({mario_texture, sf::IntRect(80, 32, 15, 16)});
-        right_small_normal.push_back({mario_texture, sf::IntRect(96, 32, 16, 16)});
-        right_small_normal.push_back({mario_texture, sf::IntRect(112, 32, 16, 16)});
+        std::ifstream file("./Asset/SuperMario/source/data/player/mario.json");
 
-        for (auto& frame : right_small_normal) {
-            frame.scale = {4.f, 4.f};
+        json data = json::parse(file);
+        for (const auto& frames_data : data["frames"]) {
+            std::vector<Animation::Frame>& frame = frames[frames_data["frame_name"]];
+            sf::Texture* frame_texture = &AssetManager::getInstance().getTexture(frames_data["texture_name"]);
+            for (const auto& frame_data : frames_data["frame"]) {
+                frame.push_back({
+                    frame_texture,
+                    sf::IntRect(
+                        frame_data["textureRect"]["rectLeft"],
+                        frame_data["textureRect"]["rectTop"],
+                        frame_data["textureRect"]["rectWidth"],
+                        frame_data["textureRect"]["rectHeight"]
+                    ),
+                    {frame_data["origin"]["x"], frame_data["origin"]["y"]},
+                    {frame_data["scale"]["x"], frame_data["scale"]["y"]},
+                    frame_data["duration"]
+                });
+            }
         }
 
-        left_small_normal = right_small_normal;
-        for (auto& frame : left_small_normal) {
-            frame.origin = {static_cast<float>(frame.textureRect.width), 0.f};
-            frame.scale = {-4.f, 4.f};
-        }
+        file.close();
     }
 
 private:

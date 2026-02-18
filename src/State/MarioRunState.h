@@ -44,9 +44,9 @@ public:
         } else {
             sprite = &animation_right.getSprite();
         }
-        auto box_collision = owner->getComponent<Collision, BoxCollision>();
-        float w = sprite->getGlobalBounds().width;
-        float h = sprite->getGlobalBounds().height;
+        const auto box_collision = owner->getComponent<Collision, BoxCollision>();
+        const float w = sprite->getGlobalBounds().width;
+        const float h = sprite->getGlobalBounds().height;
         box_collision->setSize(w, h);
         owner->setSize(w, h);
     }

@@ -4,10 +4,11 @@ project(GameEngine)
 set(CMAKE_CXX_STANDARD 17)
 
 # 设置 SFML 路径（根据你的实际路径修改）
-set(SFML_ROOT "E:/Document/SFML/SFML-2.6.1-gcc")
+set(SFML_ROOT "./lib/SFML-2.6.1-gcc")
 
 # 包含头文件
 include_directories(${SFML_ROOT}/include)
+include_directories(./lib)
 include_directories(src)
 include_directories(src/Components)
 include_directories(src/Components/Collisions)
