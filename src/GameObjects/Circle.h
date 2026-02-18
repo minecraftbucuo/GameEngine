@@ -6,7 +6,7 @@
 #include "GameObject.h"
 #include <SFML/Graphics.hpp>
 
-#include "AnimationManager.h"
+#include "FrameManager.h"
 #include "AssetManager.h"
 #include "CameraComponent.h"
 #include "EventBus.h"

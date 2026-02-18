@@ -20,7 +20,7 @@ public:
         this->setSceneContext();
         collisionSystem = std::make_unique<CollisionSystem>();
         AssetManager::getInstance().loadTexture("E:/Project/C++ Program/CLion/GameEngine/src/Asset/SuperMario/resources/graphics");
-        AnimationManager::getInstance().loadAnimation();
+        FrameManager::getInstance().loadFrame();
 
         bg.setTexture(AssetManager::getInstance().getTexture("level_1"));
         const float bg_scale = static_cast<float>(window->getSize().y) / bg.getLocalBounds().height;

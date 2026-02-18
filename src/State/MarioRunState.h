@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Animation.h"
-#include "AnimationManager.h"
+#include "FrameManager.h"
 #include "BaseState.h"
 #include "GameObject.h"
 #include "StateMachine.h"
@@ -13,8 +13,8 @@
 class MarioRunState : public BaseState {
 public:
     explicit MarioRunState() : BaseState("MarioRunState") {
-        animation_right = AnimationManager::getInstance().getAnimation("right_small_normal");
-        animation_left = AnimationManager::getInstance().getAnimation("left_small_normal");
+        animation_right.setFrames(FrameManager::getInstance().getFrame("right_small_normal"));
+        animation_left.setFrames(FrameManager::getInstance().getFrame("left_small_normal"));
     }
     ~MarioRunState() override = default;
 

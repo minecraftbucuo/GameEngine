@@ -18,10 +18,10 @@ public:
         const sf::Texture& mario_texture = AssetManager::getInstance().getTexture("mario_bros");
         right_sprite.setTexture(mario_texture);
         right_sprite.setTextureRect(sf::IntRect(144, 32, 16, 16));
-        right_sprite.setScale(5.f, 5.f);
+        right_sprite.setScale(4.f, 4.f);
         left_sprite.setTexture(mario_texture);
         left_sprite.setTextureRect(sf::IntRect(144, 32, 16, 16));
-        left_sprite.setScale(-5.f, 5.f);
+        left_sprite.setScale(-4.f, 4.f);
         left_sprite.setOrigin(static_cast<float>(right_sprite.getTextureRect().width), 0.f);
     }
     ~MarioJumpState() override = default;

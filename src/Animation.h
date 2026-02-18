@@ -19,37 +19,41 @@ public:
     Animation() = default;
     ~Animation() = default;
 
-    void addFrame(const Frame& frame) {
-        frames.push_back(frame);
+    void addFrame(const Frame& frame) const {
+        frames->push_back(frame);
+    }
+
+    void setFrames(std::vector<Frame>* _frames) {
+        this->frames = _frames;
     }
 
     void update(const sf::Time& deltaTime) {
         currentFrameDuration += deltaTime.asMilliseconds();
-        if (currentFrameDuration >= frames[currentFrame].duration) {
+        if (currentFrameDuration >= (*frames)[currentFrame].duration) {
             currentFrameDuration = 0;
-            currentFrame = (currentFrame + 1) % frames.size();
+            currentFrame = (currentFrame + 1) % frames->size();
         }
     }
 
-    Frame& getFrame() {
-        return frames[currentFrame];
+    Frame& getFrame() const {
+        return (*frames)[currentFrame];
     }
 
-    std::vector<Frame>& getFrames() {
-        return frames;
+    std::vector<Frame>& getFrames() const {
+        return (*frames);
     }
 
     sf::Sprite& getSprite() {
-        sprite.setTexture(*frames[currentFrame].texture);
-        sprite.setTextureRect(frames[currentFrame].textureRect);
-        sprite.setOrigin(frames[currentFrame].origin);
-        sprite.setScale(frames[currentFrame].scale);
+        sprite.setTexture(*(*frames)[currentFrame].texture);
+        sprite.setTextureRect((*frames)[currentFrame].textureRect);
+        sprite.setOrigin((*frames)[currentFrame].origin);
+        sprite.setScale((*frames)[currentFrame].scale);
         return sprite;
     }
 
 private:
     unsigned int currentFrame = 0;
     unsigned int currentFrameDuration = 0;
-    std::vector<Frame> frames;
+    std::vector<Frame>* frames{};
     sf::Sprite sprite;
 };
