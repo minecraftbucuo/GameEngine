@@ -94,7 +94,7 @@ public:
         if (components.find(typeid(T).hash_code()) != components.end()) {
             return std::static_pointer_cast<T>(components[typeid(T).hash_code()]);
         }
-        std::cout << "Component not found: " << typeid(T).name() << std::endl;
+        std::cout << this->tag << ": Component not found: " << typeid(T).name() << std::endl;
         return nullptr;
     }
 
@@ -103,7 +103,7 @@ public:
         if (components.find(typeid(IT).hash_code()) != components.end()) {
             return std::static_pointer_cast<T>(components[typeid(IT).hash_code()]);
         }
-        std::cout << "Component not found: " << typeid(IT).name() << std::endl;
+        std::cout << this->tag << " : Component not found: " << typeid(IT).name() << std::endl;
         return nullptr;
     }
 

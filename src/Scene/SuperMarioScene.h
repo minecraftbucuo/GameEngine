@@ -4,6 +4,7 @@
 
 #pragma once
 #include "BoxGameObject.h"
+#include "Button.h"
 #include "Ground.h"
 #include "Scene.h"
 #include "CollisionSystem.h"
@@ -12,13 +13,12 @@
 
 class SuperMarioScene : public Scene {
 public:
-    SuperMarioScene(sf::RenderWindow* _window) : Scene(_window) {}
+    explicit SuperMarioScene(sf::RenderWindow* _window) : Scene(_window, "SuperMarioScene") {}
     ~SuperMarioScene() override = default;
 
     void init() override {
-        this->setCamera(window);
-        this->setSceneContext();
         collisionSystem = std::make_unique<CollisionSystem>();
+        Scene::init();
         AssetManager::getInstance().loadTexture("./Asset/SuperMario/resources/graphics");
         FrameManager::getInstance().loadFrame();
 
@@ -87,9 +87,12 @@ public:
             }
         } else if (event.type == sf::Event::MouseButtonPressed) {
             const sf::Vector2f pos = SceneContext::getInstance().getCamera()->getCenter();
-            // std::cout << pos.x - 600 << " " << pos.y - 480 << std::endl;
-            std::cout << pos.x - 600 + event.mouseButton.x << " " << pos.y - 480 + event.mouseButton.y << std::endl;
+            std::cout << "SuperMarioScene:" << pos.x - 600 + event.mouseButton.x << " " << pos.y - 480 + event.mouseButton.y << std::endl;
         }
+    }
+
+    CollisionSystem* getCollisionSystem() const override {
+        return collisionSystem.get();
     }
 
 private:

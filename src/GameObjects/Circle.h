@@ -15,6 +15,7 @@
 #include "MarioController.h"
 #include "MarioJumpState.h"
 #include "SceneContext.h"
+#include "SceneManager.h"
 
 
 class Circle : public GameObject {
@@ -62,7 +63,10 @@ public:
         auto collision = this->getComponent<Collision>();
         sf::Vector2f dy = sf::Vector2f(0.f, 1.f);
         collision->setPosition(collision->getPosition() + dy);
-        const auto game_objects = *SceneContext::getInstance().getGameObjects();
+
+        const auto game_objects = *SceneContext::getInstance().
+        getSceneManager()->getCurrentScene()->getCollisionSystem()->getObjects();
+
         for (auto& game_object : game_objects) {
             if (game_object->getTag() == this->getTag()) continue;
             auto other_collision = game_object->getComponent<Collision>();

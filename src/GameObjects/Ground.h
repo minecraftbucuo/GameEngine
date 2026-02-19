@@ -21,9 +21,6 @@ public:
         const auto boxCollision = this->getComponent<Collision, BoxCollision>();
         boxCollision->setPosition(posX, posY);
     }
-    void start() override {
-        GameObject::start();
-    }
 };
 
 

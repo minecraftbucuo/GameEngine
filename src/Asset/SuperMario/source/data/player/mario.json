@@ -6,17 +6,6 @@
             "frame": [
                 {
                     "textureRect": {
-                        "rectLeft": 80,
-                        "rectTop": 32,
-                        "rectWidth": 15,
-                        "rectHeight": 16
-                    },
-                    "origin": {"x":  0.0, "y": 0.0},
-                    "scale": {"x": 4.0, "y": 4.0},
-                    "duration": 100
-                },
-                {
-                    "textureRect": {
                         "rectLeft": 96,
                         "rectTop": 32,
                         "rectWidth": 16,
@@ -24,7 +13,7 @@
                     },
                     "origin": {"x":  0.0, "y": 0.0},
                     "scale": {"x": 4.0, "y": 4.0},
-                    "duration": 100
+                    "duration": 70
                 },
                 {
                     "textureRect": {
@@ -35,7 +24,18 @@
                     },
                     "origin": {"x":  0.0, "y": 0.0},
                     "scale": {"x": 4.0, "y": 4.0},
-                    "duration": 100
+                    "duration": 70
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 80,
+                        "rectTop": 32,
+                        "rectWidth": 15,
+                        "rectHeight": 16
+                    },
+                    "origin": {"x":  0.0, "y": 0.0},
+                    "scale": {"x": 4.0, "y": 4.0},
+                    "duration": 70
                 }
             ]
         },
@@ -45,17 +45,6 @@
             "frame": [
                 {
                     "textureRect": {
-                        "rectLeft": 80,
-                        "rectTop": 32,
-                        "rectWidth": 15,
-                        "rectHeight": 16
-                    },
-                    "origin": {"x":  15.0, "y": 0.0},
-                    "scale": {"x": -4.0, "y": 4.0},
-                    "duration": 100
-                },
-                {
-                    "textureRect": {
                         "rectLeft": 96,
                         "rectTop": 32,
                         "rectWidth": 16,
@@ -63,7 +52,7 @@
                     },
                     "origin": {"x":  16.0, "y": 0.0},
                     "scale": {"x": -4.0, "y": 4.0},
-                    "duration": 100
+                    "duration": 70
                 },
                 {
                     "textureRect": {
@@ -74,7 +63,18 @@
                     },
                     "origin": {"x":  16.0, "y": 0.0},
                     "scale": {"x": -4.0, "y": 4.0},
-                    "duration": 100
+                    "duration": 70
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 80,
+                        "rectTop": 32,
+                        "rectWidth": 15,
+                        "rectHeight": 16
+                    },
+                    "origin": {"x":  15.0, "y": 0.0},
+                    "scale": {"x": -4.0, "y": 4.0},
+                    "duration": 70
                 }
             ]
         }

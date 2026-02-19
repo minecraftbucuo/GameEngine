@@ -55,7 +55,17 @@ public:
         textures[name] = texture;
     }
 
+    const sf::Font& getFont() {
+        if (!have_load_font) {
+            font.loadFromFile("../src/Asset/Font/Minecraft_AE.ttf");
+            have_load_font = true;
+        }
+        return font;
+    }
+
 private:
     AssetManager() = default;
     std::unordered_map<std::string, sf::Texture> textures{};
+    sf::Font font{};
+    bool have_load_font = false;
 };

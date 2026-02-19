@@ -15,12 +15,11 @@
 
 class GameScene : public Scene {
 public:
-    GameScene(sf::RenderWindow* _window) : Scene(_window) {}
+    explicit GameScene(sf::RenderWindow* _window) : Scene(_window, "GameScene") {}
     ~GameScene() override = default;
 
     void init() override {
-        this->setCamera(window);
-        this->setSceneContext();
+        Scene::init();
         collisionSystem = std::make_unique<CollisionSystem>();
         initScene();
     }

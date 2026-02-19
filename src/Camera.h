@@ -99,6 +99,10 @@ public:
         }
     }
 
+    sf::Vector2f getViewSize() const {
+         return floatRect.getSize();
+    }
+
 private:
     sf::FloatRect floatRect;
     sf::View view;

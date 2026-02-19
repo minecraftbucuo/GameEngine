@@ -46,6 +46,10 @@ public:
         }
     }
 
+    [[nodiscard]] const std::vector<std::shared_ptr<GameObject>>* getObjects() const {
+        return &objects;
+    }
+
 private:
     std::vector<std::shared_ptr<GameObject>> objects;
 };

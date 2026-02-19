@@ -29,9 +29,5 @@ public:
         );
     }
 
-    void setPosition(const float posX, const float posY) override {
-        GameObject::setPosition(posX, posY);
-    }
-
 };
 

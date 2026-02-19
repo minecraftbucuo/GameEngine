@@ -7,6 +7,8 @@
 #include "GameScene.h"
 #include "Scene.h"
 #include "GameScene3D.h"
+#include "MenuScene.h"
+#include "SceneManager.h"
 #include "SuperMarioScene.h"
 
 
@@ -19,9 +21,12 @@ public:
 
     void init() {
         window = new sf::RenderWindow(sf::VideoMode(1200, 960), "GameEngine");
-        // loadScene<GameScene>(window);
-        // loadScene<GameScene3D>(window);
-        loadScene<SuperMarioScene>(window);
+        scene_manager = std::make_shared<SceneManager>();
+        scene_manager->addScene<GameScene>(window);
+        scene_manager->addScene<GameScene3D>(window);
+        scene_manager->addScene<SuperMarioScene>(window);
+        scene_manager->addScene<MenuScene>(window);
+        scene_manager->loadScene("MenuScene");
     }
 
     void start() const {
@@ -34,28 +39,18 @@ public:
                 if (event.type == sf::Event::Closed) {
                     window->close();
                 }
-                currentScene->handleEvent(event);
+                scene_manager->handleEvent(event);
             }
 
-            currentScene->update(deltaTime);
+            scene_manager->update(deltaTime);
             window->clear();
-            currentScene->render(window);
+            scene_manager->render(window);
             window->display();
         }
     }
 
-    template<typename T, typename... Args>
-    void loadScene(Args&&... args) {
-        loadScene(std::make_shared<T>(std::forward<Args>(args)...));
-    }
-
-    void loadScene(std::shared_ptr<Scene>&& scene) {
-        currentScene = std::move(scene);
-        currentScene->init();
-    }
-
 private:
-    std::shared_ptr<Scene> currentScene;
+    std::shared_ptr<SceneManager> scene_manager;
     sf::RenderWindow* window{};
 };
 

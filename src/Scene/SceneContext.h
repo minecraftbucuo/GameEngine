@@ -7,6 +7,8 @@
 #include "GameObject.h"
 #include <SFML/Graphics.hpp>
 
+class SceneManager;
+
 class SceneContext {
 public:
     static SceneContext& getInstance() {
@@ -25,6 +27,10 @@ public:
 
     void setGameObjects(const std::vector<std::shared_ptr<GameObject>>* _game_objects) {
         game_objects = _game_objects;
+    }
+
+    void setSceneManager(SceneManager* _scene_manager) {
+        scene_manager = _scene_manager;
     }
 
     [[nodiscard]] Camera* getCamera() const {
@@ -49,9 +55,23 @@ public:
         return game_objects;
     }
 
+    [[nodiscard]] SceneManager* getSceneManager() const {
+        return scene_manager;
+    }
+
+    sf::Vector2i getMousePosition() const {
+        const sf::Vector2f camera_center = camera->getCenter();
+        const sf::Vector2u window_size = window->getSize();
+        sf::Vector2i mouse_position = sf::Mouse::getPosition(*window);
+        mouse_position.x += camera_center.x - window_size.x * 0.5f;
+        mouse_position.y += camera_center.y - window_size.y * 0.5f;
+        return mouse_position;
+    }
+
 private:
     sf::RenderWindow* window{};
     Camera* camera{};
     const std::vector<std::shared_ptr<GameObject>>* game_objects{};
+    SceneManager* scene_manager{};
 };
 

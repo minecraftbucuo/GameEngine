@@ -3,19 +3,26 @@
 //
 #pragma once
 #include <memory>
+#include <utility>
 #include <vector>
 #include <SFML/Graphics.hpp>
 #include "GameObject.h"
 #include "SceneContext.h"
 #include "Camera.h"
 
+class CollisionSystem;
+class SceneManager;
 class Scene {
 public:
-    Scene(sf::RenderWindow* _window) : window(_window) {}
+    explicit Scene(sf::RenderWindow* _window) : window(_window), scene_name("Scene") {}
+    explicit Scene(sf::RenderWindow* _window, std::string _name) : window(_window), scene_name(std::move(_name)) {}
     virtual ~Scene() = default;
 
     // 场景初始化方法
-    virtual void init() = 0;
+    virtual void init() {
+        this->setCamera(window);
+        this->setSceneContext();
+    }
 
     // 场景更新方法
     virtual void update(sf::Time deltaTime) {
@@ -70,14 +77,30 @@ public:
         if (window) SceneContext::getInstance().setWindow(window);
         if (camera) SceneContext::getInstance().setCamera(camera.get());
         SceneContext::getInstance().setGameObjects(&game_objects);
+        SceneContext::getInstance().setSceneManager(scene_manager);
     }
 
     [[nodiscard]] sf::Vector2u getWindowSize() const {
         return window->getSize();
     }
 
+    [[nodiscard]] const std::string& getSceneName() const {
+        return scene_name;
+    }
+
+    void setSceneManager(SceneManager* _scene_manager) {
+        scene_manager = _scene_manager;
+        SceneContext::getInstance().setSceneManager(_scene_manager);
+    }
+
+    [[nodiscard]] virtual CollisionSystem* getCollisionSystem() const {
+        return nullptr;
+    }
+
 protected:
     std::vector<std::shared_ptr<GameObject>> game_objects;
     sf::RenderWindow* window{};
     std::unique_ptr<Camera> camera;
+    std::string scene_name;
+    SceneManager* scene_manager{};
 };

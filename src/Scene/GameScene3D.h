@@ -12,13 +12,12 @@
 
 class GameScene3D : public Scene {
 public:
-    GameScene3D(sf::RenderWindow* _window) : Scene(_window) {}
+    explicit GameScene3D(sf::RenderWindow* _window) : Scene(_window, "GameScene3D") {}
     ~GameScene3D() override = default;
 
     void init() override {
         window->setSize(sf::Vector2u(1200, 1200));
-        this->setCamera(window);
-        this->setSceneContext();
+        Scene::init();
         // this->addObject(std::make_shared<Penguin>());
         this->addObject(std::make_shared<Cube>());
         // this->addObject(std::make_shared<NewModel>());
