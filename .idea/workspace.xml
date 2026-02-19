@@ -3,9 +3,14 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
-  <component name="CMakePresetLoader"><![CDATA[{
-  "useNewFormat": true
-}]]></component>
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
+    <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
+    <option name="/Default/RiderDebugger/RiderRestoreDecompile/RestoreDecompileSetting/@EntryValue" value="false" type="bool" />
+  </component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
   <component name="CMakeProjectFlavorService">
     <option name="flavorId" value="CMakePlainProjectFlavor" />
   </component>
@@ -24,170 +29,17 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02101d23-0458-45a5-bfa2-693931b2e700" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/AlResource.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/Export.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/InputSoundFile.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/Listener.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/Music.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/OutputSoundFile.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/Sound.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/SoundBuffer.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/SoundBufferRecorder.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/SoundFileFactory.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/SoundFileFactory.inl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/SoundFileReader.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/SoundFileWriter.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/SoundRecorder.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/SoundSource.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Audio/SoundStream.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Config.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/GpuPreference.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/BlendMode.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/CircleShape.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Color.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/ConvexShape.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Drawable.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Export.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Font.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Glsl.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Glsl.inl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Glyph.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Image.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/PrimitiveType.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Rect.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Rect.inl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/RectangleShape.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/RenderStates.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/RenderTarget.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/RenderTexture.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/RenderWindow.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Shader.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Shape.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Sprite.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Text.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Texture.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Transform.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Transformable.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/Vertex.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/VertexArray.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/VertexBuffer.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Graphics/View.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Main.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/Export.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/Ftp.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/Http.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/IpAddress.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/Packet.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/Socket.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/SocketHandle.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/SocketSelector.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/TcpListener.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/TcpSocket.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Network/UdpSocket.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/OpenGL.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Clock.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Err.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Export.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/FileInputStream.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/InputStream.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Lock.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/MemoryInputStream.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Mutex.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/NativeActivity.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/NonCopyable.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Sleep.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/String.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/String.inl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Thread.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Thread.inl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/ThreadLocal.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/ThreadLocalPtr.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/ThreadLocalPtr.inl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Time.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Utf.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Utf.inl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Vector2.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Vector2.inl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Vector3.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/System/Vector3.inl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Clipboard.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Context.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/ContextSettings.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Cursor.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Event.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Export.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/GlResource.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Joystick.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Keyboard.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Mouse.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Sensor.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Touch.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/VideoMode.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Vulkan.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/Window.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/WindowBase.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/WindowHandle.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/include/SFML/Window/WindowStyle.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/cmake/SFML/SFMLConfig.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/cmake/SFML/SFMLConfigDependencies.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/cmake/SFML/SFMLConfigVersion.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/cmake/SFML/SFMLSharedTargets-debug.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/cmake/SFML/SFMLSharedTargets-release.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/cmake/SFML/SFMLSharedTargets.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/cmake/SFML/SFMLStaticTargets-debug.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/cmake/SFML/SFMLStaticTargets-release.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/cmake/SFML/SFMLStaticTargets.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libFLAC.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libfreetype.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libogg.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libopenal32.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-audio-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-audio-s-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-audio-s.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-audio.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-graphics-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-graphics-s-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-graphics-s.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-graphics.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-main-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-main.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-network-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-network-s-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-network-s.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-network.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-system-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-system-s-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-system-s.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-system.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-window-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-window-s-d.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-window-s.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libsfml-window.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libvorbis.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libvorbisenc.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/lib/libvorbisfile.a" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/license.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/SFML-2.6.1-gcc/readme.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/json.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/GameEngine.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/editor.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+    <list default="true" id="02101d23-0458-45a5-bfa2-693931b2e700" name="Changes" comment="将 SFML 直接放进项目中，添加动画帧信息使用json文件加载功能。">
+      <change afterPath="$PROJECT_DIR$/lib/nlohmann/json_fwd.hpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Manager/FrameManager.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Asset/SuperMario/source/data/player/mario.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/Asset/SuperMario/source/data/player/mario.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/FrameManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/FrameManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene/SuperMarioScene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/SuperMarioScene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/State/MarioIdleState.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/State/MarioIdleState.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/State/MarioRunState.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/State/MarioRunState.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/json.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/nlohmann/json.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/AssetManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Manager/AssetManager.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/FrameManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Manager/FrameManager.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/GameObjects/Mario.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/GameObjects/Mario.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ModelManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Manager/ModelManager.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -197,22 +49,22 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Release" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "minecraftbucuo"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;minecraftbucuo&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "git@github.com:minecraftbucuo/GameEngine.git",
-    "accountId": "f6a077cb-cc2e-4f31-bf00-83c67ffd0a9a"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:minecraftbucuo/GameEngine.git&quot;,
+    &quot;accountId&quot;: &quot;f6a077cb-cc2e-4f31-bf00-83c67ffd0a9a&quot;
   }
-}]]></component>
+}</component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="1cbq3J5L" />
   </component>
@@ -222,10 +74,13 @@
     <option name="minorVersion" value="3.1" />
     <option name="productBranch" value="Classic" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 5
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
   <component name="ProjectId" id="39poZrqxahliukXEycGnnl9iPxp" />
+  <component name="ProjectStatusUIService"><![CDATA[{
+  "uiKindId": "Widget"
+}]]></component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -236,6 +91,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.RadMigrateCodeStyle": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
@@ -244,19 +100,29 @@
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "git-widget-placeholder": "master",
+    "last_opened_file_path": "E:/Project/C++ Program/CLion/GameEngine/lib/nlohmann",
     "nodejs_package_manager_path": "npm",
     "org.rust.first.attach.projects": "true",
     "settings.editor.selected.configurable": "CMakeSettings",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\Project\C++ Program\CLion\GameEngine\lib\nlohmann" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\Project\C++ Program\CLion\GameEngine\lib\nlohmann" />
+      <recent name="E:\Project\C++ Program\CLion\GameEngine\src\Manager" />
+    </key>
+  </component>
   <component name="RunManager">
-    <configuration name="GameEngine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="GameEngine" TARGET_NAME="GameEngine" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="GameEngine" RUN_TARGET_NAME="GameEngine">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+    <configuration name="GameEngine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="GameEngine" TARGET_NAME="GameEngine" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="GameEngine" RUN_TARGET_NAME="GameEngine">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -269,8 +135,20 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1771402431601</updated>
-      <workItem from="1771402432746" duration="3740000" />
+      <workItem from="1771402432746" duration="6721000" />
+      <workItem from="1771419400517" duration="1152000" />
+      <workItem from="1771463153697" duration="2163000" />
+      <workItem from="1771465338078" duration="3508000" />
     </task>
+    <task id="LOCAL-00001" summary="将 SFML 直接放进项目中，添加动画帧信息使用json文件加载功能。">
+      <option name="closed" value="true" />
+      <created>1771406372551</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1771406372551</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -280,5 +158,20 @@
     <isAutomaticCheckingOnLaunch value="false" />
     <isAutomaticFoundErrors value="true" />
     <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="将 SFML 直接放进项目中，添加动画帧信息使用json文件加载功能。" />
+    <option name="LAST_COMMIT_MESSAGE" value="将 SFML 直接放进项目中，添加动画帧信息使用json文件加载功能。" />
   </component>
 </project>

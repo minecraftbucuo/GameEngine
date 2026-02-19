@@ -6,8 +6,6 @@
 #include "GameObject.h"
 #include <SFML/Graphics.hpp>
 
-#include "FrameManager.h"
-#include "AssetManager.h"
 #include "MarioController.h"
 #include "MarioIdleState.h"
 #include "MarioJumpState.h"
