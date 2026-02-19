@@ -30,28 +30,14 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02101d23-0458-45a5-bfa2-693931b2e700" name="Changes" comment="chore(build): 更新构建配置和IDE设置&#10;- 引入json_fwd.hpp前向声明&#10;- 添加src/Manager目录到include路径">
-      <change afterPath="$PROJECT_DIR$/src/Asset/Font/Minecraft_AE.ttf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/GameObjects/Button.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Manager/SceneManager.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Scene/MenuScene.h" afterDir="false" />
+    <list default="true" id="02101d23-0458-45a5-bfa2-693931b2e700" name="Changes" comment="feat(game): 实现场景管理器和按钮组件功能&#10;&#10;- 添加SceneManager类用于统一管理游戏场景切换&#10;- 新增Button组件支持鼠标交互和点击事件响应&#10;- 在AssetManager中集成字体资源加载功能&#10;- 添加菜单场景支持游戏启动界面导航功能">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Asset/SuperMario/source/data/player/mario.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/Asset/SuperMario/source/data/player/mario.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Camera.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Camera.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/CollisionSystem.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/CollisionSystem.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/GameEngine.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/GameEngine.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/GameObjects/BoxGameObject.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/GameObjects/BoxGameObject.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Components/CollisionHandles/CollisionHandle.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Components/CollisionHandles/CollisionHandle.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Components/Collisions/Collision.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Components/Collisions/Collision.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/GameObjects/Circle.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/GameObjects/Circle.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/GameObjects/GameObject.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/GameObjects/GameObject.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/GameObjects/Ground.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/GameObjects/Ground.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/GameObjects/Mario.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/GameObjects/Mario.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Manager/AssetManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Manager/AssetManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Manager/FrameManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Manager/FrameManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene/GameScene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/GameScene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene/GameScene3D.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/GameScene3D.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene/Scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/Scene.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Scene/SceneContext.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/SceneContext.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Scene/SuperMarioScene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Scene/SuperMarioScene.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/State/MarioRunState.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/State/MarioRunState.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -136,6 +122,11 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -148,7 +139,7 @@
       <workItem from="1771419400517" duration="1152000" />
       <workItem from="1771463153697" duration="2163000" />
       <workItem from="1771465338078" duration="25352000" />
-      <workItem from="1771496028762" duration="404000" />
+      <workItem from="1771496028762" duration="13330000" />
     </task>
     <task id="LOCAL-00001" summary="将 SFML 直接放进项目中，添加动画帧信息使用json文件加载功能。">
       <option name="closed" value="true" />
@@ -166,7 +157,15 @@
       <option name="project" value="LOCAL" />
       <updated>1771469457714</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="feat(game): 实现场景管理器和按钮组件功能&#10;&#10;- 添加SceneManager类用于统一管理游戏场景切换&#10;- 新增Button组件支持鼠标交互和点击事件响应&#10;- 在AssetManager中集成字体资源加载功能&#10;- 添加菜单场景支持游戏启动界面导航功能">
+      <option name="closed" value="true" />
+      <created>1771496767576</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1771496767578</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -191,7 +190,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="将 SFML 直接放进项目中，添加动画帧信息使用json文件加载功能。" />
     <MESSAGE value="chore(build): 更新构建配置和IDE设置&#10;- 引入json_fwd.hpp前向声明&#10;- 添加src/Manager目录到include路径" />
-    <option name="LAST_COMMIT_MESSAGE" value="chore(build): 更新构建配置和IDE设置&#10;- 引入json_fwd.hpp前向声明&#10;- 添加src/Manager目录到include路径" />
+    <MESSAGE value="feat(game): 实现场景管理器和按钮组件功能&#10;&#10;- 添加SceneManager类用于统一管理游戏场景切换&#10;- 新增Button组件支持鼠标交互和点击事件响应&#10;- 在AssetManager中集成字体资源加载功能&#10;- 添加菜单场景支持游戏启动界面导航功能" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(game): 实现场景管理器和按钮组件功能&#10;&#10;- 添加SceneManager类用于统一管理游戏场景切换&#10;- 新增Button组件支持鼠标交互和点击事件响应&#10;- 在AssetManager中集成字体资源加载功能&#10;- 添加菜单场景支持游戏启动界面导航功能" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

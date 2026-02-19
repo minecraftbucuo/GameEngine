@@ -14,11 +14,6 @@
 
 class CollisionHandle : public Component {
 public:
-    void start() override {}
-    void update(const sf::Time& deltaTime) override {}
-    void render(sf::RenderWindow* window) override {}
-    void handleEvent(const sf::Event& event) override {}
-
     void handleCollision(const CollisionEvent& event) {
         size_t hash_code = typeid(*event.b->getComponent<Collision>()).hash_code();
         if (this->collisionHandlers.find(hash_code) == this->collisionHandlers.end()) {
@@ -34,8 +29,6 @@ public:
     static void handle(const CollisionEvent& event) {
         auto& this_ = event.a;
         auto& other = event.b;
-
-        // std::cout << this_->getTag() << ' ' << other->getTag() << std::endl;
 
         if (!this_->getMoveAble()) return;
         std::shared_ptr<MoveComponent> moveComponent = this_->getComponent<MoveComponent>();

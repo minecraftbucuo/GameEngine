@@ -12,18 +12,6 @@ class CircleCollision;
 class Collision : public Component {
 public:
     Collision() = default;
-    void start() override {
-
-    }
-    void update(const sf::Time& deltaTime) override {
-
-    }
-    void render(sf::RenderWindow* window) override {
-
-    }
-    void handleEvent(const sf::Event& event) override {
-
-    }
     virtual void setPosition(const sf::Vector2f& _position) {
         this->position = _position;
     }

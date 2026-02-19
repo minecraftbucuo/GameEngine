@@ -53,10 +53,10 @@ public:
     }
 
     void update(sf::Time deltaTime) override {
-        GameObject::update(deltaTime);
         if (needGravity()) {
             this->getComponent<GravityComponent>()->setActive(true);
         }
+        GameObject::update(deltaTime);
     }
 
     bool needGravity() {

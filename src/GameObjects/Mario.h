@@ -48,12 +48,10 @@ public:
     }
 
     void update(sf::Time deltaTime) override {
-        GameObject::update(deltaTime);
-        // std::cout << this->getSpeed().y << std::endl;
-        // std::cout << this->getComponent<StateMachine>()->getCurrentStateName() << std::endl;
         if (needGravity()) {
             this->getComponent<GravityComponent>()->setActive(true);
         }
+        GameObject::update(deltaTime);
     }
 
     bool needGravity() {
@@ -93,7 +91,6 @@ public:
         const float dy = std::min(event.a_position.y + this_->getSize().y,
             event.b_position.y + other->getSize().y) - std::max(event.a_position.y, event.b_position.y);
 
-        if (std::abs(dx - dy) <= 0.1f) return;
         // 水平碰撞
         if (dx < dy) {
             // const float relativeSpeedX = event.b_speed.x - event.a_speed.x;
@@ -109,6 +106,7 @@ public:
                 moveComponent->setPositionX(event.b_position.x + other->getSize().x);
             }
         } else {
+            if (this_->getSpeed().y < 0 && dx - dy < 10.f) return;
             const float relativeSpeedY = event.b_speed.y - event.a_speed.y;
             moveComponent->setSpeedY(relativeSpeedY * 0.28f);
             if (std::abs(this_->getSpeed().y) <= 2.f) {

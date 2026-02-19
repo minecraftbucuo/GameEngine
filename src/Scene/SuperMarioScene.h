@@ -53,6 +53,9 @@ public:
 
         std::shared_ptr<Ground> pipe1 = std::make_shared<Ground>(1927, 720, 124, 137);
         this->addObject(pipe1);
+
+        std::shared_ptr<Ground> box2 = std::make_shared<Ground>(333, 652, 100, 100);
+        this->addObject(box2);
     }
 
     void render(sf::RenderWindow* _window) override {
