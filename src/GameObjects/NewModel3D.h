@@ -9,9 +9,9 @@
 #include "ModelManager.h"
 #include "cmath"
 
-class NewModel : public GameObject {
+class NewModel3D : public GameObject {
 public:
-    NewModel() {
+    NewModel3D() {
         Model* p = ModelManager::getInstance().getModel("new_model");
         if (p == nullptr) {
             ModelManager::getInstance().loadModel("./Asset/new_model.obj", "new_model");

@@ -1,25 +1,25 @@
 //
-// Created by MINEC on 2026/1/3.
+// Created by MINEC on 2026/1/4.
 //
 
 #pragma once
 
 #include "GameObject.h"
 #include "SceneContext.h"
+#include "ModelManager.h"
 
-class Penguin : public GameObject {
+class Human3D : public GameObject {
 public:
-    Penguin() {
-        Model* p = ModelManager::getInstance().getModel("penguin");
+    Human3D() {
+        Model* p = ModelManager::getInstance().getModel("human");
         if (p == nullptr) {
-            ModelManager::getInstance().loadModel("./Asset/penguin.obj", "penguin");
-            this->model = ModelManager::getInstance().getModel("penguin");
+            ModelManager::getInstance().loadModel("./Asset/human.obj", "human");
+            this->model = ModelManager::getInstance().getModel("human");
         } else {
             this->model = p;
         }
-        position = {0.0f, -0.5f, 1.0f};
+        position = {0.0f, -3.0f, 5.0f};
     }
-
     void render(sf::RenderWindow* window) override {
         // drawPoints(window);
         drawFaces(window);

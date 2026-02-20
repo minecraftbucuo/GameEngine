@@ -8,7 +8,15 @@
 
 class MenuScene : public Scene {
 public:
-    explicit MenuScene(sf::RenderWindow* _window) : Scene(_window, "MenuScene") {}
+    explicit MenuScene(sf::RenderWindow* _window) : Scene(_window, "MenuScene") {
+        title.setString(L"Menu");
+        title.setFillColor(sf::Color::Yellow);
+        title.setFont(AssetManager::getInstance().getFont());
+        title.setScale(2.f, 2.f);
+        // 让标题居中
+        title.setPosition(_window->getSize().x * 0.5f - title.getGlobalBounds().width * 0.5f,
+            window->getSize().y * 0.15f - title.getGlobalBounds().height * 0.5f);
+    }
     ~MenuScene() override = default;
 
     void init() override {
@@ -17,10 +25,34 @@ public:
     }
 
     void initScene() {
-        std::shared_ptr<Button> button = std::make_shared<Button>(100, 100, 200, 50, L"开始游戏");
-        button->setOnClick([&]() -> void {
+        std::shared_ptr<Button> button1 = std::make_shared<Button>(100, 100, 200, 50, L"超级玛丽");
+        button1->setOnClick([&]() -> void {
            SceneContext::getInstance().getSceneManager()->loadScene("SuperMarioScene");
         });
-        this->addObject(button);
+        auto render_window = SceneContext::getInstance().getWindow();
+        button1->setToRectCenter(0, render_window->getSize().y * 0.25f, render_window->getSize().x, render_window->getSize().y * 0.25f);
+        this->addObject(button1);
+
+        std::shared_ptr<Button> button2 = std::make_shared<Button>(100, 100, 200, 50, L"3D渲染");
+        button2->setOnClick([&]() -> void {
+           SceneContext::getInstance().getSceneManager()->loadScene("GameScene3D");
+        });
+        button2->setToRectCenter(0, render_window->getSize().y * 0.5f, render_window->getSize().x, render_window->getSize().y * 0.25f);
+        this->addObject(button2);
+
+        std::shared_ptr<Button> button3 = std::make_shared<Button>(100, 100, 200, 50, L"Demo");
+        button3->setOnClick([&]() -> void {
+           SceneContext::getInstance().getSceneManager()->loadScene("GameScene");
+        });
+        button3->setToRectCenter(0, render_window->getSize().y * 0.75f, render_window->getSize().x, render_window->getSize().y * 0.25f);
+        this->addObject(button3);
     }
+
+    void render(sf::RenderWindow* _window) override {
+        Scene::render(_window);
+        _window->draw(title);
+    }
+
+private:
+    sf::Text title;
 };

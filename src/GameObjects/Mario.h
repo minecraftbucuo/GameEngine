@@ -13,6 +13,7 @@
 #include "StateMachine.h"
 #include "SceneContext.h"
 #include "SceneManager.h"
+#include "MarioCameraComponent.h"
 
 
 class Mario : public GameObject {
@@ -26,7 +27,7 @@ public:
         // this->addComponent<CollisionHandle, BoxCollisionHandle>();
         this->addComponent<GravityComponent>();
         this->addComponent<MoveComponent>();
-        this->addComponent<CameraComponent>();
+        this->addComponent<MarioCameraComponent>();
 
         const auto stateMachine = this->addComponent<StateMachine>();
         stateMachine->addState<MarioRunState>();

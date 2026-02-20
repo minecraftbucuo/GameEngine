@@ -83,10 +83,13 @@ public:
                 }
             }
         } else if (event.type == sf::Event::MouseButtonPressed) {
-            int x = event.mouseButton.x;
-            int y = event.mouseButton.y;
-            addObject(std::make_shared<Circle>(x, y, 20.f));
+            const auto mouse_position = SceneContext::getInstance().getMousePosition();
+            addObject(std::make_shared<Circle>(mouse_position.x - 20, mouse_position.y - 20, 20.f));
         }
+    }
+
+    [[nodiscard]] CollisionSystem* getCollisionSystem() const override {
+        return collisionSystem.get();
     }
 
 private:

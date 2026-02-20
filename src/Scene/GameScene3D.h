@@ -6,9 +6,9 @@
 
 #include "Scene.h"
 #include "Cube.h"
-#include "NewModel.h"
-#include "Penguin.h"
-#include "Human.h"
+#include "NewModel3D.h"
+#include "Penguin3D.h"
+#include "Human3D.h"
 
 class GameScene3D : public Scene {
 public:
