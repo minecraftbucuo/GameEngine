@@ -9,6 +9,7 @@
 #include "Scene.h"
 #include "CollisionSystem.h"
 #include "Mario.h"
+#include "SimpleNetwork.h"
 
 
 class SuperMarioScene : public Scene {
@@ -68,6 +69,7 @@ public:
         if (this->collisionSystem) {
             this->collisionSystem->checkCollisions();
         }
+        simple_network.update(deltaTime);
     }
 
     void addObject(const std::shared_ptr<GameObject>& obj) override {
@@ -98,7 +100,26 @@ public:
         return collisionSystem.get();
     }
 
+    void startServer() {
+        simple_network.startServer();
+        for (const auto& obj : game_objects) {
+            if (obj->getTag().substr(0, 5) == "mario") {
+                simple_network.addGameObject(obj);
+            }
+        }
+    }
+
+    void connectToServer(const std::string& address) {
+        simple_network.connectToServer(address);
+        for (const auto& obj : game_objects) {
+            if (obj->getTag().substr(0, 5) == "mario") {
+                simple_network.addGameObject(obj);
+            }
+        }
+    }
+
 private:
     std::unique_ptr<CollisionSystem> collisionSystem;
+    SimpleNetwork simple_network;
     sf::Sprite bg;
 };

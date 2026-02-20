@@ -36,9 +36,11 @@ public:
     }
 
     void update(const sf::Time& deltaTime) override {
-        // if (std::abs(owner->getSpeed().y) <= 1.f) {
-        //     owner->getComponent<StateMachine>()->setState("MarioIdleState");
-        // }
+        if (owner->getSpeed().x < 0) {
+            setIsLeft(true);
+        } else if (owner->getSpeed().x > 0) {
+            setIsLeft(false);
+        }
     }
 
     void handleEvent(const sf::Event& event) override {

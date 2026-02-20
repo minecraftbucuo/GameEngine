@@ -32,13 +32,15 @@ if(WIN32)
             debug sfml-graphics-d
             debug sfml-window-d
             debug sfml-system-d
+            debug sfml-network-d
             optimized sfml-graphics
             optimized sfml-window
             optimized sfml-system
+            optimized sfml-network
     )
 else()
     # Linux/macOS 通常无后缀
     link_directories(${SFML_ROOT}/lib)
     add_executable(${PROJECT_NAME} ${SOURCES})
-    target_link_libraries(${PROJECT_NAME} sfml-graphics sfml-window sfml-system)
+    target_link_libraries(${PROJECT_NAME} sfml-graphics sfml-window sfml-system sfml-network)
 endif()

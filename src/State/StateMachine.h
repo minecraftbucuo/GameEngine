@@ -59,7 +59,7 @@ public:
         this->isLeft = value;
     }
 
-    const std::string& getCurrentStateName() const {
+    std::string getCurrentStateName() const {
         if (currentState) {
             return currentState->getName();
         }

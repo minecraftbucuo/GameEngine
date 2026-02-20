@@ -5,6 +5,7 @@
 #pragma once
 #include "Button.h"
 #include "Scene.h"
+#include "SuperMarioScene.h"
 
 class MenuScene : public Scene {
 public:
@@ -25,24 +26,32 @@ public:
     }
 
     void initScene() {
-        std::shared_ptr<Button> button1 = std::make_shared<Button>(100, 100, 200, 50, L"超级玛丽");
+        std::shared_ptr<Button> button1 = std::make_shared<Button>(100, 100, 250, 50, L"超级玛丽Client");
         button1->setOnClick([&]() -> void {
-           SceneContext::getInstance().getSceneManager()->loadScene("SuperMarioScene");
+            SceneContext::getInstance().getSceneManager()->loadScene("SuperMarioScene");
+            std::dynamic_pointer_cast<SuperMarioScene>(SceneContext::getInstance().getSceneManager()->getCurrentScene())->connectToServer("127.0.0.1");
+        });
+        std::shared_ptr<Button> button1_ = std::make_shared<Button>(100, 100, 250, 50, L"超级玛丽Server");
+        button1_->setOnClick([&]() -> void {
+            SceneContext::getInstance().getSceneManager()->loadScene("SuperMarioScene");
+            std::dynamic_pointer_cast<SuperMarioScene>(SceneContext::getInstance().getSceneManager()->getCurrentScene())->startServer();
         });
         auto render_window = SceneContext::getInstance().getWindow();
-        button1->setToRectCenter(0, render_window->getSize().y * 0.25f, render_window->getSize().x, render_window->getSize().y * 0.25f);
+        button1->setToRectCenter(0, render_window->getSize().y * 0.25f, render_window->getSize().x * 0.5f, render_window->getSize().y * 0.25f);
         this->addObject(button1);
+        button1_->setToRectCenter(render_window->getSize().x * 0.5f, render_window->getSize().y * 0.25f, render_window->getSize().x * 0.5f, render_window->getSize().y * 0.25f);
+        this->addObject(button1_);
 
         std::shared_ptr<Button> button2 = std::make_shared<Button>(100, 100, 200, 50, L"3D渲染");
         button2->setOnClick([&]() -> void {
-           SceneContext::getInstance().getSceneManager()->loadScene("GameScene3D");
+            SceneContext::getInstance().getSceneManager()->loadScene("GameScene3D");
         });
         button2->setToRectCenter(0, render_window->getSize().y * 0.5f, render_window->getSize().x, render_window->getSize().y * 0.25f);
         this->addObject(button2);
 
         std::shared_ptr<Button> button3 = std::make_shared<Button>(100, 100, 200, 50, L"Demo");
         button3->setOnClick([&]() -> void {
-           SceneContext::getInstance().getSceneManager()->loadScene("GameScene");
+            SceneContext::getInstance().getSceneManager()->loadScene("GameScene");
         });
         button3->setToRectCenter(0, render_window->getSize().y * 0.75f, render_window->getSize().x, render_window->getSize().y * 0.25f);
         this->addObject(button3);

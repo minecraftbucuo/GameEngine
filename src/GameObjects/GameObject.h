@@ -194,11 +194,11 @@ protected:
     bool active;
     bool moveAble{true};
     bool started;
-    int id;
+    unsigned int id;
     std::string tag = "game_object:";
     std::unordered_map<size_t, std::shared_ptr<Component>> components;
     std::vector<size_t> components_vector;
-    inline static int idCounter = 0;
+    inline static unsigned int idCounter = 0;
 };
 
 

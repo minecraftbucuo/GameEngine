@@ -18,16 +18,16 @@
 
 class Mario : public GameObject {
 public:
-    Mario(const float x, const float y, const std::string& tag = "mario") {
+    Mario(const float x, const float y, const bool isPlayer = true) {
         this->position = sf::Vector2f(x, y);
-
-        this->addComponent<MarioController>();
+        this->isPlayer = isPlayer;
+        if (isPlayer) this->addComponent<MarioController>();
 
         this->addComponent<Collision, BoxCollision, true>();
         // this->addComponent<CollisionHandle, BoxCollisionHandle>();
         this->addComponent<GravityComponent>();
         this->addComponent<MoveComponent>();
-        this->addComponent<MarioCameraComponent>();
+        if (isPlayer) this->addComponent<MarioCameraComponent>();
 
         const auto stateMachine = this->addComponent<StateMachine>();
         stateMachine->addState<MarioRunState>();
@@ -35,7 +35,7 @@ public:
         stateMachine->addState<MarioJumpState>();
         stateMachine->setState("MarioRunState");
 
-        this->tag = tag + ":" + std::to_string(this->id);
+        this->tag = "mario:" + std::to_string(this->id);
     }
 
     void start() override {
@@ -46,6 +46,10 @@ public:
                 handleCollision(collisionEvent);
             }
         );
+    }
+
+    void handleEvent(sf::Event& e) override {
+        if (isPlayer) GameObject::handleEvent(e);
     }
 
     void update(sf::Time deltaTime) override {
@@ -125,4 +129,7 @@ public:
             }
         }
     }
+
+private:
+    bool isPlayer = true;
 };
