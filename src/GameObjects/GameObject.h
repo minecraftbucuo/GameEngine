@@ -147,6 +147,18 @@ public:
         size = sf::Vector2f(width, height);
     }
 
+    unsigned int getId() const {
+        return id;
+    }
+
+    void setId(const unsigned int _id) {
+        this->id = _id;
+    }
+
+    const std::string& getClassName() const {
+        return className;
+    }
+
     void updateComponents(sf::Time deltaTime) {
         for (const auto key : components_vector) {
             auto it = components.find(key);
@@ -196,6 +208,7 @@ protected:
     bool started;
     unsigned int id;
     std::string tag = "game_object:";
+    std::string className = "GameObject";
     std::unordered_map<size_t, std::shared_ptr<Component>> components;
     std::vector<size_t> components_vector;
     inline static unsigned int idCounter = 0;

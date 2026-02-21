@@ -20,6 +20,7 @@ public:
             this->model = p;
         }
         position = {0.f, -0.6f, 1.f};
+        className = "NewModel3D";
     }
     void render(sf::RenderWindow* window) override {
         // drawPoints(window);

@@ -10,12 +10,15 @@
 
 class BoxGameObject : public GameObject {
 public:
-    BoxGameObject() = default;
+    BoxGameObject() {
+        className = "BoxGameObject";
+    }
     BoxGameObject(const float posX, const float posY, const float width, const float height, const std::string& tag = "box")
             : GameObject(posX, posY, width, height) {
         this->tag = tag + ":" + std::to_string(id);
         this->addComponent<Collision, BoxCollision, true>();
         this->addComponent<CollisionHandle, BoxCollisionHandle>();
+        className = "BoxGameObject";
     }
 
     void start() override {

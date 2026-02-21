@@ -31,6 +31,7 @@ public:
         this->addComponent<MoveComponent>();
         this->addComponent<GravityComponent>();
         this->tag = tag + ":" + std::to_string(this->id);
+        className = "Player";
     }
     void render(sf::RenderWindow* window) override {
         renderComponents(window);

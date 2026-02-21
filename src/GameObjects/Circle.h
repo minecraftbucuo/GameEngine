@@ -32,6 +32,8 @@ public:
         this->addComponent<MoveComponent>();
 
         this->tag = tag + ":" + std::to_string(this->id);
+
+        className = "Circle";
     }
 
     void render(sf::RenderWindow* window) override {

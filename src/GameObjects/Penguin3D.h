@@ -18,6 +18,7 @@ public:
             this->model = p;
         }
         position = {0.0f, -0.5f, 1.0f};
+        className = "Penguin3D";
     }
 
     void render(sf::RenderWindow* window) override {

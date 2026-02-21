@@ -63,6 +63,23 @@ public:
         game_objects.push_back(obj);
     }
 
+    virtual void addObjectWithMap(const std::shared_ptr<GameObject>& obj) {
+        game_objects.push_back(obj);
+        game_objects_map[obj->getId()] = obj;
+    }
+
+    virtual void addObjectWithNetwork(const std::shared_ptr<GameObject>& obj) {
+
+    }
+
+    std::shared_ptr<GameObject> findGameObjectById(const unsigned int id) {
+        if (game_objects_map.find(id) == game_objects_map.end()) {
+            std::cerr << "Scene::findGameObjectById : GameObject not found" << std::endl;
+            return nullptr;
+        }
+        return game_objects_map[id];
+    }
+
     // 相机管理
     void setCamera(sf::RenderWindow* _window) {
         camera = std::make_unique<Camera>(_window);
@@ -99,6 +116,7 @@ public:
 
 protected:
     std::vector<std::shared_ptr<GameObject>> game_objects;
+    std::unordered_map<unsigned int, std::shared_ptr<GameObject>> game_objects_map;
     sf::RenderWindow* window{};
     std::unique_ptr<Camera> camera;
     std::string scene_name;

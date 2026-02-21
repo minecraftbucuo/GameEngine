@@ -14,6 +14,7 @@ public:
             : BoxGameObject(x, y, width, height) {
         this->tag = tag + ":" + std::to_string(id);
         this->moveAble = false;
+        className = "Ground";
     }
 
     void setPosition(const float posX, const float posY) override {

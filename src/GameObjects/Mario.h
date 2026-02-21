@@ -21,7 +21,8 @@ public:
     Mario(const float x, const float y, const bool isPlayer = true) {
         this->position = sf::Vector2f(x, y);
         this->isPlayer = isPlayer;
-        if (isPlayer) this->addComponent<MarioController>();
+        const auto marioController = this->addComponent<MarioController>();
+        if (!isPlayer) marioController->setActive(false);
 
         this->addComponent<Collision, BoxCollision, true>();
         // this->addComponent<CollisionHandle, BoxCollisionHandle>();
@@ -36,6 +37,7 @@ public:
         stateMachine->setState("MarioRunState");
 
         this->tag = "mario:" + std::to_string(this->id);
+        className = "Mario";
     }
 
     void start() override {
@@ -128,6 +130,10 @@ public:
                 moveComponent->setPositionY(event.b_position.y + other->getSize().y);
             }
         }
+    }
+
+    bool getIsPlayer() const {
+        return isPlayer;
     }
 
 private:

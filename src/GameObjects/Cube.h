@@ -19,6 +19,7 @@ public:
             this->model = p;
         }
         position = {0.0f, 0.0f, 3.0f};
+        className = "Cube";
     }
     void render(sf::RenderWindow* window) override {
         drawPoints(window);

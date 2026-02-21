@@ -21,6 +21,7 @@ public:
         text.setFillColor(sf::Color::Black);
         text.setPosition(x + (w - text.getGlobalBounds().width) * 0.5f, y + (h - text.getGlobalBounds().height) * 0.5f);
         this->tag = "Button:" + std::to_string(this->id);
+        className = "Button";
     }
     void render(sf::RenderWindow* window) override {
         if (is_hover) {

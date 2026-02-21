@@ -26,25 +26,10 @@ public:
         bg.setTexture(AssetManager::getInstance().getTexture("level_1"));
         const float bg_scale = static_cast<float>(window->getSize().y) / bg.getLocalBounds().height;
         bg.setScale(bg_scale, bg_scale);
-        initScene();
+        initStaticObjects();
     }
 
-    void initScene() {
-        std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
-        this->addObject(mario);
-
-        std::shared_ptr<Player> player2 = std::make_shared<Player>(60, 300, 40);
-        player2->removeComponent<GravityComponent>();
-        // player2->addComponent<CameraComponent>();
-        this->addObject(player2);
-
-
-        std::shared_ptr<BoxGameObject> box = std::make_shared<BoxGameObject>(800, 800, 300, 80);
-        const auto move = box->addComponent<MoveComponent>();
-        move->setSpeedX(-200);
-        // box->addComponent<GravityComponent>();
-        this->addObject(box);
-
+    void initStaticObjects() {
         // 左墙
         std::shared_ptr<Ground> wall1 = std::make_shared<Ground>(0, 0, 10, 960, "wall1");
         this->addObject(wall1);
@@ -57,6 +42,23 @@ public:
 
         std::shared_ptr<Ground> box2 = std::make_shared<Ground>(333, 652, 100, 100);
         this->addObject(box2);
+    }
+
+    void initDynamicObjects() {
+        std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
+        this->addObjectWithNetwork(mario);
+
+        std::shared_ptr<Player> player2 = std::make_shared<Player>(60, 300, 40);
+        player2->removeComponent<GravityComponent>();
+        // player2->addComponent<CameraComponent>();
+        this->addObjectWithNetwork(player2);
+
+
+        std::shared_ptr<BoxGameObject> box = std::make_shared<BoxGameObject>(800, 800, 300, 80);
+        const auto move = box->addComponent<MoveComponent>();
+        move->setSpeedX(-200);
+        // box->addComponent<GravityComponent>();
+        this->addObjectWithNetwork(box);
     }
 
     void render(sf::RenderWindow* _window) override {
@@ -79,7 +81,20 @@ public:
         }
     }
 
+    void addObjectWithMap(const std::shared_ptr<GameObject>& obj) override {
+        Scene::addObjectWithMap(obj);
+        if (this->collisionSystem && obj->getComponent<Collision>()) {
+            this->collisionSystem->addObject(obj);
+        }
+    }
+
+    void addObjectWithNetwork(const std::shared_ptr<GameObject>& obj) override {
+        addObjectWithMap(obj);
+        simple_network.addGameObject(obj);
+    }
+
     void handleEvent(sf::Event& event) override {
+        simple_network.handleEvent(event);
         Scene::handleEvent(event);
         if (event.type == sf::Event::Resized) {
             for (const auto& obj : game_objects) {
@@ -102,20 +117,11 @@ public:
 
     void startServer() {
         simple_network.startServer();
-        for (const auto& obj : game_objects) {
-            if (obj->getTag().substr(0, 5) == "mario") {
-                simple_network.addGameObject(obj);
-            }
-        }
+        initDynamicObjects();
     }
 
     void connectToServer(const std::string& address) {
         simple_network.connectToServer(address);
-        for (const auto& obj : game_objects) {
-            if (obj->getTag().substr(0, 5) == "mario") {
-                simple_network.addGameObject(obj);
-            }
-        }
     }
 
 private:
