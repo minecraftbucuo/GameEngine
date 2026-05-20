@@ -18,6 +18,14 @@ public:
 
     void takeDamage(int damage);
 
+    [[nodiscard]] int getHealth() const {
+        return this->health;
+    }
+
+    void setHealth(const int _health) {
+        this->health = _health;
+    }
+
     [[nodiscard]] bool isDead() const;
 
 private:

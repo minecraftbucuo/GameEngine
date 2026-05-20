@@ -15,8 +15,6 @@
 #endif
 #include "SuperMarioScene.h"
 
-class SuperMarioServerScene;
-
 static std::filesystem::path getExeDir() {
 #ifdef _WIN32
     wchar_t path[MAX_PATH];
@@ -38,6 +36,7 @@ public:
 
     void init() {
         // 更改工作目录为主程序所在目录
+        LOG_INFO_FMT("Program directory: {}", getExeDir().generic_string());
         std::filesystem::current_path(getExeDir());
 
         Logger::getInstance().setLogFile("log.txt");

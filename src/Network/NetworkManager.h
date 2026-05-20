@@ -43,7 +43,7 @@ public:
 
     void addGameObjectAndSync(const std::shared_ptr<GameObject>& obj);
 
-    void createNewPlayer(std::shared_ptr<TcpClient> newClient);
+    void initClientScene(const std::shared_ptr<TcpClient>& newClient);
 
     void verifyClient();
 

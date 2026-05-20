@@ -47,8 +47,7 @@ bool NetworkManager::connectToServer(const std::string& address) {
     // 发送验证 Packet
     sf::Packet verifyPacket;
     verifyPacket << CLIENT_TOKEN;
-    clientSocket.append(verifyPacket);
-    clientSocket.send();
+    clientSocket.getSocket().send(verifyPacket);
 
     // 等待服务端返回验证结果
     sf::Packet resultPacket;
@@ -156,7 +155,8 @@ void NetworkManager::receiveNewConnection() {
     }
 }
 
-void NetworkManager::createNewPlayer(const std::shared_ptr<TcpClient> newClient) {
+// 初始化客户端的场景并且将 newClient 加入到 clients vector 中
+void NetworkManager::initClientScene(const std::shared_ptr<TcpClient>& newClient) {
     // 给客户端发送当前场景信息
     for (auto it = game_objects.begin(); it != game_objects.end();) {
         if (const auto obj = it->lock()) {
@@ -202,9 +202,8 @@ void NetworkManager::verifyClient() {
                 constexpr bool success = true;
                 std::string message = "Hello brave Mario!";
                 resultPacket << success << message;
-                client.append(resultPacket);
-                client.send();
-                createNewPlayer(std::make_shared<TcpClient>(client));
+                client.getSocket().send(resultPacket);
+                initClientScene(std::make_shared<TcpClient>(client));
                 it = unverified.erase(it); // 已验证，从未验证列表中删除
             } else {
                 client.disconnect(); // 直接关闭连接，拒绝其他客户端

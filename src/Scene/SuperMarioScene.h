@@ -8,6 +8,7 @@
 #include "Ground.h"
 #include "Scene.h"
 #include "CollisionSystem.h"
+#include "HealthBar.h"
 #include "Mario.h"
 #include "NetworkManager.h"
 
@@ -68,12 +69,14 @@ public:
         if (obj_type == ObjectType::MarioPlayer || obj_type == ObjectType::Mario) {
             float x, y, s_x, s_y;
             bool is_jump;
-            packet >> x >> y >> s_x >> s_y >> is_jump;
+            int health;
+            packet >> x >> y >> s_x >> s_y >> is_jump >> health;
             const auto player = std::make_shared<Mario>(x, y, obj_type == ObjectType::MarioPlayer);
             player->setId(id);
-            LOG_DEBUG_FMT("Create mario, id:{}, x:{}, y:{}, s_x:{}, s_y:{}, is_jump:{}", id, x, y, s_x, s_y, is_jump);
+            LOG_DEBUG_FMT("Create mario, id:{}, x:{}, y:{}, s_x:{}, s_y:{}, is_jump:{}, health:{}", id, x, y, s_x, s_y, is_jump, health);
             const auto& move_component = player->getComponent<MoveComponent>();
             move_component->setSpeed(s_x, s_y);
+            player->getComponent<HealthBar>()->setHealth(health);
             this->addObjectWithNetwork(player);
             return player;
         }

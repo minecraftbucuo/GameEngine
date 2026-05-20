@@ -200,11 +200,12 @@ void Mario::serialize(sf::Packet& packet, const NetworkMsg type) {
     if (type == NetworkMsg::SpawnObject) {  // 交给Scene处理
         packet << type << this->getId();   // 给 NetworkManager 判断是哪种操作和定位对象的 ID
 
-        // 通知客户端新建对象   ID   对象类型   x   y   s_x   s_y   is_jump
+        // 通知客户端新建对象   ID   对象类型   x   y   s_x   s_y   is_jump   health
         packet << ObjectType::Mario;
         const bool is_jump = this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState";
+        const int health = this->getComponent<HealthBar>()->getHealth();
         packet << this->getPosition().x << this->getPosition().y << this->getSpeed().x << this->getSpeed().y <<
-            is_jump;
+            is_jump << health;
     } else if (type == NetworkMsg::UpdateObject) {  // 交给自己处理
         packet << type << this->getId();   // 给 NetworkManager 判断是哪种操作和定位对象的 ID
 
@@ -215,11 +216,12 @@ void Mario::serialize(sf::Packet& packet, const NetworkMsg type) {
     } else if (type == NetworkMsg::SpawnPlayer) {  // 交给Scene处理
         packet << type << this->getId();   // 给 NetworkManager 判断是哪种操作和定位对象的 ID
 
-        // 通知客户端创建玩家   ID   对象类型   x   y   s_x   s_y   is_jump
+        // 通知客户端创建玩家   ID   对象类型   x   y   s_x   s_y   is_jump   health
         packet << ObjectType::MarioPlayer;
         const bool is_jump = this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState";
+        const int health = this->getComponent<HealthBar>()->getHealth();
         packet << this->getPosition().x << this->getPosition().y << this->getSpeed().x << this->getSpeed().y <<
-            is_jump;
+            is_jump << health;
     }
     // else if (type == NetworkMsg::RemoveObject) {  // 交给外部处理
     //     通知客户端删除对象   ID

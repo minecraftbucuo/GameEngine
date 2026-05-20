@@ -22,7 +22,7 @@ public:
         return m_socket->receive(packet);
     }
 
-    sf::TcpSocket& getSocket() const {
+    [[nodiscard]] sf::TcpSocket& getSocket() const {
         return *m_socket;
     }
 
@@ -30,7 +30,7 @@ public:
         m_socket->setBlocking(blocking);
     }
 
-    sf::Socket::Status connect(const sf::IpAddress& remoteAddress, const unsigned short remotePort, const sf::Time timeout = sf::Time::Zero) const {
+    [[nodiscard]] sf::Socket::Status connect(const sf::IpAddress& remoteAddress, const unsigned short remotePort, const sf::Time timeout = sf::Time::Zero) const {
         return m_socket->connect(remoteAddress, remotePort, timeout);
     }
 
