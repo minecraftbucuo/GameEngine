@@ -45,16 +45,22 @@ public:
 
     void createNewPlayer(std::shared_ptr<TcpClient> newClient);
 
+    void verifyClient();
+
     void respawnPlayer(const std::shared_ptr<TcpClient>& client);
 
     void addGameObject(const std::shared_ptr<GameObject>& obj);
 
 private:
+    inline static const std::string CLIENT_TOKEN = "minecraftbucuo/mario";
+    inline static const sf::Time VERIFY_TIMEOUT = sf::seconds(10);
+
     NetworkType network_type = NetworkType::None;
     unsigned int port = CONFIG.network.port;
     TcpClient clientSocket;
     sf::TcpListener listener;
     std::vector<std::shared_ptr<TcpClient>> clients;
+    std::vector<std::pair<TcpClient, sf::Clock>> unverified;
     std::unordered_map<TcpClient*, std::weak_ptr<ISerializable>> players;
     // 需要同步的游戏对象
     std::vector<std::weak_ptr<ISerializable>> game_objects;
