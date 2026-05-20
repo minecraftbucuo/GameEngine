@@ -44,6 +44,27 @@ bool NetworkManager::connectToServer(const std::string& address) {
         return false;
     }
 
+    // 发送验证 Packet
+    sf::Packet verifyPacket;
+    verifyPacket << CLIENT_TOKEN;
+    clientSocket.append(verifyPacket);
+    clientSocket.send();
+
+    // 等待服务端返回验证结果
+    sf::Packet resultPacket;
+    if (clientSocket.receive(resultPacket) != sf::Socket::Done) {
+        LOG_WARN("Failed to receive verifying response!");
+        return false;
+    }
+    bool success;
+    std::string message;
+    resultPacket >> success >> message;
+    if (!success) {
+        LOG_WARN_FMT("Verification failed: {}", message);
+        return false;
+    }
+    LOG_INFO_FMT("Verification succeeded: {}", message);
+
     clientSocket.setBlocking(false);
     network_type = NetworkType::Client;
     LOG_INFO("Connected to server successfully!");
@@ -126,31 +147,28 @@ void NetworkManager::handleEvent(const sf::Event& event) {
 }
 
 void NetworkManager::receiveNewConnection() {
-    if (const auto newClient = std::make_shared<TcpClient>(); listener.accept(newClient->getSocket()) == sf::Socket::Done) {
-        newClient->setBlocking(false);
-        // 给客户端发送当前场景信息
-        for (auto it = game_objects.begin(); it != game_objects.end();) {
-            if (const auto obj = it->lock()) {
-                sf::Packet packet;
-                obj->serialize(packet, NetworkMsg::SpawnObject);
-                newClient->append(packet);
-                ++it;
-            } else {
-                it = game_objects.erase(it);
-            }
-        }
-
-        createNewPlayer(newClient);
-
-#ifndef SERVER_BUILD
-        LOG_INFO_FMT("New client connected! Total number of players: {}", clients.size() + 1u);
-#else
-        LOG_INFO_FMT("New client connected! Total number of players: {}", clients.size());
-#endif
+    if (const auto newClient = TcpClient(); listener.accept(newClient.getSocket()) == sf::Socket::Done) {
+        newClient.setBlocking(false);
+        unverified.emplace_back(newClient, sf::Clock());
+        LOG_INFO_FMT("New TCP connection established with {}:{}",
+            newClient.getSocket().getRemoteAddress().toString(),
+            newClient.getSocket().getRemotePort());
     }
 }
 
 void NetworkManager::createNewPlayer(const std::shared_ptr<TcpClient> newClient) {
+    // 给客户端发送当前场景信息
+    for (auto it = game_objects.begin(); it != game_objects.end();) {
+        if (const auto obj = it->lock()) {
+            sf::Packet packet;
+            obj->serialize(packet, NetworkMsg::SpawnObject);
+            newClient->append(packet);
+            ++it;
+        } else {
+            it = game_objects.erase(it);
+        }
+    }
+
     // 创建新加入的玩家
     const auto current_scene = SceneContext::getInstance().getSceneManager()->getCurrentScene();
     // spawnEntityWithNetwork 方法会广播生成新对象的消息给clients vector里的所有客户端
@@ -163,6 +181,44 @@ void NetworkManager::createNewPlayer(const std::shared_ptr<TcpClient> newClient)
     newClient->append(packet);
 
     clients.emplace_back(newClient);
+
+#ifndef SERVER_BUILD
+    LOG_INFO_FMT("New client connected! Total number of players: {}", clients.size() + 1u);
+#else
+    LOG_INFO_FMT("New client connected! Total number of players: {}", clients.size());
+#endif
+}
+
+void NetworkManager::verifyClient() {
+    // 验证 TCP 连接是否由 Mario 客户端发起
+    // 并且检查客户端是否连接过长时间而没有发送任何 Packet
+    for (auto it = unverified.begin(); it != unverified.end();) {
+        auto& [client, clock] = *it;
+        if (sf::Packet verifyPacket; client.receive(verifyPacket) == sf::Socket::Done) {
+            std::string token;
+            verifyPacket >> token;
+            if (token == CLIENT_TOKEN) {
+                sf::Packet resultPacket;
+                constexpr bool success = true;
+                std::string message = "Hello brave Mario!";
+                resultPacket << success << message;
+                client.append(resultPacket);
+                client.send();
+                createNewPlayer(std::make_shared<TcpClient>(client));
+                it = unverified.erase(it); // 已验证，从未验证列表中删除
+            } else {
+                client.disconnect(); // 直接关闭连接，拒绝其他客户端
+                it = unverified.erase(it);
+                LOG_WARN_FMT("Wrong client token with '{}'", token);
+            }
+        } else if (const sf::Time elapsed = clock.getElapsedTime(); elapsed >= VERIFY_TIMEOUT) {
+            client.disconnect(); // 关闭超时连接，防止 DDoS
+            it = unverified.erase(it);
+            LOG_WARN("No verify packet sent from client and time out");
+        } else {
+            ++it;
+        }
+    }
 }
 
 void NetworkManager::respawnPlayer(const std::shared_ptr<TcpClient>& client) {
@@ -191,6 +247,8 @@ void NetworkManager::respawnPlayer(const std::shared_ptr<TcpClient>& client) {
 void NetworkManager::serverUpdate(const sf::Time& deltaTime) {
     // 接收新用户连接
     receiveNewConnection();
+    // 验证 TCP 客户端是否为 Mario 客户端
+    verifyClient();
     // 处理客户端数据
     std::unordered_map<unsigned int, bool> removeIdsMap; // 存储需要删除的玩家id
     for (auto it = clients.begin(); it != clients.end();) {
