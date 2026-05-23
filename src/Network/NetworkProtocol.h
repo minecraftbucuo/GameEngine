@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <cstdint>
 
 // 1. 发送：通用枚举重载
 template <typename T>
