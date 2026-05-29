@@ -176,7 +176,14 @@ public:
 #ifndef SERVER_BUILD
     void handleEvent(sf::Event& event) override {
         simple_network.handleEvent(event);
-        Scene::handleEvent(event);
+
+        if (camera) camera->handleEvent(event);
+        // 必须用这种 for 循环，因为 game_objects 可能会改变，扩容导致迭代器失效
+        for (int i = 0; i < game_objects.size(); ++i) {
+            const auto& obj = game_objects[i];
+            obj->handleEvent(event);
+        }
+
         if (event.type == sf::Event::MouseButtonPressed) {
             const sf::Vector2i pos = SceneContext::getInstance().getMousePosition();
             LOG_TRACE_FMT("Mouse clicked at ({}, {})", pos.x, pos.y);
