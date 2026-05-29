@@ -58,6 +58,36 @@
    ./GameEngine
    ```
 
+5. 🐧 Nix 环境特别说明 (非 NixOS 系统)
+
+   如果你的系统是非 NixOS 的 Linux 发行版（如 Arch Linux、Ubuntu 等），并且使用 `nix develop` 或 `Nix Flakes` 提供了构建环境，直接运行编译后的二进制文件可能会遇到 `Failed to create an OpenGL context` 报错或段错误。
+
+   这是由于 Nix 严格的环境隔离机制导致程序无法加载宿主机的显卡驱动。**解决方案是使用 `nixGL` 包装运行**，可选下面两种方案之一：
+
+   1. **直接运行**:
+      ```bash
+      # 如果你使用 Intel/AMD 等开源 Mesa 驱动:
+      nix run --impure github:nix-community/nixGL -- ./GameEngine
+
+      # 如果你使用 NVIDIA 闭源驱动:
+      nix run --impure github:nix-community/nixGL#nixGLNvidia -- ./GameEngine
+      ```
+
+   2. **全局安装**:
+
+      你可以将 nixGL 安装到本地 profile 以简化命令：
+      ```bash
+      nix profile install --impure github:nix-community/nixGL
+      ```
+
+      安装后，使用命令启动游戏：
+
+      ```bash
+      nixGL ./GameEngine
+      ```
+
+      *(注：如果你的终端是 Fish shell，请确保 Nix profile 路径已加入环境变量：`fish_add_path ~/.nix-profile/bin`)*
+
 ## 运行示例
 
 项目包含基本示例，展示了以下内容：
