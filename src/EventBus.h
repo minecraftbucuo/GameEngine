@@ -8,9 +8,19 @@
 #include <string>
 #include <functional>
 #include <vector>
-#include <any>
 
 class EventBus {
+    class HolderBase {
+    public:
+        virtual ~HolderBase() = default;
+    };
+
+    template<typename T>
+    class EventHolder : public HolderBase {
+    public:
+        ~EventHolder() override = default;
+        std::vector<std::function<void(const T&)>> events;
+    };
 public:
     static EventBus& getInstance() {
         static EventBus instance;
@@ -18,18 +28,20 @@ public:
     }
 
     template <typename T>
-    void subscribe(const std::string& event, std::function<void(T)> callback) {
-        listeners[event].push_back([callback](std::any data) {
-            callback(std::any_cast<T>(data));
-        });
+    void subscribe(const std::string& event, std::function<void(const T&)>&& callback) {
+        auto& holder_ptr = event_holder[event];
+        if (!holder_ptr) holder_ptr = std::make_unique<EventHolder<T>>();
+        auto* holder = static_cast<EventHolder<T>*>(holder_ptr.get());
+        holder->events.push_back(std::move(callback));
         LOG_TRACE_FMT("{} subscribed", event);
     }
 
     template <typename T>
-    void publish(const std::string& eventName, T data) {
-        if (listeners.contains(eventName)) {
-            for (auto& listener : listeners[eventName]) {
-                listener(data);
+    void publish(const std::string& eventName, const T& data) {
+        if (const auto it = event_holder.find(eventName); it != event_holder.end() && it->second) {
+            for (auto* holder = static_cast<EventHolder<std::decay_t<T>>*>(it->second.get());
+                const auto& event : holder->events) {
+                event(data);
             }
         } else {
             LOG_WARN_FMT("{} not found", eventName);
@@ -37,16 +49,16 @@ public:
     }
 
     void removeSubscribe(const std::string& event_name) {
-        if (!listeners.contains(event_name)) {
+        if (!event_holder.contains(event_name)) {
             LOG_WARN_FMT("{} not found", event_name);
             return;
         }
         LOG_TRACE_FMT("{} removed", event_name);
-        listeners.erase(event_name);
+        event_holder.erase(event_name);
     }
 
 private:
-    std::unordered_map<std::string, std::vector<std::function<void(std::any)>>> listeners;
+    std::unordered_map<std::string, std::unique_ptr<HolderBase>> event_holder;
     EventBus() = default;
 };
 

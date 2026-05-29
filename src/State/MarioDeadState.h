@@ -18,7 +18,7 @@ public:
 #ifndef SERVER_BUILD
         const sf::Texture& mario_texture = AssetManager::getInstance().getTexture("mario_bros");
         sprite.setTexture(mario_texture);
-        sprite.setTextureRect(sf::IntRect(178, 32, 12, 16));
+        sprite.setTextureRect(sf::IntRect(160, 32, 16, 16));
         sprite.setScale(4.f, 4.f);
 #endif
     }
