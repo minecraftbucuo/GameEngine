@@ -8,6 +8,8 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include <memory>
+#include "Logger.h"
 
 class EventBus {
     class HolderBase {

@@ -2,9 +2,13 @@
 // Created by MINEC on 2026/5/8.
 //
 #include "Box.h"
+
+#include "Collision.h"
+#include "CollisionHandle.h"
 #include "FrameManager.h"
 #include "GravityComponent.h"
 #include "MoveComponent.h"
+#include "BoxCollision.h"
 
 Box::Box(const float x, const float y, const std::string& tag) : BoxGameObject(x, y, 0, 0) {
     this->tag = tag + ":" + std::to_string(id);

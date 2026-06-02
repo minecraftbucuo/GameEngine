@@ -26,15 +26,9 @@ public:
     bool needGravity();
 
 private:
-    void setPosition(const float x, const float y) override {
-        GameObject::setPosition(x, y);
-        shape.setPosition(x, y);
-    }
+    void setPosition(float x, float y) override;
 
-    void setSpeed(const float x, const float y) {
-        this->speed.x = x;
-        this->speed.y = y;
-    }
+    void setSpeed(float x, float y);
 
     sf::CircleShape shape;
 };

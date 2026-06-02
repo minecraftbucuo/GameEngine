@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <memory>
 #include <string>
-#include "Collision.h"
 #include "Logger.h"
 
 class GameObject {

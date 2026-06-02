@@ -18,24 +18,14 @@ public:
     }
 #endif
 
-    void update(sf::Time deltaTime) const {
-        currentScene->update(deltaTime);
-    }
+    void update(sf::Time deltaTime) const;
 #ifndef SERVER_BUILD
     void render(sf::RenderWindow* window) const {
         currentScene->render(window);
     }
 #endif
 
-    void loadScene(const std::string& scene_name) {
-        if (!scenes.contains(scene_name)) {
-            LOG_ERROR_FMT("Scene {} not found", scene_name);
-            return;
-        }
-        if (currentScene) currentScene->exit();
-        currentScene = scenes[scene_name];
-        currentScene->init();
-    }
+    void loadScene(const std::string& scene_name);
 
     template <typename T, typename... Args>
     void addScene(Args&&... args) {
@@ -44,9 +34,7 @@ public:
         scenes[scene->getSceneName()]->setSceneManager(this);
     }
 
-    std::shared_ptr<Scene> getCurrentScene() const {
-        return currentScene;
-    }
+    std::shared_ptr<Scene> getCurrentScene() const;
 
 private:
     std::unordered_map<std::string, std::shared_ptr<Scene>> scenes;

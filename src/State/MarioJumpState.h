@@ -13,6 +13,7 @@
 #include "StateMachine.h"
 #include "GravityComponent.h"
 #include "Timer.h"
+#include "MoveComponent.h"
 
 
 class MarioJumpState : public BaseState {

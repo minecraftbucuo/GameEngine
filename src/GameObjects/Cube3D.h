@@ -3,21 +3,11 @@
 //
 
 #pragma once
-
+#ifndef SERVER_BUILD
 #include "GameObject3D.h"
-#include "ModelManager.h"
 
 class Cube3D : public GameObject3D {
 public:
-    Cube3D() {
-        Model* p = ModelManager::getInstance().getModel("cube");
-        if (p == nullptr) {
-            ModelManager::getInstance().loadModel(CONFIG.getModelPath("cube"), "cube");
-            this->model = ModelManager::getInstance().getModel("cube");
-        } else {
-            this->model = p;
-        }
-        position = {0.0f, 0.0f, 3.0f};
-        className = "Cube3D";
-    }
+    Cube3D();
 };
+#endif

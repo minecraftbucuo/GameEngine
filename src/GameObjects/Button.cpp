@@ -48,4 +48,17 @@ bool Button::isMouseOver() const {
     return buttonBounds.contains(static_cast<float>(mouse_pos.x), static_cast<float>(mouse_pos.y));
 }
 
+void Button::setOnClick(std::function<void()>&& _onClick) {
+    this->onClick = std::move(_onClick);
+}
+
+void Button::setToRectCenter(const float x, const float y, const float w, const float h) {
+    shape.setPosition(x + w * 0.5f - shape.getSize().x * 0.5f, y + h * 0.5f - shape.getSize().y * 0.5f);
+    text.setPosition(x + (w - text.getGlobalBounds().width) * 0.5f, y + (h - text.getGlobalBounds().height) * 0.5f);
+}
+
+void Button::runOnClick() const {
+    if (onClick) onClick();
+}
+
 #endif

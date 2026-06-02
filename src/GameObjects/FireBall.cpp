@@ -10,6 +10,7 @@
 #include "EventBus.h"
 #include "BoxCollision.h"
 #include "Logger.h"
+#include "MoveComponent.h"
 
 FireBall::FireBall(const unsigned int owner_id, const float x, const float y, const float speed_x) {
     this->owner_id = owner_id;

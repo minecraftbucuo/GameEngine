@@ -7,28 +7,32 @@
 #include <SFML/Graphics.hpp>
 
 class GameObject;
+
 class Component {
 public:
     Component() = default;
-    explicit Component(GameObject* owner) : owner(owner) {}
+
+    explicit Component(GameObject* owner) : owner(owner) {
+    }
+
     virtual ~Component() = default;
 
-    virtual void start() {}
-    virtual void update(const sf::Time& deltaTime) {}
-    virtual void render(sf::RenderWindow* window) {}
-    virtual void handleEvent(const sf::Event& event) {}
-    void setOwner(GameObject* obj) {
-        owner = obj;
+    virtual void start() {
     }
-    [[nodiscard]] GameObject* getOwner() const {
-        return owner;
+
+    virtual void update(const sf::Time& deltaTime) {
     }
-    void setActive(const bool value) {
-        active = value;
+
+    virtual void render(sf::RenderWindow* window) {
     }
-    [[nodiscard]] bool getActive() const {
-        return active;
+
+    virtual void handleEvent(const sf::Event& event) {
     }
+
+    void setOwner(GameObject* obj);
+    [[nodiscard]] GameObject* getOwner() const;
+    void setActive(bool value);
+    [[nodiscard]] bool getActive() const;
 
 protected:
     GameObject* owner{};

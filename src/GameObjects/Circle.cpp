@@ -79,4 +79,14 @@ bool Circle::needGravity() {
     collision->setCollisionPosition(collision->getCollisionPosition() - dy);
     return true;
 }
+
+void Circle::setPosition(const float x, const float y) {
+    GameObject::setPosition(x, y);
+    shape.setPosition(x, y);
+}
+
+void Circle::setSpeed(const float x, const float y) {
+    this->speed.x = x;
+    this->speed.y = y;
+}
 #endif

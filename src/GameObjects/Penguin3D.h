@@ -3,29 +3,16 @@
 //
 
 #pragma once
+#ifndef SERVER_BUILD
 
 #include "GameObject3D.h"
 
 class Penguin3D : public GameObject3D {
 public:
-    Penguin3D() {
-        Model* p = ModelManager::getInstance().getModel("penguin");
-        if (p == nullptr) {
-            ModelManager::getInstance().loadModel(CONFIG.getModelPath("penguin"), "penguin");
-            this->model = ModelManager::getInstance().getModel("penguin");
-        } else {
-            this->model = p;
-        }
-        position = {0.0f, -0.5f, 1.0f};
-        className = "Penguin3D";
-    }
+    Penguin3D();
 
-    void render(sf::RenderWindow* window) override {
-        // drawPoints(window);
-        drawFaces(window);
-    }
+    void render(sf::RenderWindow* window) override;
 
-    void update(const sf::Time deltaTime) override {
-        angleXZ += deltaTime.asSeconds();
-    }
+    void update(sf::Time deltaTime) override;
 };
+#endif

@@ -4,113 +4,36 @@
 
 #pragma once
 #ifndef SERVER_BUILD
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 
 class Camera {
 public:
     Camera() = default;
-    explicit Camera(sf::RenderWindow* window) {
-        init(window);
-    }
+    explicit Camera(sf::RenderWindow* window);
 
-    void init(sf::RenderWindow* _window) {
-        this->window = _window;
-        this->floatRect = sf::FloatRect(0, 0,
-                        static_cast<float>(window->getSize().x),
-                        static_cast<float>(window->getSize().y));
-        this->view = sf::View(floatRect);
-        window->setView(view);
-    }
+    void init(sf::RenderWindow* _window);
 
-    void init() {
-        if (window) this->resize();
-    }
+    void init();
 
-    void resize() {
-        this->floatRect.width = static_cast<float>(window->getSize().x);
-        this->floatRect.height = static_cast<float>(window->getSize().y);
-        updateView();
-    }
+    void resize();
 
-    void setSize(const float width, const float height) {
-        this->floatRect.width = width;
-        this->floatRect.height = height;
-        updateView();
-    }
+    void setSize(const float width, const float height);
 
-    void setPosition(const float x, const float y) {
-        this->floatRect.left = x;
-        this->floatRect.top = y;
-        updateView();
-    }
+    void setPosition(const float x, const float y);
 
-    sf::Vector2f getPosition() const {
-        return {this->floatRect.left, this->floatRect.top};
-    }
+    sf::Vector2f getPosition() const;
 
-    void setPositionX(const float x) {
-        this->floatRect.left = x;
-        updateView();
-    }
+    void setPositionX(const float x);
 
-    void setMouseControl(const bool flag) {
-        this->mouseControl = flag;
-    }
+    void setMouseControl(const bool flag);
 
-    sf::Vector2f getCenter() const {
-        return view.getCenter();
-    }
+    sf::Vector2f getCenter() const;
 
-    void addPosition(const sf::Vector2i& pos) {
-        this->floatRect.left += static_cast<float>(pos.x);
-        this->floatRect.top += static_cast<float>(pos.y);
-        updateView();
-    }
+    void addPosition(const sf::Vector2i& pos);
 
-    void handleEvent(const sf::Event& event) {
-        if (event.type == sf::Event::KeyPressed) {
-            if (event.key.code == sf::Keyboard::Up) {
-                this->floatRect.top -= 20;
-                updateView();
-            } else if (event.key.code == sf::Keyboard::Down) {
-                this->floatRect.top += 20;
-                updateView();
-            } else if (event.key.code == sf::Keyboard::Left) {
-                this->floatRect.left -= 20;
-                updateView();
-            } else if (event.key.code == sf::Keyboard::Right) {
-                this->floatRect.left += 20;
-                updateView();
-            }
-        } else if (event.type == sf::Event::MouseWheelScrolled) {
-            float scale;
-            if (event.mouseWheelScroll.delta > 0) {
-                scale = 0.9f;
-            } else {
-                scale = 1.f / 0.9f;
-            }
-            floatRect.width *= scale;
-            floatRect.height *= scale;
-            updateView();
-        }
+    void handleEvent(const sf::Event& event);
 
-        if (mouseControl && event.type == sf::Event::MouseButtonPressed) {
-            isPressed = true;
-            mousePos = sf::Mouse::getPosition(*window);
-        }
-        if (mouseControl && event.type == sf::Event::MouseButtonReleased) {
-            isPressed = false;
-        }
-        if (mouseControl && isPressed && event.type == sf::Event::MouseMoved) {
-            const auto pos = sf::Mouse::getPosition(*window);
-            addPosition(mousePos - pos);
-            mousePos = pos;
-        }
-    }
-
-    sf::Vector2f getViewSize() const {
-         return floatRect.getSize();
-    }
+    sf::Vector2f getViewSize() const;
 
 private:
     sf::FloatRect floatRect;
@@ -120,9 +43,6 @@ private:
     sf::Vector2i mousePos;
     bool isPressed = false;
 
-    void updateView() {
-        view = sf::View(floatRect);
-        window->setView(view);
-    }
+    void updateView();
 };
 #endif

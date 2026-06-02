@@ -3,29 +3,15 @@
 //
 
 #pragma once
+#ifndef SERVER_BUILD
 
 #include "GameObject3D.h"
-#include "ModelManager.h"
 
 class Human3D : public GameObject3D {
 public:
-    Human3D() {
-        Model* p = ModelManager::getInstance().getModel("human");
-        if (p == nullptr) {
-            ModelManager::getInstance().loadModel(CONFIG.getModelPath("human"), "human");
-            this->model = ModelManager::getInstance().getModel("human");
-        } else {
-            this->model = p;
-        }
-        position = {0.0f, -3.0f, 5.0f};
-        className = "Human3D";
-    }
-    void render(sf::RenderWindow* window) override {
-        // drawPoints(window);
-        drawFaces(window);
-    }
+    Human3D();
+    void render(sf::RenderWindow* window) override;
 
-    void update(const sf::Time deltaTime) override {
-        angleXZ += deltaTime.asSeconds();
-    }
+    void update(sf::Time deltaTime) override;
 };
+#endif

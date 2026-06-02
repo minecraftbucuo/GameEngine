@@ -16,73 +16,32 @@ public:
         sf::Vector2f scale = {1.f, 1.f};
         unsigned int duration = 100;
     };
+
     Animation() = default;
     ~Animation() = default;
 
-    void addFrame(const Frame& frame) const {
-        frames->push_back(frame);
-    }
+    void addFrame(const Frame& frame) const;
 
-    void setBack(const bool flag) {
-        this->back = flag;
-    }
+    void setBack(bool flag);
 
-    void setFrames(std::vector<Frame>* _frames) {
-        this->frames = _frames;
-    }
+    void setFrames(std::vector<Frame>* _frames);
 
-    void update(const sf::Time& deltaTime) {
-        currentFrameDuration += deltaTime.asMilliseconds();
-        if (currentFrameDuration >= (*frames)[currentFrame].duration) {
-            currentFrameDuration = 0;
-            if (back) {
-                if (currentFrame == 0) add = 1;
-                else if (currentFrame == frames->size() - 1) {
-                    add = -1;
-                    over = true;
-                }
-                currentFrame = currentFrame + add;
-            } else {
-                if (currentFrame + 1 == frames->size()) over = true;
-                currentFrame = (currentFrame + 1) % frames->size();
-            }
-        }
-    }
+    void update(const sf::Time& deltaTime);
 
-    void render(sf::RenderWindow* window, const sf::Vector2f& position) {
-        sf::Sprite& sprite_ = this->getSprite();
-        sprite_.setPosition(position);
-        window->draw(sprite_);
-    }
+    void render(sf::RenderWindow* window, const sf::Vector2f& position);
 
     // 获取动画是否完整播放完一遍
-    bool isOver() const {
-        return over;
-    }
+    bool isOver() const;
 
-    Frame& getFrame() const {
-        return (*frames)[currentFrame];
-    }
+    Frame& getFrame() const;
 
-    std::vector<Frame>& getFrames() const {
-        return (*frames);
-    }
+    std::vector<Frame>& getFrames() const;
 
-    sf::Sprite& getSprite() {
-        sprite.setTexture(*(*frames)[currentFrame].texture);
-        sprite.setTextureRect((*frames)[currentFrame].textureRect);
-        sprite.setOrigin((*frames)[currentFrame].origin);
-        sprite.setScale((*frames)[currentFrame].scale);
-        return sprite;
-    }
+    sf::Sprite& getSprite();
 
-    float getFrameWidth() const {
-        return getFrame().scale.x * static_cast<float>(getFrame().textureRect.width);
-    }
+    float getFrameWidth() const;
 
-    float getFrameHeight() const {
-        return getFrame().scale.y * static_cast<float>(getFrame().textureRect.height);
-    }
+    float getFrameHeight() const;
 
 private:
     unsigned int currentFrame = 0;

@@ -16,27 +16,10 @@ public:
     explicit GameScene3D(sf::RenderWindow* _window) : Scene(_window, "GameScene3D") {}
     ~GameScene3D() override = default;
 
-    void init() override {
-        window->setSize(sf::Vector2u(1200, 1200));
-        Scene::init();
-        if (is_init) return;
-        is_init = true;
-        // this->addObject(std::make_shared<Penguin3D>());
-        // this->addObject(std::make_shared<Cube3D>());
-        this->addObject(std::make_shared<Cube3DWithController>());
-        // this->addObject(std::make_shared<NewModel3D>());
-        // this->addObject(std::make_shared<Human3D>());
-    }
+    void init() override;
 
-    void handleEvent(sf::Event& event) override {
-        Scene::handleEvent(event);
-        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-            SceneContext::getInstance().getSceneManager()->loadScene("MenuScene");
-        }
-    }
+    void handleEvent(sf::Event& event) override;
 
-    void exit() override {
-        window->setSize(sf::Vector2u(CONFIG.window.width, CONFIG.window.height));
-    }
+    void exit() override;
 };
 #endif
