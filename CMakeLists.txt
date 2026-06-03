@@ -22,9 +22,9 @@ else ()
     # 如果系统没有提供 SFML，使用项目提供的版本
     message(STATUS "System SFML not found, using bundled version")
     if (WIN32)
-        set(SFML_ROOT "./lib/SFML-2.6.1-gcc")
+        set(SFML_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/lib/SFML-2.6.1-gcc")
     else ()
-        set(SFML_ROOT "./lib/SFML-2.6.1-linux")
+        set(SFML_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/lib/SFML-2.6.1-linux")
     endif ()
 endif ()
 

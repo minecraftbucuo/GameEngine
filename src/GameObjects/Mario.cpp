@@ -13,6 +13,14 @@
 #include "CollisionSystem.h"
 #include "HealthBar.h"
 #include "MarioDeadState.h"
+#include "Collision.h"
+#include "GravityComponent.h"
+#include "BoxCollision.h"
+#include "AssetManager.h"
+#include "MarioJumpState.h"
+#include "EventBus.h"
+#include "FireBall.h"
+
 
 Mario::Mario(const float x, const float y, const bool isPlayer) {
     this->position = sf::Vector2f(x, y);
@@ -43,6 +51,11 @@ Mario::Mario(const float x, const float y, const bool isPlayer) {
     className = "Mario";
 }
 
+Mario::~Mario() {
+    EventBus::getInstance().removeSubscribe("onCollision" + this->tag);
+    LOG_DEBUG_FMT("The object tagged {} is destroyed", this->getTag());
+}
+
 void Mario::start() {
     GameObject::start();
     EventBus::getInstance().subscribe<CollisionEvent>(
@@ -61,6 +74,8 @@ void Mario::handleEvent(sf::Event& e) {
         }
     }
 }
+
+
 
 void Mario::shoot() {
     if (!could_shoot) return;
@@ -189,11 +204,19 @@ void Mario::handleCollision(const CollisionEvent& event) {
     }
 }
 
+bool Mario::getIsPlayer() const {
+    return isPlayer;
+}
+
 void Mario::destroy() {
     NetworkGameObject::destroy();
     if (this->isPlayer) {
         EventBus::getInstance().publish("PlayerDied", true);
     }
+}
+
+sf::Vector2f Mario::getCenter() {
+    return this->position + getComponent<Collision>()->getOffset() + this->size * 0.5f;
 }
 
 void Mario::serialize(sf::Packet& packet, const NetworkMsg type) {
@@ -247,7 +270,7 @@ void Mario::deserialize(sf::Packet& packet) {
         if (type == InputType::Jump) {
             const auto& state_machine = this->getComponent<StateMachine>();
             if (state_machine->getCurrentStateName() == "MarioDeadState") return;
-            marioController->jump();
+            marioController->jump(false);
             state_machine->setState("MarioJumpState");
             std::dynamic_pointer_cast<MarioJumpState>(state_machine->getCurrentState())->setJumpTimer();
         } else if (type == InputType::RunLeft) {

@@ -3,25 +3,17 @@
 //
 
 #pragma once
-#include "GameObject.h"
 #include <SFML/Graphics.hpp>
-
-#include "MarioJumpState.h"
-#include "Collision.h"
-#include "FireBall.h"
-#include "EventBus.h"
-#include "Logger.h"
 #include "NetworkGameObject.h"
-
+#include "Events.h"
+#include "Timer.h"
+#include <SFML/Audio.hpp>
 
 class Mario : public NetworkGameObject {
 public:
     Mario(float x, float y, bool isPlayer = true);
 
-    ~Mario() override {
-        EventBus::getInstance().removeSubscribe("onCollision" + this->tag);
-        LOG_DEBUG_FMT("The object tagged {} is destroyed", this->getTag());
-    }
+    ~Mario() override;
 
     void start() override;
 
@@ -35,15 +27,11 @@ public:
 
     void handleCollision(const CollisionEvent& event);
 
-    bool getIsPlayer() const {
-        return isPlayer;
-    }
+    bool getIsPlayer() const;
 
     void destroy() override;
 
-    sf::Vector2f getCenter() override {
-        return this->position + getComponent<Collision>()->getOffset() + this->size * 0.5f;
-    }
+    sf::Vector2f getCenter() override;
 
     void serialize(sf::Packet& packet, NetworkMsg type) override;
 

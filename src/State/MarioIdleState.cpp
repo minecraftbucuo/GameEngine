@@ -24,7 +24,6 @@ MarioIdleState::MarioIdleState() : BaseState("MarioIdleState") {
     left_sprite.setTextureRect(sf::IntRect(178, 32, 12, 16));
     left_sprite.setScale(-4.f, 4.f);
     left_sprite.setOrigin(static_cast<float>(right_sprite.getTextureRect().width), 0.f);
-    jump_sound.setBuffer(AssetManager::getInstance().getSoundBuffer("small_jump"));
 #endif
 }
 
@@ -58,15 +57,6 @@ void MarioIdleState::handleEvent(const sf::Event& event) {
         }
         else if (event.key.code == sf::Keyboard::D) {
             setIsLeft(false);
-        }
-        else if (event.key.code == sf::Keyboard::W) {
-#ifndef SERVER_BUILD
-            jump_sound.stop();
-            jump_sound.play();
-#endif
-            owner->getComponent<StateMachine>()->setState("MarioJumpState");
-            std::dynamic_pointer_cast<MarioJumpState>(owner->getComponent<StateMachine>()->getCurrentState())->
-                setJumpTimer();
         }
     }
 }

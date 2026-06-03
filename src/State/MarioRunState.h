@@ -6,7 +6,6 @@
 
 #include "Animation.h"
 #include "BaseState.h"
-#include <SFML/Audio.hpp>
 
 class MarioRunState : public BaseState {
 public:
@@ -31,6 +30,5 @@ private:
 #ifndef SERVER_BUILD
     Animation animation_right;
     Animation animation_left;
-    sf::Sound jump_sound;
 #endif
 };

@@ -9,13 +9,11 @@
 #include "GameObject.h"
 #include "Collision.h"
 #include "BoxCollision.h"
-#include "MarioJumpState.h"
 
 MarioRunState::MarioRunState() : BaseState("MarioRunState") {
 #ifndef SERVER_BUILD
     animation_right.setFrames(FrameManager::getInstance().getFrame("right_small_normal"));
     animation_left.setFrames(FrameManager::getInstance().getFrame("left_small_normal"));
-    jump_sound.setBuffer(AssetManager::getInstance().getSoundBuffer("small_jump"));
 #endif
 }
 
@@ -62,13 +60,6 @@ void MarioRunState::handleEvent(const sf::Event& event) {
             setIsLeft(true);
         } else if (event.key.code == sf::Keyboard::D) {
             setIsLeft(false);
-        } else if (event.key.code == sf::Keyboard::W) {
-#ifndef SERVER_BUILD
-            jump_sound.stop();
-            jump_sound.play();
-#endif
-            owner->getComponent<StateMachine>()->setState("MarioJumpState");
-            std::dynamic_pointer_cast<MarioJumpState>(owner->getComponent<StateMachine>()->getCurrentState())->setJumpTimer();
         }
     }
 }

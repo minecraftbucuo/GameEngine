@@ -8,6 +8,8 @@
 #include "MoveComponent.h"
 #include "StateMachine.h"
 #include "ConfigManager.h"
+#include "AssetManager.h"
+#include "MarioJumpState.h"
 
 void MarioController::handleEvent(const sf::Event& event) {
     if (event.type == sf::Event::KeyPressed) {
@@ -30,14 +32,24 @@ void MarioController::handleEvent(const sf::Event& event) {
     }
 }
 
-void MarioController::jump() const {
+void MarioController::jump(bool play_sound) const {
     std::shared_ptr<MoveComponent> moveComponent = owner->getComponent<MoveComponent>();
     if (!moveComponent) {
         moveComponent = owner->addComponent<MoveComponent>();
     }
     auto state = owner->getComponent<StateMachine>();
-    if (state && state->getCurrentStateName() != "MarioJumpState")
+    if (state && state->getCurrentStateName() != "MarioJumpState") {
         moveComponent->setSpeedY(-CONFIG.game.jumpForce);
+#ifndef SERVER_BUILD
+        if (play_sound) {
+            jump_sound.setBuffer(AssetManager::getInstance().getSoundBuffer("small_jump"));
+            jump_sound.stop();
+            jump_sound.play();
+        }
+#endif
+        state->setState("MarioJumpState");
+        std::dynamic_pointer_cast<MarioJumpState>(owner->getComponent<StateMachine>()->getCurrentState())->setJumpTimer();
+    }
 }
 
 void MarioController::runLeft() const {

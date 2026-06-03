@@ -12,6 +12,9 @@
 #include "Brick.h"
 #include "SceneContext.h"
 #include "SceneManager.h"
+#include "MoveComponent.h"
+#include "FireBall.h"
+#include "Collision.h"
 
 void SuperMarioScene::init() {
     Scene::init();

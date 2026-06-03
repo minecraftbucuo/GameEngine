@@ -4,9 +4,6 @@
 
 #pragma once
 #include "BaseState.h"
-#ifndef SERVER_BUILD
-#include <SFML/Audio.hpp>
-#endif
 
 class MarioIdleState : public BaseState {
 public:
@@ -29,6 +26,5 @@ private:
 #ifndef SERVER_BUILD
     sf::Sprite left_sprite;
     sf::Sprite right_sprite;
-    sf::Sound jump_sound;
 #endif
 };
