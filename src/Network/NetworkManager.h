@@ -51,6 +51,10 @@ public:
 
     void addGameObject(const std::shared_ptr<GameObject>& obj);
 
+    bool isClient() const;
+
+    TcpClient& getClientSocket();
+
 private:
     inline static const std::string CLIENT_TOKEN = "minecraftbucuo/mario";
     inline static const sf::Time VERIFY_TIMEOUT = sf::seconds(10);

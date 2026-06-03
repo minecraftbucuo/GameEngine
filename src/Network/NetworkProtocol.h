@@ -47,8 +47,7 @@ enum class InputType : uint8_t {
     Jump = 0,
     RunLeft = 1,
     RunRight = 2,
-    StopRunLeft = 3,
-    StopRunRight = 4,
-    JumpRelease = 5,
-    Shoot = 6
+    StopRun = 3,
+    JumpRelease = 4,
+    Shoot = 5
 };

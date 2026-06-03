@@ -32,14 +32,6 @@ public:
     }
     ~MarioJumpState() override = default;
 
-    void setJumpTimer() {
-        jump_timer.setCallback([&]() -> void {
-            w_is_pressed = false;
-        });
-        w_is_pressed = true;
-        jump_timer.start(500);
-    }
-
     void update(const sf::Time& deltaTime) override {
         if (owner->getSpeed().x < 0) {
             setIsLeft(true);
@@ -52,11 +44,6 @@ public:
         } else {
             box_collision->setOffset(sf::Vector2f(0.f, 0.f));
         }
-        if (w_is_pressed) {
-            jump_timer.update(deltaTime);
-            const auto& move_component = owner->getComponent<MoveComponent>();
-            move_component->addSpeed(sf::Vector2f(0.f, -1815.f * deltaTime.asSeconds()));
-        }
     }
 #ifndef SERVER_BUILD
     void handleEvent(const sf::Event& event) override {
@@ -67,9 +54,6 @@ public:
                 setIsLeft(false);
             }
         } else if (event.type == sf::Event::KeyReleased) {
-            if (event.key.code == sf::Keyboard::W) {
-                w_is_pressed = false;
-            }
         }
     }
 
@@ -93,15 +77,9 @@ public:
         owner->getComponent<StateMachine>()->setIsLeft(value);
     }
 
-    void set_w_is_pressed(const bool flag) {
-        w_is_pressed = flag;
-    }
-
 private:
 #ifndef SERVER_BUILD
     sf::Sprite left_sprite;
     sf::Sprite right_sprite;
 #endif
-    bool w_is_pressed = false;
-    Timer jump_timer;
 };

@@ -21,6 +21,8 @@ public:
 
     void init() override;
 
+    void exit() override;
+
     std::shared_ptr<GameObject> spawnEntity() override;
 
     std::shared_ptr<GameObject> spawnEntityWithNetwork() override;

@@ -98,47 +98,10 @@ void NetworkManager::handleEvent(const sf::Event& event) {
         }
     }
     if (network_type == NetworkType::Client) {
-        sf::Packet packet;
         if (event.type == sf::Event::KeyPressed) {
-            if (event.key.code == sf::Keyboard::W) {
-                packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
-                packet << InputType::Jump;
-                clientSocket.append(packet);
-            }
-            else if (event.key.code == sf::Keyboard::A) {
-                packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
-                packet << InputType::RunLeft;
-                clientSocket.append(packet);
-            }
-            else if (event.key.code == sf::Keyboard::D) {
-                packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
-                packet << InputType::RunRight;
-                clientSocket.append(packet);
-            }
-            else if (event.key.code == sf::Keyboard::J) {
-                packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
-                packet << InputType::Shoot;
-                clientSocket.append(packet);
-            }
-            else if (event.key.code == sf::Keyboard::R) {
+            if (event.key.code == sf::Keyboard::R) {
+                sf::Packet packet;
                 packet << NetworkMsg::ClientRespawn;
-                clientSocket.append(packet);
-            }
-        }
-        else if (event.type == sf::Event::KeyReleased) {
-            if (event.key.code == sf::Keyboard::A) {
-                packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
-                packet << InputType::StopRunLeft;
-                clientSocket.append(packet);
-            }
-            else if (event.key.code == sf::Keyboard::D) {
-                packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
-                packet << InputType::StopRunRight;
-                clientSocket.append(packet);
-            }
-            else if (event.key.code == sf::Keyboard::W) {
-                packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
-                packet << InputType::JumpRelease;
                 clientSocket.append(packet);
             }
         }
@@ -387,4 +350,12 @@ void NetworkManager::addGameObjectAndSync(const std::shared_ptr<GameObject>& obj
 
 void NetworkManager::addGameObject(const std::shared_ptr<GameObject>& obj) {
     game_objects.emplace_back(std::dynamic_pointer_cast<ISerializable>(obj));
+}
+
+bool NetworkManager::isClient() const {
+    return this->network_type == NetworkType::Client;
+}
+
+TcpClient& NetworkManager::getClientSocket() {
+    return clientSocket;
 }

@@ -6,7 +6,6 @@
 #include <SFML/Graphics.hpp>
 #include "NetworkGameObject.h"
 #include "Events.h"
-#include "Timer.h"
 #include <SFML/Audio.hpp>
 
 class Mario : public NetworkGameObject {
@@ -18,8 +17,6 @@ public:
     void start() override;
 
     void handleEvent(sf::Event& e) override;
-
-    void shoot();
 
     void update(sf::Time deltaTime) override;
 
@@ -39,9 +36,4 @@ public:
 
 private:
     bool isPlayer = true;
-    bool could_shoot = true;
-    Timer shoot_timer;
-#ifndef SERVER_BUILD
-    sf::Sound shoot_sound;
-#endif
 };

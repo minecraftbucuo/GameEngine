@@ -18,6 +18,7 @@
 
 void SuperMarioScene::init() {
     Scene::init();
+    SceneContext::getInstance().setNetworkManager(&(this->simple_network));
     if (is_init) return;
     is_init = true;
     collisionSystem = std::make_unique<CollisionSystem>();
@@ -38,6 +39,11 @@ void SuperMarioScene::init() {
 #ifdef SERVER_BUILD
     startServer();
 #endif
+}
+
+void SuperMarioScene::exit() {
+    Scene::exit();
+    SceneContext::getInstance().setNetworkManager(nullptr);
 }
 
 std::shared_ptr<GameObject> SuperMarioScene::spawnEntity() {

@@ -25,8 +25,8 @@
 Mario::Mario(const float x, const float y, const bool isPlayer) {
     this->position = sf::Vector2f(x, y);
     this->isPlayer = isPlayer;
-    const auto marioController = this->addComponent<MarioController>();
-    if (!isPlayer) marioController->setActive(false);
+    const auto marioController = this->addComponent<MarioController, true>();
+    if (!isPlayer) marioController->setIsPlayer(false);
 
     this->addComponent<Collision, BoxCollision, true>();
     // this->addComponent<CollisionHandle, BoxCollisionHandle>();
@@ -34,7 +34,6 @@ Mario::Mario(const float x, const float y, const bool isPlayer) {
     this->addComponent<HealthBar>();
 #ifndef SERVER_BUILD
     if (isPlayer) this->addComponent<MarioCameraComponent>();
-    shoot_sound.setBuffer(AssetManager::getInstance().getSoundBuffer("fireball"));
 #endif
     const auto stateMachine = this->addComponent<StateMachine>();
     stateMachine->addState<MarioRunState>();
@@ -44,8 +43,6 @@ Mario::Mario(const float x, const float y, const bool isPlayer) {
     stateMachine->setState("MarioIdleState");
 
     this->addComponent<MoveComponent>();
-
-    shoot_timer.setCallback([&]() -> void { could_shoot = true; });
 
     this->tag = "mario:" + std::to_string(this->id);
     className = "Mario";
@@ -68,38 +65,9 @@ void Mario::start() {
 
 void Mario::handleEvent(sf::Event& e) {
     if (isPlayer) GameObject::handleEvent(e);
-    if (e.type == sf::Event::KeyPressed) {
-        if (e.key.code == sf::Keyboard::J && this->isPlayer) {
-            shoot();
-        }
-    }
-}
-
-
-
-void Mario::shoot() {
-    if (!could_shoot) return;
-    could_shoot = false;
-    shoot_timer.start(CONFIG.game.shootDelay);
-#ifndef SERVER_BUILD
-    shoot_sound.stop();
-    shoot_sound.play();
-#endif
-    const auto current_scene = SceneContext::getInstance().getSceneManager()->getCurrentScene();
-    // TODO: 先这样写，到时候看怎么改好
-    if (current_scene->getNetworkType() == NetworkManager::NetworkType::Client) return;
-    if (this->getComponent<StateMachine>()->getIsLeft()) {
-        current_scene->addObjectWithNetwork(std::make_shared<FireBall>(getId(), position.x - 32.f, position.y, -600.f));
-    }
-    else {
-        current_scene->addObjectWithNetwork(std::make_shared<FireBall>(getId(), position.x +
-                                                            getComponent<Collision>()->getOffset().x + this->getSize().
-                                                            x, position.y, 600.f));
-    }
 }
 
 void Mario::update(sf::Time deltaTime) {
-    shoot_timer.update(deltaTime);
     if (needGravity()) {
         this->getComponent<GravityComponent>()->setActive(true);
         if (this->getComponent<StateMachine>()->getCurrentStateName() != "MarioJumpState")
@@ -268,26 +236,20 @@ void Mario::deserialize(sf::Packet& packet) {
         InputType type;
         packet >> type;
         if (type == InputType::Jump) {
-            const auto& state_machine = this->getComponent<StateMachine>();
-            if (state_machine->getCurrentStateName() == "MarioDeadState") return;
             marioController->jump(false);
-            state_machine->setState("MarioJumpState");
-            std::dynamic_pointer_cast<MarioJumpState>(state_machine->getCurrentState())->setJumpTimer();
         } else if (type == InputType::RunLeft) {
             marioController->runLeft();
         } else if (type == InputType::RunRight) {
             marioController->runRight();
-        } else if (type == InputType::StopRunLeft || type == InputType::StopRunRight) {
+        } else if (type == InputType::StopRun) {
             marioController->stopRun();
         } else if (type == InputType::JumpRelease) {
             // 处理长安跳跃键后松开的逻辑
             if (this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState") {
-                const auto& jump_state = std::dynamic_pointer_cast<MarioJumpState>(
-                    this->getComponent<StateMachine>()->getCurrentState());
-                jump_state->set_w_is_pressed(false);
+                marioController->setWisPressed(false);
             }
         } else if (type == InputType::Shoot) {
-            this->shoot();
+            marioController->shoot(false);
         }
     }
 }

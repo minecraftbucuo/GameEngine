@@ -9,6 +9,7 @@
 
 class GameObject;
 class SceneManager;
+class NetworkManager;
 
 class SceneContext {
 public:
@@ -38,6 +39,14 @@ public:
     [[nodiscard]] sf::Vector2i getMousePosition() const;
 #endif
 
+    void setNetworkManager(NetworkManager* _network_manager) {
+        network_manager = _network_manager;
+    }
+
+    NetworkManager* getNetworkManager() const {
+        return network_manager;
+    }
+
 private:
 #ifndef SERVER_BUILD
     sf::RenderWindow* window{};
@@ -45,5 +54,6 @@ private:
 #endif
     const std::vector<std::shared_ptr<GameObject>>* game_objects{};
     SceneManager* scene_manager{};
+    NetworkManager* network_manager{};
 };
 

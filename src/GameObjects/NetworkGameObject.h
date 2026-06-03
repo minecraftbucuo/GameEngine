@@ -14,6 +14,8 @@ public:
 
     NetworkGameObject() = default;
 
+    ~NetworkGameObject() override = default;
+
     unsigned int getNetworkId() override {
         return this->getId();
     }
