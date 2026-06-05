@@ -72,6 +72,10 @@ void Mario::update(sf::Time deltaTime) {
         this->getComponent<GravityComponent>()->setActive(true);
         if (this->getComponent<StateMachine>()->getCurrentStateName() != "MarioJumpState")
             this->getComponent<StateMachine>()->setState("MarioJumpState");
+    } else {
+        if (this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState") {
+            this->getComponent<StateMachine>()->setState("MarioIdleState");
+        }
     }
     GameObject::update(deltaTime);
     if (this->getPosition().y > static_cast<float>(SceneContext::getInstance().getWindowHeight())) {

@@ -84,7 +84,7 @@ void MarioController::jump(const bool play_sound) {
         if (play_sound) {
             jump_sound.stop();
             jump_sound.play();
-            LOG_DEBUG("jump sound play!");
+            LOG_TRACE("jump sound play!");
         }
 #endif
         state->setState("MarioJumpState");
@@ -161,7 +161,7 @@ void MarioController::shoot(const bool play_sound) {
     if (play_sound) {
         shoot_sound.stop();
         shoot_sound.play();
-        LOG_DEBUG("shoot sound play!");
+        LOG_TRACE("shoot sound play!");
     }
 #endif
     const auto network_manager = SceneContext::getInstance().getNetworkManager();

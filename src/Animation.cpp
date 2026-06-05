@@ -1,7 +1,7 @@
 //
 // Created by MINEC on 2026/6/2.
 //
-
+#ifndef SERVER_BUILD
 #include "Animation.h"
 
 void Animation::addFrame(const Frame& frame) const {
@@ -67,3 +67,4 @@ float Animation::getFrameWidth() const {
 float Animation::getFrameHeight() const {
     return getFrame().scale.y * static_cast<float>(getFrame().textureRect.height);
 }
+#endif

@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#ifndef SERVER_BUILD
 #include <vector>
 #include <SFML/Graphics.hpp>
 
@@ -52,3 +53,4 @@ private:
     bool over = false;
     int add = 1;
 };
+#endif
