@@ -17,15 +17,15 @@ public:
 
     void resize();
 
-    void setSize(const float width, const float height);
+    void setSize(float width, float height);
 
-    void setPosition(const float x, const float y);
+    void setPosition(float x, float y);
 
     sf::Vector2f getPosition() const;
 
-    void setPositionX(const float x);
+    void setPositionX(float x);
 
-    void setMouseControl(const bool flag);
+    void setMouseControl(bool flag);
 
     sf::Vector2f getCenter() const;
 

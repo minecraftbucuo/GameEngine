@@ -33,7 +33,7 @@ void MarioController::handleEvent(const sf::Event& event) {
         if (event.key.code == sf::Keyboard::D) {
             runRight();
         }
-        if (event.key.code == sf::Keyboard::W) {
+        if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Space) {
             jump();
         }
         if (event.key.code == sf::Keyboard::J) {
@@ -46,7 +46,7 @@ void MarioController::handleEvent(const sf::Event& event) {
         if (event.key.code == sf::Keyboard::D) {
             stopRun();
         }
-        if (event.key.code == sf::Keyboard::W) {
+        if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Space) {
             w_is_pressed = false;
             if (SceneContext::getInstance().getNetworkManager()->isClient()) {
                 sf::Packet packet;
