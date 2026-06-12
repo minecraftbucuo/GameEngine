@@ -30,37 +30,37 @@ void GameObject::start() {
 
 
 void GameObject::updateComponents(sf::Time deltaTime) {
-    for (const auto key : components_vector) {
+    for (const auto& key : components_vector) {
         auto it = components.find(key);
         if (it == components.end()) {
-            LOG_ERROR_FMT("Component not found: {}", key);
+            LOG_ERROR_FMT("Component not found: {}", key.name());
             continue;
         }
-        if (components[key]->getActive())
-            components[key]->update(deltaTime);
+        if (it->second->getActive())
+            it->second->update(deltaTime);
     }
 }
 
 void GameObject::renderComponents(sf::RenderWindow* window) {
-    for (const auto key : components_vector) {
+    for (const auto& key : components_vector) {
         auto it = components.find(key);
         if (it == components.end()) {
-            LOG_ERROR_FMT("Component not found: {}", key);
+            LOG_ERROR_FMT("Component not found: {}", key.name());
             continue;
         }
-        if (components[key]->getActive())
-            components[key]->render(window);
+        if (it->second->getActive())
+            it->second->render(window);
     }
 }
 
 void GameObject::handleComponents(sf::Event& e) {
-    for (const auto key : components_vector) {
+    for (const auto& key : components_vector) {
         auto it = components.find(key);
         if (it == components.end()) {
-            LOG_ERROR_FMT("Component not found: {}", key);
+            LOG_ERROR_FMT("Component not found: {}", key.name());
             continue;
         }
-        if (components[key]->getActive())
-            components[key]->handleEvent(e);
+        if (it->second->getActive())
+            it->second->handleEvent(e);
     }
 }

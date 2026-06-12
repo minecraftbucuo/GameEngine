@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <memory>
 #include <string>
+#include <typeindex>
 #include "Logger.h"
 
 class Scene;
@@ -58,7 +59,7 @@ public:
 
     template <typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args) {
-        const size_t componentId = typeid(T).hash_code();
+        const std::type_index componentId(typeid(T));
         std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
         components[componentId] = component;
         components_vector.emplace_back(componentId);
@@ -68,7 +69,7 @@ public:
 
     template <typename IT, typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args) {
-        const size_t componentId = typeid(IT).hash_code();
+        const std::type_index componentId(typeid(IT));
         std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
         components[componentId] = component;
         components_vector.emplace_back(componentId);
@@ -78,8 +79,9 @@ public:
 
     template <typename T>
     std::shared_ptr<T> getComponent() {
-        if (components.find(typeid(T).hash_code()) != components.end()) {
-            return std::static_pointer_cast<T>(components[typeid(T).hash_code()]);
+        const std::type_index key(typeid(T));
+        if (components.find(key) != components.end()) {
+            return std::static_pointer_cast<T>(components[key]);
         }
         LOG_INFO_FMT("{} : Component not found: {}", this->tag, typeid(T).name());
         return nullptr;
@@ -87,8 +89,9 @@ public:
 
     template <typename IT, typename T>
     std::shared_ptr<T> getComponent() {
-        if (components.contains(typeid(IT).hash_code())) {
-            return std::static_pointer_cast<T>(components[typeid(IT).hash_code()]);
+        const std::type_index key(typeid(IT));
+        if (components.contains(key)) {
+            return std::static_pointer_cast<T>(components[key]);
         }
         LOG_INFO_FMT("{} : Component not found: {}", this->tag, typeid(IT).name());
         return nullptr;
@@ -96,7 +99,7 @@ public:
 
     template <typename T>
     bool removeComponent() {
-        if (const size_t componentId = typeid(T).hash_code();
+        if (const std::type_index componentId(typeid(T));
             components.contains(componentId)) {
             components.erase(componentId);
             for (int i = 0; i < components_vector.size(); i++) {
@@ -184,8 +187,8 @@ protected:
     std::string tag = "game_object:";
     std::string className = "GameObject";
     Scene* scene{};
-    std::unordered_map<size_t, std::shared_ptr<Component>> components;
-    std::vector<size_t> components_vector;
+    std::unordered_map<std::type_index, std::shared_ptr<Component>> components;
+    std::vector<std::type_index> components_vector;
     inline static unsigned int idCounter = 0;
 };
 
