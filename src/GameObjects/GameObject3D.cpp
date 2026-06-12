@@ -3,7 +3,6 @@
 //
 #ifndef SERVER_BUILD
 #include "GameObject3D.h"
-#include "SceneContext.h"
 #include <cmath>
 
 void GameObject3D::update(const sf::Time deltaTime) {
@@ -26,11 +25,8 @@ void GameObject3D::drawFaces(sf::RenderWindow* window) const {
     }
 }
 
-sf::Vector2f GameObject3D::transToWindow(const sf::Vector2f& pos) {
-    const auto scene_context = SceneContext::getInstance();
-    const unsigned width = scene_context.getWindowWidth();
-    const unsigned height = scene_context.getWindowHeight();
-    return {(pos.x + 1) / 2 * static_cast<float>(width), (1 - pos.y) / 2 * static_cast<float>(height)};
+sf::Vector2f GameObject3D::transToWindow(const sf::Vector2f& pos, sf::Vector2u windowSize) {
+    return {(pos.x + 1) / 2 * static_cast<float>(windowSize.x), (1 - pos.y) / 2 * static_cast<float>(windowSize.y)};
 }
 
 void GameObject3D::drawPoint(sf::RenderWindow* window, const sf::Vector2f& pos) {

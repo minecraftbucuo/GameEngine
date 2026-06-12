@@ -11,6 +11,8 @@ class Cube3DWithController : public Cube3D {
 public:
     Cube3DWithController();
 
+    void start() override;
+
     void update(const sf::Time deltaTime) override {
     }
 

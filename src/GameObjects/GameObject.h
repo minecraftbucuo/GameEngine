@@ -10,6 +10,8 @@
 #include <string>
 #include "Logger.h"
 
+class Scene;
+
 class GameObject {
     friend class MoveComponent;
     friend class StateMachine;
@@ -31,9 +33,7 @@ public:
         renderComponents(window);
     }
 
-    virtual void start() {
-        started = true;
-    }
+    virtual void start();
 
     bool isActive() const {
         return active;
@@ -66,17 +66,6 @@ public:
         return component;
     }
 
-    template <typename T, bool Start, typename... Args>
-    std::shared_ptr<T> addComponent(Args&&... args) {
-        const size_t componentId = typeid(T).hash_code();
-        std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
-        components[componentId] = component;
-        components_vector.emplace_back(componentId);
-        component->setOwner(this);
-        if constexpr (Start) component->start();
-        return component;
-    }
-
     template <typename IT, typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args) {
         const size_t componentId = typeid(IT).hash_code();
@@ -84,17 +73,6 @@ public:
         components[componentId] = component;
         components_vector.emplace_back(componentId);
         component->setOwner(this);
-        return component;
-    }
-
-    template <typename IT, typename T, bool Start, typename... Args>
-    std::shared_ptr<T> addComponent(Args&&... args) {
-        const size_t componentId = typeid(IT).hash_code();
-        std::shared_ptr<T> component = std::make_shared<T>(std::forward<Args>(args)...);
-        components[componentId] = component;
-        components_vector.emplace_back(componentId);
-        component->setOwner(this);
-        if constexpr (Start) component->start();
         return component;
     }
 
@@ -172,6 +150,14 @@ public:
         return className;
     }
 
+    Scene* getScene() const {
+        return scene;
+    }
+
+    void setScene(Scene* s) {
+        scene = s;
+    }
+
     void updateComponents(sf::Time deltaTime);
 
     void renderComponents(sf::RenderWindow* window);
@@ -197,6 +183,7 @@ protected:
     unsigned int id;
     std::string tag = "game_object:";
     std::string className = "GameObject";
+    Scene* scene{};
     std::unordered_map<size_t, std::shared_ptr<Component>> components;
     std::vector<size_t> components_vector;
     inline static unsigned int idCounter = 0;

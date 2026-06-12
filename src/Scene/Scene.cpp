@@ -58,6 +58,7 @@ void Scene::handleEvent(sf::Event& event) {
 #endif
 
 void Scene::addObjectWithMap(const std::shared_ptr<GameObject>& obj) {
+    obj->setScene(this);
     game_objects.push_back(obj);
     game_objects_map[obj->getId()] = obj;
 }
@@ -99,3 +100,15 @@ void Scene::setSceneManager(SceneManager* _scene_manager) {
     scene_manager = _scene_manager;
     SceneContext::getInstance().setSceneManager(_scene_manager);
 }
+
+#ifndef SERVER_BUILD
+sf::Vector2i Scene::getMousePosition() const {
+    if (!window || !camera) return {};
+    const sf::Vector2f camera_center = camera->getCenter();
+    const sf::Vector2u window_size = window->getSize();
+    sf::Vector2i mouse_position = sf::Mouse::getPosition(*window);
+    mouse_position.x += static_cast<int>(camera_center.x - window_size.x * 0.5f);
+    mouse_position.y += static_cast<int>(camera_center.y - window_size.y * 0.5f);
+    return mouse_position;
+}
+#endif

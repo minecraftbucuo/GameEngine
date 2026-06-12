@@ -12,8 +12,7 @@
 #include "FireBall.h"
 #include "MarioJumpState.h"
 #include "NetworkManager.h"
-#include "SceneContext.h"
-#include "SceneManager.h"
+#include "Scene.h"
 
 void MarioController::start() {
 #ifndef SERVER_BUILD
@@ -48,11 +47,11 @@ void MarioController::handleEvent(const sf::Event& event) {
         }
         if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Space) {
             w_is_pressed = false;
-            if (SceneContext::getInstance().getNetworkManager()->isClient()) {
+            if (owner->getScene()->getNetworkManager()->isClient()) {
                 sf::Packet packet;
                 packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
                 packet << InputType::JumpRelease;
-                SceneContext::getInstance().getNetworkManager()->getClientSocket().append(packet);
+                owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
             }
         }
     }
@@ -91,11 +90,11 @@ void MarioController::jump(const bool play_sound) {
         w_is_pressed = true;
         jump_timer.start(500);
 
-        if (SceneContext::getInstance().getNetworkManager()->isClient()) {
+        if (owner->getScene()->getNetworkManager()->isClient()) {
             sf::Packet packet;
             packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
             packet << InputType::Jump;
-            SceneContext::getInstance().getNetworkManager()->getClientSocket().append(packet);
+            owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
         }
     }
 }
@@ -107,11 +106,11 @@ void MarioController::runLeft() const {
     }
     moveComponent->setSpeedX(-CONFIG.game.playerSpeed);
 
-    if (SceneContext::getInstance().getNetworkManager()->isClient()) {
+    if (owner->getScene()->getNetworkManager()->isClient()) {
         sf::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::RunLeft;
-        SceneContext::getInstance().getNetworkManager()->getClientSocket().append(packet);
+        owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
     }
 }
 
@@ -122,11 +121,11 @@ void MarioController::runRight() const {
     }
     moveComponent->setSpeedX(CONFIG.game.playerSpeed);
 
-    if (SceneContext::getInstance().getNetworkManager()->isClient()) {
+    if (owner->getScene()->getNetworkManager()->isClient()) {
         sf::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::RunRight;
-        SceneContext::getInstance().getNetworkManager()->getClientSocket().append(packet);
+        owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
     }
 }
 
@@ -137,11 +136,11 @@ void MarioController::stopRun() const {
     }
     moveComponent->setSpeedX(0.f);
 
-    if (SceneContext::getInstance().getNetworkManager()->isClient()) {
+    if (owner->getScene()->getNetworkManager()->isClient()) {
         sf::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::StopRun;
-        SceneContext::getInstance().getNetworkManager()->getClientSocket().append(packet);
+        owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
     }
 }
 
@@ -164,13 +163,13 @@ void MarioController::shoot(const bool play_sound) {
         LOG_TRACE("shoot sound play!");
     }
 #endif
-    const auto network_manager = SceneContext::getInstance().getNetworkManager();
-    const auto current_scene = SceneContext::getInstance().getSceneManager()->getCurrentScene();
+    const auto network_manager = owner->getScene()->getNetworkManager();
+    const auto current_scene = owner->getScene();
     if (network_manager->isClient()) {
         sf::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::Shoot;
-        SceneContext::getInstance().getNetworkManager()->getClientSocket().append(packet);
+        network_manager->getClientSocket().append(packet);
         return;
     }
     if (owner->getComponent<StateMachine>()->getIsLeft()) {

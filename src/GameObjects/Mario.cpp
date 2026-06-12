@@ -5,7 +5,6 @@
 #include "Mario.h"
 #include "MarioRunState.h"
 #include "StateMachine.h"
-#include "SceneContext.h"
 #include "SceneManager.h"
 #include "MarioCameraComponent.h"
 #include "MarioController.h"
@@ -25,10 +24,10 @@
 Mario::Mario(const float x, const float y, const bool isPlayer) {
     this->position = sf::Vector2f(x, y);
     this->isPlayer = isPlayer;
-    const auto marioController = this->addComponent<MarioController, true>();
+    const auto marioController = this->addComponent<MarioController>();
     if (!isPlayer) marioController->setIsPlayer(false);
 
-    this->addComponent<Collision, BoxCollision, true>();
+    this->addComponent<Collision, BoxCollision>();
     // this->addComponent<CollisionHandle, BoxCollisionHandle>();
     this->addComponent<GravityComponent>();
     this->addComponent<HealthBar>();
@@ -78,7 +77,7 @@ void Mario::update(sf::Time deltaTime) {
         }
     }
     GameObject::update(deltaTime);
-    if (this->getPosition().y > static_cast<float>(SceneContext::getInstance().getWindowHeight())) {
+    if (this->getPosition().y > static_cast<float>(getScene()->getWindowSize().y)) {
         if (this->getComponent<HealthBar>()->isDead()) return;
         this->getComponent<MoveComponent>()->setPositionY(-this->getSize().y);
     }
@@ -90,8 +89,7 @@ bool Mario::needGravity() {
     sf::Vector2f dy = sf::Vector2f(0.f, 1.f);
     collision->setCollisionPosition(collision->getCollisionPosition() + dy);
 
-    const auto game_objects = *SceneContext::getInstance().
-                               getSceneManager()->getCurrentScene()->getCollisionSystem()->getObjects();
+    const auto game_objects = *getScene()->getCollisionSystem()->getObjects();
 
     for (auto& game_object : game_objects) {
         if (game_object->getTag() == this->getTag()) continue;

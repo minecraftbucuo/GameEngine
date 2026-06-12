@@ -19,6 +19,8 @@
 void SuperMarioScene::init() {
     Scene::init();
     SceneContext::getInstance().setNetworkManager(&(this->simple_network));
+    this->setNetworkManager(&(this->simple_network));
+    simple_network.setCurrentScene(this);
     if (is_init) return;
     is_init = true;
     collisionSystem = std::make_unique<CollisionSystem>();
@@ -44,6 +46,7 @@ void SuperMarioScene::init() {
 void SuperMarioScene::exit() {
     Scene::exit();
     SceneContext::getInstance().setNetworkManager(nullptr);
+    this->setNetworkManager(nullptr);
 }
 
 std::shared_ptr<GameObject> SuperMarioScene::spawnEntity() {
@@ -184,11 +187,11 @@ void SuperMarioScene::handleEvent(sf::Event& event) {
     }
 
     if (event.type == sf::Event::MouseButtonPressed) {
-        const sf::Vector2i pos = SceneContext::getInstance().getMousePosition();
+        const sf::Vector2i pos = getMousePosition();
         LOG_TRACE_FMT("Mouse clicked at ({}, {})", pos.x, pos.y);
     } else if (event.type == sf::Event::KeyPressed) {
         if (event.key.code == sf::Keyboard::Escape) {
-            SceneContext::getInstance().getSceneManager()->loadScene("MenuScene");
+            getSceneManager()->loadScene("MenuScene");
         } else if (event.key.code == sf::Keyboard::R && show_death_screen) {
             show_death_screen = false;
             if (simple_network.getNetworkType() == NetworkManager::NetworkType::Server) {

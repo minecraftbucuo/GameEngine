@@ -3,12 +3,12 @@
 //
 
 #include "GravityComponent.h"
-#include "SceneContext.h"
 #include "MoveComponent.h"
 #include "GameObject.h"
+#include "Scene.h"
 
 void GravityComponent::update(const sf::Time& deltaTime) {
-    float worldHeight = SceneContext::getInstance().getWindowHeight();
+    float worldHeight = owner->getScene()->getWindowSize().y;
 
     if (std::abs(this->owner->getPosition().y + this->owner->getSize().y - worldHeight) < 0.1f
         && std::abs(owner->getSpeed().y) <= 1.f) return;

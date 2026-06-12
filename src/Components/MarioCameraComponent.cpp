@@ -5,11 +5,11 @@
 #ifndef SERVER_BUILD
 #include "MarioCameraComponent.h"
 #include "Camera.h"
-#include "SceneContext.h"
 #include "GameObject.h"
+#include "Scene.h"
 
-MarioCameraComponent::MarioCameraComponent() {
-    if (const Camera* camera = SceneContext::getInstance().getCamera()) {
+void MarioCameraComponent::start() {
+    if (const Camera* camera = owner->getScene()->getCamera()) {
         this->position = camera->getPosition();
     }
 }
@@ -18,7 +18,7 @@ void MarioCameraComponent::update(const sf::Time& deltaTime) {
     if (owner->getPosition().x > 500) this->setTargetPositionX(owner->getPosition().x - 500);
     else this->setTargetPositionX(0);
     if (this->target_position != this->position) {
-        if (Camera* camera = SceneContext::getInstance().getCamera()) {
+        if (Camera* camera = owner->getScene()->getCamera()) {
             position = position + (target_position - position) * 0.03f;
             camera->setPosition(position.x, position.y);
         }

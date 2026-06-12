@@ -5,7 +5,8 @@
 
 #include "Button.h"
 #include "AssetManager.h"
-#include "SceneContext.h"
+#include "GameObject.h"
+#include "Scene.h"
 
 Button::Button(const float x, const float y, const float w, const float h, const sf::String& button_text) {
     shape = sf::RectangleShape(sf::Vector2f(w, h));
@@ -44,7 +45,7 @@ void Button::handleEvent(sf::Event& event) {
 
 bool Button::isMouseOver() const {
     const sf::FloatRect buttonBounds = shape.getGlobalBounds();
-    const auto mouse_pos = SceneContext::getInstance().getMousePosition();
+    const auto mouse_pos = this->getScene()->getMousePosition();
     return buttonBounds.contains(static_cast<float>(mouse_pos.x), static_cast<float>(mouse_pos.y));
 }
 

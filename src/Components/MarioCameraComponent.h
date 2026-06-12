@@ -8,7 +8,10 @@
 
 class MarioCameraComponent : public Component {
 public:
-    MarioCameraComponent();
+    MarioCameraComponent() = default;
+
+    void start() override;
+
     void update(const sf::Time& deltaTime) override;
 
     void setTargetPosition(const sf::Vector2f& pos);

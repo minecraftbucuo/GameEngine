@@ -58,6 +58,7 @@ public:
     }
 
     virtual void addObject(const std::shared_ptr<GameObject>& obj) {
+        obj->setScene(this);
         game_objects.push_back(obj);
     }
 
@@ -99,6 +100,26 @@ public:
 
     void setSceneManager(SceneManager* _scene_manager);
 
+    [[nodiscard]] SceneManager* getSceneManager() const {
+        return scene_manager;
+    }
+
+    [[nodiscard]] NetworkManager* getNetworkManager() const {
+        return network_manager;
+    }
+
+    void setNetworkManager(NetworkManager* nm) {
+        network_manager = nm;
+    }
+
+#ifndef SERVER_BUILD
+    [[nodiscard]] sf::RenderWindow* getWindow() const {
+        return window;
+    }
+
+    [[nodiscard]] sf::Vector2i getMousePosition() const;
+#endif
+
     [[nodiscard]] virtual CollisionSystem* getCollisionSystem() const {
         return nullptr;
     }
@@ -118,5 +139,6 @@ protected:
 
     std::string scene_name;
     SceneManager* scene_manager{};
+    NetworkManager* network_manager{};
     bool is_init = false;
 };

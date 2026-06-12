@@ -4,7 +4,6 @@
 
 #ifndef SERVER_BUILD
 #include "GameScene3D.h"
-#include "SceneContext.h"
 #include "SceneManager.h"
 
 void GameScene3D::init() {
@@ -22,7 +21,7 @@ void GameScene3D::init() {
 void GameScene3D::handleEvent(sf::Event& event) {
     Scene::handleEvent(event);
     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-        SceneContext::getInstance().getSceneManager()->loadScene("MenuScene");
+        this->getSceneManager()->loadScene("MenuScene");
     }
 }
 

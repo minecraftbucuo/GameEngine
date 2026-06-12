@@ -10,9 +10,8 @@
 #include "CollisionHandle.h"
 #include "CircleCollisionHandle.h"
 #include "MarioJumpState.h"
-#include "SceneContext.h"
-#include "SceneManager.h"
 #include "CollisionSystem.h"
+#include "Scene.h"
 
 Circle::Circle(const float x, const float y, const float radius, const std::string& tag) {
     shape.setRadius(radius);
@@ -64,8 +63,7 @@ bool Circle::needGravity() {
     sf::Vector2f dy = sf::Vector2f(0.f, 1.f);
     collision->setCollisionPosition(collision->getCollisionPosition() + dy);
 
-    const auto game_objects = *SceneContext::getInstance().
-    getSceneManager()->getCurrentScene()->getCollisionSystem()->getObjects();
+    const auto& game_objects = *getScene()->getCollisionSystem()->getObjects();
 
     for (auto& game_object : game_objects) {
         if (game_object->getTag() == this->getTag()) continue;

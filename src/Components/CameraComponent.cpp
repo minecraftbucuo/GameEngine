@@ -6,11 +6,11 @@
 #include "CameraComponent.h"
 
 #include "Camera.h"
-#include "SceneContext.h"
 #include "GameObject.h"
+#include "Scene.h"
 
 void CameraComponent::update(const sf::Time& deltaTime) {
-    if (Camera* camera = SceneContext::getInstance().getCamera()) {
+    if (Camera* camera = owner->getScene()->getCamera()) {
         camera->setPosition(owner->getPosition().x - 400, owner->getPosition().y - 600);
     }
 }

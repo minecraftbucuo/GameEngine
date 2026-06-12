@@ -15,7 +15,7 @@ BoxGameObject::BoxGameObject() {
 BoxGameObject::BoxGameObject(const float posX, const float posY, const float width, const float height,
     const std::string& tag) : GameObject(posX, posY, width, height) {
     this->tag = tag + ":" + std::to_string(id);
-    this->addComponent<Collision, BoxCollision, true>();
+    this->addComponent<Collision, BoxCollision>();
     this->addComponent<CollisionHandle, BoxCollisionHandle>();
     className = "BoxGameObject";
 }

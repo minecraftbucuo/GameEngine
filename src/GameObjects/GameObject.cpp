@@ -4,6 +4,8 @@
 
 #include "GameObject.h"
 
+#include <ranges>
+
 #include "Logger.h"
 
 GameObject::GameObject() : position(0, 0), size(0, 0), speed(0, 0), active(true), started(false) {
@@ -17,6 +19,13 @@ GameObject::GameObject(const float posX, const float posY, const float width, co
     this->started = false;
     this->active = true;
     this->id = idCounter++;
+}
+
+void GameObject::start() {
+    started = true;
+    for (const auto& component : components | std::views::values) {
+        component->start();
+    }
 }
 
 

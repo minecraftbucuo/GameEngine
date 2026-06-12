@@ -24,7 +24,7 @@ FireBall::FireBall(const unsigned int owner_id, const float x, const float y, co
     this->setSize(CONFIG.game.defaultBlockSize / 2, CONFIG.game.defaultBlockSize / 2);
 #endif
 
-    this->addComponent<Collision, BoxCollision, true>();
+    this->addComponent<Collision, BoxCollision>();
     this->addComponent<GravityComponent>();
 
     this->addComponent<MoveComponent>()->setSpeed(sf::Vector2f(speed_x, CONFIG.game.fireballSpeedY));

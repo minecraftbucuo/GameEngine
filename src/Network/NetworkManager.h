@@ -13,6 +13,8 @@
 #include "GameObject.h"
 #include "TcpClient.h"
 
+class Scene;
+
 class NetworkManager {
 public:
     enum class NetworkType : uint8_t {
@@ -26,6 +28,9 @@ public:
     NetworkType getNetworkType() const {
         return network_type;
     }
+
+    void setCurrentScene(Scene* scene) { current_scene = scene; }
+    Scene* getCurrentScene() const { return current_scene; }
 
     bool startServer();
 
@@ -69,4 +74,5 @@ private:
     // 需要同步的游戏对象
     std::vector<std::weak_ptr<ISerializable>> game_objects;
     int past_time = 0;
+    Scene* current_scene{};
 };

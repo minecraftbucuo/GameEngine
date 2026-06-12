@@ -5,6 +5,7 @@
 #pragma once
 #ifndef SERVER_BUILD
 #include "GameObject.h"
+#include "Scene.h"
 #include "ModelManager.h"
 
 class GameObject3D : public GameObject {
@@ -27,7 +28,7 @@ protected:
 
     void drawFaces(sf::RenderWindow* window) const;
 
-    static sf::Vector2f transToWindow(const sf::Vector2f& pos);
+    static sf::Vector2f transToWindow(const sf::Vector2f& pos, sf::Vector2u windowSize);
 
     static sf::Vector2f project(const sf::Vector3f& pos) {
         return {pos.x / pos.z, pos.y / pos.z};
@@ -48,7 +49,7 @@ protected:
     }
 
     sf::Vector2f trans(const sf::Vector3f& point, const sf::Vector3f& pos) const {
-        return transToWindow(project(rotate(point) + pos));
+        return transToWindow(project(rotate(point) + pos), getScene()->getWindowSize());
     }
 
     Model* model{};

@@ -7,8 +7,7 @@
 #include <ranges>
 
 #include "Logger.h"
-#include "SceneContext.h"
-#include "SceneManager.h"
+#include "Scene.h"
 #include "NetworkProtocol.h"
 
 bool NetworkManager::startServer() {
@@ -133,7 +132,6 @@ void NetworkManager::initClientScene(const std::shared_ptr<TcpClient>& newClient
     }
 
     // 创建新加入的玩家
-    const auto current_scene = SceneContext::getInstance().getSceneManager()->getCurrentScene();
     // spawnEntityWithNetwork 方法会广播生成新对象的消息给clients vector里的所有客户端
     const auto newPlayer = current_scene->spawnEntityWithNetwork();
     players[newClient.get()] = std::dynamic_pointer_cast<ISerializable>(newPlayer);
@@ -185,8 +183,6 @@ void NetworkManager::verifyClient() {
 
 void NetworkManager::respawnPlayer(const std::shared_ptr<TcpClient>& client) {
     // 创建重生玩家
-    const auto current_scene = SceneContext::getInstance().getSceneManager()->getCurrentScene();
-
     const auto newPlayer = current_scene->spawnEntity();
     players[client.get()] = std::dynamic_pointer_cast<ISerializable>(newPlayer);
 
@@ -302,15 +298,14 @@ void NetworkManager::clientUpdate(const sf::Time& deltaTime) {
             if (type == NetworkMsg::SpawnObject || type == NetworkMsg::SpawnPlayer) {
                 LOG_INFO_FMT("Received packet, type: SpawnObject, IsPlayer: {}", type == NetworkMsg::SpawnPlayer);
                 players[&clientSocket] = std::dynamic_pointer_cast<ISerializable>(
-                    SceneContext::getInstance().getSceneManager()->getCurrentScene()->spawnEntityWithNetwork(packet));
+                    current_scene->spawnEntityWithNetwork(packet));
             }
             else if (type == NetworkMsg::UpdateObject) {
                 LOG_TRACE("Received packet, type: UpdateObject");
                 unsigned int id;
                 packet >> id;
                 const std::shared_ptr<ISerializable>& obj = std::dynamic_pointer_cast<ISerializable>(
-                    SceneContext::getInstance().getSceneManager()->
-                                                getCurrentScene()->findGameObjectById(id));
+                    current_scene->findGameObjectById(id));
                 if (!obj) {
                     LOG_ERROR_FMT("Object with ID {} are not found", id);
                     packet.clear();
@@ -322,13 +317,12 @@ void NetworkManager::clientUpdate(const sf::Time& deltaTime) {
                 LOG_TRACE("Received packet, type: RemoveObject");
                 unsigned int id;
                 packet >> id;
-                SceneContext::getInstance().getSceneManager()->
-                                            getCurrentScene()->findGameObjectById(id)->destroy();
-                SceneContext::getInstance().getSceneManager()->getCurrentScene()->removeObjectById(id);
+                current_scene->findGameObjectById(id)->destroy();
+                current_scene->removeObjectById(id);
             }
             else if (type == NetworkMsg::SpawnFireBall) {
                 LOG_TRACE("Received packet, type: SpawnFireBall");
-                SceneContext::getInstance().getSceneManager()->getCurrentScene()->spawnEntityWithNetwork(packet);
+                current_scene->spawnEntityWithNetwork(packet);
             }
         }
         status = clientSocket.receive(packet);
