@@ -3,13 +3,11 @@
 //
 
 #include <Scene.h>
-#include "SceneContext.h"
 
 void Scene::init() {
 #ifndef SERVER_BUILD
     this->setCamera(window);
 #endif
-    this->setSceneContext();
     GameObject::resetIdCounter();
 }
 
@@ -87,18 +85,8 @@ void Scene::removeObjectById(const unsigned int id) {
     }
 }
 
-void Scene::setSceneContext() const {
-#ifndef SERVER_BUILD
-    if (window) SceneContext::getInstance().setWindow(window);
-    if (camera) SceneContext::getInstance().setCamera(camera.get());
-#endif
-    SceneContext::getInstance().setGameObjects(&game_objects);
-    SceneContext::getInstance().setSceneManager(scene_manager);
-}
-
 void Scene::setSceneManager(SceneManager* _scene_manager) {
     scene_manager = _scene_manager;
-    SceneContext::getInstance().setSceneManager(_scene_manager);
 }
 
 #ifndef SERVER_BUILD

@@ -81,8 +81,6 @@ public:
         return camera.get();
     }
 #endif
-    // 场景大小和上下文管理
-    void setSceneContext() const;
 
 #ifndef SERVER_BUILD
     [[nodiscard]] sf::Vector2u getWindowSize() const {

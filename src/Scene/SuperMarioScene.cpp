@@ -10,7 +10,6 @@
 #include "Ground.h"
 #include "Box.h"
 #include "Brick.h"
-#include "SceneContext.h"
 #include "SceneManager.h"
 #include "MoveComponent.h"
 #include "FireBall.h"
@@ -18,7 +17,6 @@
 
 void SuperMarioScene::init() {
     Scene::init();
-    SceneContext::getInstance().setNetworkManager(&(this->simple_network));
     this->setNetworkManager(&(this->simple_network));
     simple_network.setCurrentScene(this);
     if (is_init) return;
@@ -45,7 +43,6 @@ void SuperMarioScene::init() {
 
 void SuperMarioScene::exit() {
     Scene::exit();
-    SceneContext::getInstance().setNetworkManager(nullptr);
     this->setNetworkManager(nullptr);
 }
 
