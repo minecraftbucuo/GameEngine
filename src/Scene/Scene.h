@@ -68,9 +68,9 @@ public:
 
     }
 
-    std::shared_ptr<GameObject> findGameObjectById(const unsigned int id);
+    std::shared_ptr<GameObject> findGameObjectById(unsigned int id);
 
-    void removeObjectById(const unsigned int id);
+    void removeObjectById(unsigned int id);
 #ifndef SERVER_BUILD
     // 相机管理
     void setCamera(sf::RenderWindow* _window) {

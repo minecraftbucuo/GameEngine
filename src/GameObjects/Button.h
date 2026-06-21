@@ -11,6 +11,9 @@
 class Button : public GameObject {
 public:
     Button(float x, float y, float w, float h, const sf::String& button_text = "Button");
+
+    void update(sf::Time deltaTime) override;
+
     void render(sf::RenderWindow* window) override;
 
     void handleEvent(sf::Event& event) override;
@@ -24,9 +27,44 @@ public:
     void runOnClick() const;
 
 private:
-    sf::RectangleShape shape;
-    std::function<void()> onClick;
-    sf::Text text;
+    void drawRoundedRect(sf::RenderWindow* window, sf::Vector2f pos, sf::Vector2f size,
+                         float radius, const sf::Color& fillColor, const sf::Color& outlineColor, float outlineThickness);
+
+    void drawFilledRoundedRect(sf::RenderWindow* window, sf::Vector2f pos, sf::Vector2f size,
+                               float radius, const sf::Color& color);
+
+    // 位置和尺寸
+    sf::Vector2f position;
+    sf::Vector2f size;
+    float cornerRadius = 12.f;
+
+    // 状态
     bool is_hover = false;
+    bool is_pressed = false;
+
+    // 缩放动画
+    float currentScale = 1.f;
+    float targetScale = 1.f;
+    float hoverScale = 1.12f;
+    float scaleLerpSpeed = 6.f;
+
+    // 三态颜色配置
+    struct StateColors {
+        sf::Color fill;
+        sf::Color outline;
+    };
+    StateColors normalColors  = {{137, 180, 255}, {116, 199, 255}};
+    StateColors hoverColors   = {{166, 255, 161}, {148, 255, 213}};
+    StateColors pressedColors = {{40, 120, 70}, {30, 90, 50}};
+
+    // 文字
+    sf::Text text;
+    sf::Text textShadow;
+
+    // 边框
+    float outlineThickness = 2.f;
+
+    // 回调
+    std::function<void()> onClick;
 };
 #endif

@@ -39,7 +39,7 @@ private:
     sf::FloatRect floatRect;
     sf::View view;
     sf::RenderWindow* window{};
-    bool mouseControl = true;
+    bool mouseControl = false;
     sf::Vector2i mousePos;
     bool isPressed = false;
 
