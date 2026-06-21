@@ -9,13 +9,12 @@
 #include "SceneManager.h"
 
 MenuScene::MenuScene(sf::RenderWindow* _window) : Scene(_window, "MenuScene") {
-    title.setString(L"Menu");
+    title.setString(L"GameEngine");
     title.setFillColor(sf::Color::Yellow);
     title.setFont(AssetManager::getInstance().getFont());
-    title.setScale(2.f, 2.f);
-    // 让标题居中
+    title.setScale(3.f, 3.f);
     title.setPosition(_window->getSize().x * 0.5f - title.getGlobalBounds().width * 0.5f,
-                      window->getSize().y * 0.15f - title.getGlobalBounds().height * 0.5f);
+                      _window->getSize().y * 0.18f);
 }
 
 void MenuScene::init() {
@@ -26,39 +25,42 @@ void MenuScene::init() {
 }
 
 void MenuScene::initScene() {
-    std::shared_ptr<Button> button1 = std::make_shared<Button>(100, 100, 250, 50, L"超级玛丽Client");
-    button1->setOnClick([&]() -> void {
+    const float winW = static_cast<float>(window->getSize().x);
+    const float winH = static_cast<float>(window->getSize().y);
+    const float btnW = 280.f;
+    const float btnH = 55.f;
+    const float startY = winH * 0.45f;
+    const float spacing = 35.f;
+
+    auto makeButton = [&](const sf::String& label, int index, auto&& callback) {
+        auto btn = std::make_shared<Button>(0, 0, btnW, btnH, label);
+        btn->setOnClick(std::forward<decltype(callback)>(callback));
+        btn->setToRectCenter(0, startY + index * (btnH + spacing), winW, btnH);
+        this->addObject(btn);
+    };
+
+    makeButton(L"超级玛丽 Client", 0, [&]() -> void {
         getSceneManager()->loadScene("SuperMarioScene");
         std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->connectToServer(
             CONFIG.network.serverIp);
     });
-    std::shared_ptr<Button> button1_ = std::make_shared<Button>(100, 100, 250, 50, L"超级玛丽Server");
-    button1_->setOnClick([&]() -> void {
+
+    makeButton(L"超级玛丽 Server", 1, [&]() -> void {
         getSceneManager()->loadScene("SuperMarioScene");
         std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->startServer();
     });
-    button1->setToRectCenter(0, window->getSize().y * 0.25f, window->getSize().x * 0.5f,
-                             window->getSize().y * 0.25f);
-    this->addObject(button1);
-    button1_->setToRectCenter(window->getSize().x * 0.5f, window->getSize().y * 0.25f,
-                              window->getSize().x * 0.5f, window->getSize().y * 0.25f);
-    this->addObject(button1_);
 
-    std::shared_ptr<Button> button2 = std::make_shared<Button>(100, 100, 200, 50, L"3D渲染");
-    button2->setOnClick([&]() -> void {
+    makeButton(L"3D 渲染", 2, [&]() -> void {
         getSceneManager()->loadScene("GameScene3D");
     });
-    button2->setToRectCenter(0, window->getSize().y * 0.5f, window->getSize().x,
-                             window->getSize().y * 0.25f);
-    this->addObject(button2);
 
-    std::shared_ptr<Button> button3 = std::make_shared<Button>(100, 100, 200, 50, L"Demo");
-    button3->setOnClick([&]() -> void {
+    makeButton(L"Demo", 3, [&]() -> void {
         getSceneManager()->loadScene("GameScene");
     });
-    button3->setToRectCenter(0, window->getSize().y * 0.75f, window->getSize().x,
-                             window->getSize().y * 0.25f);
-    this->addObject(button3);
+
+    makeButton(L"设置", 4, [&]() -> void {
+        // TODO: 进入设置界面
+    });
 }
 
 void MenuScene::render(sf::RenderWindow* _window) {
