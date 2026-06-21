@@ -15,9 +15,19 @@ public:
 
     void initScene();
 
+    void update(sf::Time deltaTime) override;
+
     void render(sf::RenderWindow* _window) override;
 
 private:
     sf::Text title;
+
+    struct Particle {
+        sf::CircleShape shape;
+        sf::Vector2f velocity;
+        float alpha;
+        float alphaSpeed;
+    };
+    std::vector<Particle> particles;
 };
 #endif
