@@ -21,6 +21,8 @@ public:
 
     bool load();
 
+    bool save();
+
     // Window 配置
     struct WindowConfig {
         unsigned width = 1200;

@@ -60,7 +60,7 @@ void MenuScene::initScene() {
     });
 
     makeButton(L"设置", 4, [&]() -> void {
-        // TODO: 进入设置界面
+        getSceneManager()->loadScene("SettingsScene");
     });
 
     // 初始化背景粒子

@@ -81,6 +81,54 @@ void ConfigManager::parseGame(const json& j) {
     game.fireBallTTL = j.value("fireBallTTL", game.fireBallTTL);
 }
 
+bool ConfigManager::save() {
+    try {
+        const auto path = "./Asset/config.json";
+
+        // 先读取现有配置，保留 assets 等未修改的部分
+        json config;
+        {
+            std::ifstream in(path);
+            if (in.is_open()) {
+                in >> config;
+            }
+        }
+
+        // Window
+        config["window"]["width"] = window.width;
+        config["window"]["height"] = window.height;
+        config["window"]["title"] = window.title;
+        config["window"]["fps"] = window.fps;
+
+        // Network
+        config["network"]["serverIp"] = network.serverIp;
+        config["network"]["port"] = network.port;
+        config["network"]["tickRate"] = network.tickRate;
+        config["network"]["timeout"] = network.timeout;
+
+        // Game
+        config["game"]["gravity"] = game.gravity;
+        config["game"]["playerSpeed"] = game.playerSpeed;
+        config["game"]["jumpForce"] = game.jumpForce;
+        config["game"]["fireballSpeedY"] = game.fireballSpeedY;
+        config["game"]["defaultBlockSize"] = game.defaultBlockSize;
+        config["game"]["shootDelay"] = game.shootDelay;
+        config["game"]["fireBallTTL"] = game.fireBallTTL;
+        config["game"]["debug"] = game.debug;
+
+        std::ofstream file(path);
+        if (!file.is_open()) {
+            LOG_ERROR_FMT("Failed to open config file for writing: {}", path);
+            return false;
+        }
+        file << config.dump(4);
+        return true;
+    } catch (const std::exception& e) {
+        LOG_ERROR_FMT("Config save error: {}", e.what());
+        return false;
+    }
+}
+
 
 
 
