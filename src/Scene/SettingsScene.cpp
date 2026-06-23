@@ -55,7 +55,7 @@ void SettingsScene::initScene() {
     const float rowH = 50.f;
     const float groupGap = 30.f;
 
-    float y = 140.f;
+    float y = 130.f;
 
     // ── 窗口设置 ──
     labels.push_back(makeGroupTitle(L"窗口设置(重启生效)", labelX, y));
@@ -98,11 +98,39 @@ void SettingsScene::initScene() {
     portInput->setString(std::to_string(CONFIG.network.port));
     portInput->setAllowedChars("0123456789");
     addObject(portInput);
+    y += rowH;
+
+    labels.push_back(makeLabel(L"网络帧率", labelX, y + 8.f));
+    tickRateInput = std::make_shared<TextInput>(inputX, y, inputW, inputH, "128");
+    tickRateInput->setString(std::to_string(CONFIG.network.tickRate));
+    tickRateInput->setAllowedChars("0123456789");
+    addObject(tickRateInput);
     y += rowH + groupGap;
 
     // ── 游戏设置 ──
     labels.push_back(makeGroupTitle(L"游戏设置", labelX, y));
     y += 50.f;
+
+    labels.push_back(makeLabel(L"重力", labelX, y + 8.f));
+    gravityInput = std::make_shared<TextInput>(inputX, y, inputW, inputH, "3200.0");
+    gravityInput->setString(std::format("{:.1f}", CONFIG.game.gravity));
+    gravityInput->setAllowedChars("0123456789.");
+    addObject(gravityInput);
+    y += rowH;
+
+    labels.push_back(makeLabel(L"玩家速度", labelX, y + 8.f));
+    playerSpeedInput = std::make_shared<TextInput>(inputX, y, inputW, inputH, "500.0");
+    playerSpeedInput->setString(std::format("{:.1f}", CONFIG.game.playerSpeed));
+    playerSpeedInput->setAllowedChars("0123456789.");
+    addObject(playerSpeedInput);
+    y += rowH;
+
+    labels.push_back(makeLabel(L"跳跃力度", labelX, y + 8.f));
+    jumpForceInput = std::make_shared<TextInput>(inputX, y, inputW, inputH, "900.0");
+    jumpForceInput->setString(std::format("{:.1f}", CONFIG.game.jumpForce));
+    jumpForceInput->setAllowedChars("0123456789.");
+    addObject(jumpForceInput);
+    y += rowH;
 
     labels.push_back(makeLabel(L"调试模式", labelX, y + 8.f));
     debugToggle = std::make_shared<Toggle>(inputX, y + 3.f, 60.f, 30.f, CONFIG.game.debug);
@@ -126,12 +154,20 @@ void SettingsScene::initScene() {
             try { return std::stoi(s.toAnsiString()); }
             catch (...) { return fallback; }
         };
+        auto toFloat = [](const sf::String& s, float fallback) -> float {
+            try { return std::stof(s.toAnsiString()); }
+            catch (...) { return fallback; }
+        };
 
         CONFIG.window.width = toUint(widthInput->getString(), CONFIG.window.width);
         CONFIG.window.height = toUint(heightInput->getString(), CONFIG.window.height);
         CONFIG.window.fps = toInt(fpsInput->getString(), CONFIG.window.fps);
         CONFIG.network.serverIp = ipInput->getString().toAnsiString();
         CONFIG.network.port = toInt(portInput->getString(), CONFIG.network.port);
+        CONFIG.network.tickRate = toInt(tickRateInput->getString(), CONFIG.network.tickRate);
+        CONFIG.game.gravity = toFloat(gravityInput->getString(), CONFIG.game.gravity);
+        CONFIG.game.playerSpeed = toFloat(playerSpeedInput->getString(), CONFIG.game.playerSpeed);
+        CONFIG.game.jumpForce = toFloat(jumpForceInput->getString(), CONFIG.game.jumpForce);
         CONFIG.game.debug = debugToggle->getState();
 
         CONFIG.save();

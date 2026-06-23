@@ -29,6 +29,10 @@ private:
     std::shared_ptr<TextInput> fpsInput;
     std::shared_ptr<TextInput> ipInput;
     std::shared_ptr<TextInput> portInput;
+    std::shared_ptr<TextInput> tickRateInput;
+    std::shared_ptr<TextInput> gravityInput;
+    std::shared_ptr<TextInput> playerSpeedInput;
+    std::shared_ptr<TextInput> jumpForceInput;
     std::shared_ptr<Toggle> debugToggle;
 };
 #endif
