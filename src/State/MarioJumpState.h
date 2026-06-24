@@ -53,7 +53,6 @@ public:
             } else if (event.key.code == sf::Keyboard::D) {
                 setIsLeft(false);
             }
-        } else if (event.type == sf::Event::KeyReleased) {
         }
     }
 

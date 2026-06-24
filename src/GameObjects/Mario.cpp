@@ -72,7 +72,8 @@ void Mario::update(sf::Time deltaTime) {
         if (this->getComponent<StateMachine>()->getCurrentStateName() != "MarioJumpState")
             this->getComponent<StateMachine>()->setState("MarioJumpState");
     } else {
-        if (this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState") {
+        if (this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState"
+            && this->getSpeed().y == 0.f) {
             this->getComponent<StateMachine>()->setState("MarioIdleState");
         }
     }
@@ -165,7 +166,11 @@ void Mario::handleCollision(const CollisionEvent& event) {
         if (top_y > bottom_y) {
             moveComponent->moveCollisionYTo(event.b_position.y - this_->getSize().y);
             moveComponent->setSpeedY(0.f);
-            this->getComponent<StateMachine>()->setState("MarioIdleState");
+            if (std::abs(this_->getSpeed().x) > 0.f) {
+                this->getComponent<StateMachine>()->setState("MarioRunState");
+            } else {
+                this->getComponent<StateMachine>()->setState("MarioIdleState");
+            }
             this->getComponent<GravityComponent>()->setActive(false);
         }
         else {
