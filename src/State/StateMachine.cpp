@@ -28,6 +28,7 @@ void StateMachine::setState(const std::string& stateName) {
         LOG_INFO_FMT("State {} does not exist!", stateName);
         return;
     }
+    if (currentState && currentState->getName() == stateName) return;
     if (currentState) {
         currentState->stop();
     }

@@ -236,7 +236,13 @@ void Mario::deserialize(sf::Packet& packet) {
         packet >> x >> y >> s_x >> s_y >> is_jump;
         const auto& move_component = this->getComponent<MoveComponent>();
         move_component->setPosition(x, y);
-        move_component->setSpeed(s_x, s_y);
+        // 客户端玩家正在跳跃时，服务器可能还没处理跳跃，不应覆盖本地 speed.y
+        if (isPlayer && getScene()->getNetworkManager()->isClient()
+            && this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState") {
+            move_component->setSpeed(s_x, this->getSpeed().y);
+        } else {
+            move_component->setSpeed(s_x, s_y);
+        }
         if (is_jump) this->getComponent<StateMachine>()->setState("MarioJumpState");
     } else if (msg_type == NetworkMsg::ClientInput) {
         const auto& marioController = this->getComponent<MarioController>();
