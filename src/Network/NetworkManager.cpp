@@ -239,14 +239,17 @@ void NetworkManager::serverUpdate(const sf::Time& deltaTime) {
         }
         // 处理玩家的输入操作
         while (status == sf::Socket::Done) {
+            // 客户端会把一帧内产生的多个输入消息合并进同一个 Packet。
+            // 这里必须把 Packet 内的消息全部读完，否则松开按键等后续输入会被忽略。
             NetworkMsg msg_type;
-            packet >> msg_type;
-            if (msg_type == NetworkMsg::ClientRespawn) {
-                LOG_INFO("client request to respawn");
-                respawnPlayer(client);
-            } else if (msg_type == NetworkMsg::ClientInput) {
-                if (player) {
-                    player->deserialize(packet);
+            while (packet >> msg_type) {
+                if (msg_type == NetworkMsg::ClientRespawn) {
+                    LOG_INFO("client request to respawn");
+                    respawnPlayer(client);
+                } else if (msg_type == NetworkMsg::ClientInput) {
+                    if (player) {
+                        player->deserialize(packet);
+                    }
                 }
             }
             status = client->receive(packet);
