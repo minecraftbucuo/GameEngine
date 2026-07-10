@@ -3,6 +3,9 @@
 //
 
 #include "Mario.h"
+
+#include <algorithm>
+
 #include "MarioRunState.h"
 #include "StateMachine.h"
 #include "SceneManager.h"
@@ -20,6 +23,27 @@
 #include "EventBus.h"
 #include "FireBall.h"
 
+namespace {
+    // 本地玩家已经在客户端预测移动，服务端快照的小误差不要硬拉回去，否则会抖动。
+    constexpr float LOCAL_POSITION_TOLERANCE = 6.f;
+    // 超过这个距离说明客户端和服务端已经明显不同步，需要直接使用服务端权威位置。
+    constexpr float LOCAL_POSITION_SNAP_DISTANCE = 120.f;
+    // 中等误差每次只修正一部分，让校正过程看起来更平滑。
+    constexpr float LOCAL_CORRECTION_RATIO = 0.18f;
+    // 远端玩家不受本地输入控制，可以更贴近服务端快照，但仍然避免每个网络包瞬移。
+    constexpr float REMOTE_POSITION_TOLERANCE = 1.5f;
+    constexpr float REMOTE_POSITION_SNAP_DISTANCE = 180.f;
+    constexpr float REMOTE_CORRECTION_SPEED = 18.f;
+
+    // 这里只比较距离大小，不需要开方，避免每个网络同步包都做 sqrt。
+    float lengthSquared(const sf::Vector2f& value) {
+        return value.x * value.x + value.y * value.y;
+    }
+
+    float clamp01(const float value) {
+        return std::max(0.f, std::min(1.f, value));
+    }
+}
 
 Mario::Mario(const float x, const float y, const bool isPlayer) {
     this->position = sf::Vector2f(x, y);
@@ -78,6 +102,7 @@ void Mario::update(sf::Time deltaTime) {
         }
     }
     GameObject::update(deltaTime);
+    applyRemoteNetworkSmoothing(deltaTime);
     if (this->getPosition().y > static_cast<float>(getScene()->getWindowSize().y)) {
         if (this->getComponent<HealthBar>()->isDead()) return;
         this->getComponent<MoveComponent>()->setPositionY(-this->getSize().y);
@@ -234,16 +259,22 @@ void Mario::deserialize(sf::Packet& packet) {
         float x, y, s_x, s_y;
         bool is_jump;
         packet >> x >> y >> s_x >> s_y >> is_jump;
-        const auto& move_component = this->getComponent<MoveComponent>();
-        move_component->setPosition(x, y);
-        // 客户端玩家正在跳跃时，服务器可能还没处理跳跃，不应覆盖本地 speed.y
-        if (isPlayer && getScene()->getNetworkManager()->isClient()
-            && this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState") {
-            move_component->setSpeed(s_x, this->getSpeed().y);
+        const sf::Vector2f serverPosition{x, y};
+        const sf::Vector2f serverSpeed{s_x, s_y};
+        if (isPlayer && getScene()->getNetworkManager()->isClient()) {
+            // 本地玩家：保留客户端预测手感，只用服务端状态做温和纠偏。
+            reconcileLocalPlayer(serverPosition, serverSpeed, is_jump);
+        } else if (!isPlayer && getScene()->getNetworkManager()->isClient()) {
+            // 远端玩家：记录服务端目标点，后续在 update 里逐帧平滑靠近。
+            networkTargetPosition = serverPosition;
+            networkTargetSpeed = serverSpeed;
+            hasNetworkTarget = true;
+            const auto& move_component = this->getComponent<MoveComponent>();
+            move_component->setSpeed(serverSpeed);
+            if (is_jump) this->getComponent<StateMachine>()->setState("MarioJumpState");
         } else {
-            move_component->setSpeed(s_x, s_y);
+            setAuthoritativeState(serverPosition, serverSpeed, is_jump);
         }
-        if (is_jump) this->getComponent<StateMachine>()->setState("MarioJumpState");
     } else if (msg_type == NetworkMsg::ClientInput) {
         const auto& marioController = this->getComponent<MarioController>();
         InputType type;
@@ -265,4 +296,76 @@ void Mario::deserialize(sf::Packet& packet) {
             marioController->shoot(false);
         }
     }
+}
+
+// 只在客户端的远端玩家对象上生效。
+// 收到服务端快照时不立刻 setPosition，而是在每帧逐步靠近目标点，减少远端角色瞬移感。
+void Mario::applyRemoteNetworkSmoothing(const sf::Time deltaTime) {
+    if (isPlayer || !hasNetworkTarget || !getScene()->getNetworkManager()->isClient()) return;
+
+    const auto& move_component = this->getComponent<MoveComponent>();
+    if (!move_component) return;
+
+    const sf::Vector2f delta = networkTargetPosition - this->getPosition();
+    const float distance_squared = lengthSquared(delta);
+    // 远端对象偏差过大时直接同步，避免长期追不上服务端真实位置。
+    if (distance_squared >= REMOTE_POSITION_SNAP_DISTANCE * REMOTE_POSITION_SNAP_DISTANCE) {
+        move_component->setPosition(networkTargetPosition);
+        move_component->setSpeed(networkTargetSpeed);
+        hasNetworkTarget = false;
+        return;
+    }
+
+    // 已经足够接近时吸附到目标点，避免小数误差导致一直微调。
+    if (distance_squared <= REMOTE_POSITION_TOLERANCE * REMOTE_POSITION_TOLERANCE) {
+        move_component->setPosition(networkTargetPosition);
+        move_component->setSpeed(networkTargetSpeed);
+        hasNetworkTarget = false;
+        return;
+    }
+
+    // 按帧时间计算本帧修正比例，帧率变化时平滑速度也比较稳定。
+    const float correction = clamp01(REMOTE_CORRECTION_SPEED * deltaTime.asSeconds());
+    move_component->addPosition(delta * correction);
+    move_component->setSpeed(networkTargetSpeed);
+}
+
+// 只用于客户端自己的玩家。
+// 本地玩家已经根据输入预测移动，这里只负责用服务端快照纠偏，避免旧快照反复拉扯角色。
+void Mario::reconcileLocalPlayer(const sf::Vector2f& serverPosition, const sf::Vector2f& serverSpeed, const bool isJump) {
+    const auto& move_component = this->getComponent<MoveComponent>();
+    if (!move_component) return;
+
+    const sf::Vector2f delta = serverPosition - this->getPosition();
+    const float distance_squared = lengthSquared(delta);
+    // 大偏差通常来自碰撞分歧、掉线重连或长时间丢包，此时平滑会显得拖泥带水，直接校正。
+    if (distance_squared >= LOCAL_POSITION_SNAP_DISTANCE * LOCAL_POSITION_SNAP_DISTANCE) {
+        setAuthoritativeState(serverPosition, serverSpeed, isJump);
+        return;
+    }
+
+    // 小误差直接忽略，中等误差慢慢补回来，避免服务端旧快照和本地预测来回抢位置。
+    if (distance_squared > LOCAL_POSITION_TOLERANCE * LOCAL_POSITION_TOLERANCE) {
+        move_component->addPosition(delta * LOCAL_CORRECTION_RATIO);
+    }
+
+    if (isJump) this->getComponent<StateMachine>()->setState("MarioJumpState");
+}
+
+// 无平滑地应用服务端权威位置和速度。
+// 当前主要在本地玩家偏离服务端太远时调用，作为防止长期不同步的兜底。
+void Mario::setAuthoritativeState(const sf::Vector2f& serverPosition, const sf::Vector2f& serverSpeed, const bool isJump) {
+    const auto& move_component = this->getComponent<MoveComponent>();
+    if (!move_component) return;
+
+    // 权威同步路径：用于服务端对象或客户端严重偏离服务端时。
+    move_component->setPosition(serverPosition);
+    // 客户端玩家正在跳跃时，服务器可能还没处理跳跃，不应覆盖本地 speed.y
+    if (isPlayer && getScene()->getNetworkManager()->isClient()
+        && this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState") {
+        move_component->setSpeed(serverSpeed.x, this->getSpeed().y);
+    } else {
+        move_component->setSpeed(serverSpeed);
+    }
+    if (isJump) this->getComponent<StateMachine>()->setState("MarioJumpState");
 }
