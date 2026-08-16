@@ -261,10 +261,11 @@ void Mario::deserialize(sf::Packet& packet) {
         packet >> x >> y >> s_x >> s_y >> is_jump;
         const sf::Vector2f serverPosition{x, y};
         const sf::Vector2f serverSpeed{s_x, s_y};
-        if (isPlayer && getScene()->getNetworkManager()->isClient()) {
+        const auto* nm = getScene()->getNetworkManager();
+        if (isPlayer && nm && nm->isClient()) {
             // 本地玩家：保留客户端预测手感，只用服务端状态做温和纠偏。
             reconcileLocalPlayer(serverPosition, serverSpeed, is_jump);
-        } else if (!isPlayer && getScene()->getNetworkManager()->isClient()) {
+        } else if (!isPlayer && nm && nm->isClient()) {
             // 远端玩家：记录服务端目标点，后续在 update 里逐帧平滑靠近。
             networkTargetPosition = serverPosition;
             networkTargetSpeed = serverSpeed;
@@ -301,7 +302,8 @@ void Mario::deserialize(sf::Packet& packet) {
 // 只在客户端的远端玩家对象上生效。
 // 收到服务端快照时不立刻 setPosition，而是在每帧逐步靠近目标点，减少远端角色瞬移感。
 void Mario::applyRemoteNetworkSmoothing(const sf::Time deltaTime) {
-    if (isPlayer || !hasNetworkTarget || !getScene()->getNetworkManager()->isClient()) return;
+    const auto* nm = getScene()->getNetworkManager();
+    if (isPlayer || !hasNetworkTarget || !nm || !nm->isClient()) return;
 
     const auto& move_component = this->getComponent<MoveComponent>();
     if (!move_component) return;
@@ -361,7 +363,8 @@ void Mario::setAuthoritativeState(const sf::Vector2f& serverPosition, const sf::
     // 权威同步路径：用于服务端对象或客户端严重偏离服务端时。
     move_component->setPosition(serverPosition);
     // 客户端玩家正在跳跃时，服务器可能还没处理跳跃，不应覆盖本地 speed.y
-    if (isPlayer && getScene()->getNetworkManager()->isClient()
+    const auto* nm = getScene()->getNetworkManager();
+    if (isPlayer && nm && nm->isClient()
         && this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState") {
         move_component->setSpeed(serverSpeed.x, this->getSpeed().y);
     } else {
