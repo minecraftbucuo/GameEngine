@@ -47,11 +47,12 @@ void MarioController::handleEvent(const sf::Event& event) {
         }
         if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Space) {
             w_is_pressed = false;
-            if (owner->getScene()->getNetworkManager()->isClient()) {
+            auto* nm = owner->getScene()->getNetworkManager();
+            if (nm && nm->isClient()) {
                 sf::Packet packet;
                 packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
                 packet << InputType::JumpRelease;
-                owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
+                nm->getClientSocket().append(packet);
             }
         }
     }
@@ -90,11 +91,12 @@ void MarioController::jump(const bool play_sound) {
         w_is_pressed = true;
         jump_timer.start(500);
 
-        if (owner->getScene()->getNetworkManager()->isClient()) {
+        auto* nm = owner->getScene()->getNetworkManager();
+        if (nm && nm->isClient()) {
             sf::Packet packet;
             packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
             packet << InputType::Jump;
-            owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
+            nm->getClientSocket().append(packet);
         }
     }
 }
@@ -106,11 +108,12 @@ void MarioController::runLeft() const {
     }
     moveComponent->setSpeedX(-CONFIG.game.playerSpeed);
 
-    if (owner->getScene()->getNetworkManager()->isClient()) {
+    auto* nm = owner->getScene()->getNetworkManager();
+    if (nm && nm->isClient()) {
         sf::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::RunLeft;
-        owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
+        nm->getClientSocket().append(packet);
     }
 }
 
@@ -121,11 +124,12 @@ void MarioController::runRight() const {
     }
     moveComponent->setSpeedX(CONFIG.game.playerSpeed);
 
-    if (owner->getScene()->getNetworkManager()->isClient()) {
+    auto* nm = owner->getScene()->getNetworkManager();
+    if (nm && nm->isClient()) {
         sf::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::RunRight;
-        owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
+        nm->getClientSocket().append(packet);
     }
 }
 
@@ -136,11 +140,12 @@ void MarioController::stopRun() const {
     }
     moveComponent->setSpeedX(0.f);
 
-    if (owner->getScene()->getNetworkManager()->isClient()) {
+    auto* nm = owner->getScene()->getNetworkManager();
+    if (nm && nm->isClient()) {
         sf::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::StopRun;
-        owner->getScene()->getNetworkManager()->getClientSocket().append(packet);
+        nm->getClientSocket().append(packet);
     }
 }
 
@@ -163,9 +168,9 @@ void MarioController::shoot(const bool play_sound) {
         LOG_TRACE("shoot sound play!");
     }
 #endif
-    const auto network_manager = owner->getScene()->getNetworkManager();
+    auto* network_manager = owner->getScene()->getNetworkManager();
     const auto current_scene = owner->getScene();
-    if (network_manager->isClient()) {
+    if (network_manager && network_manager->isClient()) {
         sf::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::Shoot;

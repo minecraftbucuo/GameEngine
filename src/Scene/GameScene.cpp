@@ -16,6 +16,7 @@
 #include "SceneManager.h"
 #include "MoveComponent.h"
 #include "Collision.h"
+#include "Mario.h"
 
 void GameScene::init() {
     Scene::init();
@@ -26,10 +27,12 @@ void GameScene::init() {
 }
 
 void GameScene::initScene() {
-    std::shared_ptr<Player> player = std::make_shared<Player>(300, 0, 40);
-    player->addComponent<Controller>();
-    player->addComponent<CameraComponent>();
-    this->addObject(player);
+    // std::shared_ptr<Player> player = std::make_shared<Player>(300, 0, 40);
+    // player->addComponent<Controller>();
+    // player->addComponent<CameraComponent>();
+    // this->addObject(player);
+    std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
+    this->addObject(mario);
 
     std::shared_ptr<Player> player2 = std::make_shared<Player>(60, 300, 40);
     // player2->removeComponent<GravityComponent>();

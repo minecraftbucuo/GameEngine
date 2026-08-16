@@ -37,8 +37,7 @@ void CollisionHandle::handle(const CollisionEvent& event) {
                               event.b_position.y + other->getSize().y) - std::max(
         event.a_position.y, event.b_position.y);
 
-    if (std::abs(dx - dy) <= 0.1f) return;
-    // 水平碰撞
+    // 选择重叠更小的方向进行解析，避免角落穿透
     if (dx < dy) {
         const float relativeSpeedX = event.b_speed.x - event.a_speed.x;
         moveComponent->setSpeedX(relativeSpeedX * 0.28f);
