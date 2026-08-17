@@ -7,8 +7,6 @@
 #include "EventBus.h"
 #include "Events.h"
 #include "GravityComponent.h"
-#include "CollisionHandle.h"
-#include "CircleCollisionHandle.h"
 #include "MarioJumpState.h"
 #include "CollisionSystem.h"
 #include "Scene.h"
@@ -19,8 +17,8 @@ Circle::Circle(const float x, const float y, const float radius, const std::stri
     this->size = sf::Vector2f(radius * 2, radius * 2);
     shape.setPosition(x, y);
 
+    // 物理响应由 CollisionSystem 求解器统一处理，不再添加 CollisionHandle 组件（B1/B6 清理）
     this->addComponent<Collision, CircleCollision>(this->position.x + radius, this->position.y + radius, this->size.x / 2);
-    this->addComponent<CollisionHandle, CircleCollisionHandle>();
     this->addComponent<GravityComponent>();
     this->addComponent<MoveComponent>();
 

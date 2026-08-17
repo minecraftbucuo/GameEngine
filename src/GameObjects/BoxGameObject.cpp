@@ -4,9 +4,8 @@
 
 #include "BoxGameObject.h"
 #include "Collision.h"
-#include "CollisionHandle.h"
-#include "BoxCollisionHandle.h"
 #include "BoxCollision.h"
+#include "Events.h"
 
 BoxGameObject::BoxGameObject() {
     className = "BoxGameObject";
@@ -15,8 +14,8 @@ BoxGameObject::BoxGameObject() {
 BoxGameObject::BoxGameObject(const float posX, const float posY, const float width, const float height,
     const std::string& tag) : GameObject(posX, posY, width, height) {
     this->tag = tag + ":" + std::to_string(id);
+    // 物理响应由 CollisionSystem 求解器统一处理，不再添加 CollisionHandle 组件（B1/B6 清理）
     this->addComponent<Collision, BoxCollision>();
-    this->addComponent<CollisionHandle, BoxCollisionHandle>();
     className = "BoxGameObject";
 }
 

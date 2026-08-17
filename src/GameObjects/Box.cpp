@@ -4,7 +4,7 @@
 #include "Box.h"
 
 #include "Collision.h"
-#include "CollisionHandle.h"
+#include "Events.h"
 #include "FrameManager.h"
 #include "GravityComponent.h"
 #include "MoveComponent.h"
@@ -28,8 +28,6 @@ Box::Box(const float x, const float y, const std::string& tag) : BoxGameObject(x
 #endif
     this->setSize(w, h);
     this->getComponent<Collision, BoxCollision>()->setSize(w, h);
-
-    this->removeComponent<CollisionHandle>();
 
     this->addComponent<MoveComponent>();
     this->addComponent<GravityComponent>()->setActive(false);

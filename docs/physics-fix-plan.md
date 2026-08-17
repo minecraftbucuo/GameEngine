@@ -21,7 +21,7 @@
 | | B3 统一碰撞体坐标语义 | ✅ |
 | | B4 broad-phase（空间哈希） | ⬜ |
 | | B5 物理参数配置化 | ⬜ |
-| | B6 删除 Mario 重复逻辑并回归 | ⬜ |
+| | B6 删除重复逻辑并回归 | ✅ |
 | 阶段 C 收尾 | C1 b 侧空指针判空 | ⬜ |
 | | C2 typeid hash 分发改显式分发 | ⬜ |
 | | C3 删除 needGravity 探针写法 | ⬜ |
@@ -197,12 +197,13 @@ GameEngine::start (165fps)
   - 替换各 handle 与求解器中的魔法数字（`0.28f`、`2.f`、`150.f`、`0.1f`、`20.f`、`2.f`）。
 - [ ] **完成标准**：改 `config.json` 中物理参数能直接改变 demo 中球的回弹/静止行为。
 
-#### B6 删除 Mario 重复逻辑并回归
+#### B6 删除重复逻辑并回归
 
-- [ ] **改动**
-  - `src/GameObjects/Mario.cpp:133-205`：删除 `handleCollision` 里重复的 box 解析逻辑，统一走 B1/B2 的求解器；Mario 只保留游戏逻辑（FireBall 伤害、状态切换、落地时重力关闭等）。
-  - `CollisionHandle::handle` 与 `CircleCollisionHandle` 的 box 路径同样收敛到求解器。
-- [ ] **完成标准**：SuperMarioScene 完整回归：移动、跳跃、落地、撞墙、踩怪/被怪碰手感与修复前一致或更好。
+- [x] **改动**
+  - **删除 `CollisionHandle` / `CircleCollisionHandle` / `BoxCollisionHandle` 三个类**（`src/Components/CollisionHandles/` 6 个文件）：B1 后物理响应统一到求解器，事件订阅者不再调用它们，全部为死代码（已确认无任何调用者）。
+  - 清理 `Circle.cpp` / `Player.cpp` / `BoxGameObject.cpp` 的 `addComponent<CollisionHandle, ...>()` 与相关 include；`Box.cpp` 的 `removeComponent<CollisionHandle>()`；`Mario.cpp` 的注释引用。
+  - `Mario::handleCollision` 与 `FireBall::handleCollision` **保留**（各自承载游戏逻辑：伤害/状态/爆炸/弹跳，且 Mario 被求解器排除、物理由其事件处理保持手感）。
+- [x] **完成标准**：SuperMarioScene 与 demo 行为与清理前一致；编译无未定义引用。
 
 ### 阶段 C：收尾清理
 

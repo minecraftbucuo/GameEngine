@@ -48,7 +48,6 @@ Mario::Mario(const float x, const float y, const bool isPlayer) {
     if (!isPlayer) marioController->setIsPlayer(false);
 
     this->addComponent<Collision, BoxCollision>();
-    // this->addComponent<CollisionHandle, BoxCollisionHandle>();
     this->addComponent<GravityComponent>();
     this->addComponent<HealthBar>();
 #ifndef SERVER_BUILD
