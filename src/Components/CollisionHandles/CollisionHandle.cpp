@@ -29,6 +29,23 @@ void CollisionHandle::handle(const CollisionEvent& event) {
     std::shared_ptr<MoveComponent> moveComponent = this_->getComponent<MoveComponent>();
     if (!moveComponent) return;
 
+    // 位置分离辅助：双方各分摊一半修正距离（对方不可移动时由本方推完整距离），
+    // 避免双方各自移动完整重叠距离导致总分离 2 倍
+    auto moveToHalfX = [&](const float targetX) {
+        const auto collision = this_->getComponent<Collision>();
+        if (!collision) return;
+        const sf::Vector2f cur = collision->getCollisionPosition();
+        const float x = other->getMoveAble() ? cur.x + (targetX - cur.x) * 0.5f : targetX;
+        moveComponent->moveCollisionTo(sf::Vector2f(x, cur.y));
+    };
+    auto moveToHalfY = [&](const float targetY) {
+        const auto collision = this_->getComponent<Collision>();
+        if (!collision) return;
+        const sf::Vector2f cur = collision->getCollisionPosition();
+        const float y = other->getMoveAble() ? cur.y + (targetY - cur.y) * 0.5f : targetY;
+        moveComponent->moveCollisionTo(sf::Vector2f(cur.x, y));
+    };
+
     // 计算 x 方向和 y 方向的重合度
     const float dx = std::min(event.a_position.x + this_->getSize().x,
                               event.b_position.x + other->getSize().x) - std::max(
@@ -48,10 +65,10 @@ void CollisionHandle::handle(const CollisionEvent& event) {
             event.a_position.x + this_->getSize().x - (event.b_position.x + other->getSize().x * 0.5f));
         float left_x = std::abs(event.a_position.x - (event.b_position.x + other->getSize().x * 0.5f));
         if (right_x < left_x) {
-            moveComponent->moveCollisionXTo(event.b_position.x - this_->getSize().x);
+            moveToHalfX(event.b_position.x - this_->getSize().x);
         }
         else {
-            moveComponent->moveCollisionXTo(event.b_position.x + other->getSize().x);
+            moveToHalfX(event.b_position.x + other->getSize().x);
         }
     }
     else {
@@ -64,13 +81,13 @@ void CollisionHandle::handle(const CollisionEvent& event) {
         float bottom_y = std::abs(
             event.a_position.y + this_->getSize().y - (event.b_position.y + other->getSize().y * 0.5f));
         if (top_y > bottom_y) {
-            moveComponent->moveCollisionYTo(event.b_position.y - this_->getSize().y);
+            moveToHalfY(event.b_position.y - this_->getSize().y);
             if (std::abs(this_->getSpeed().y) <= 150.f) {
                 moveComponent->setSpeedY(0.f);
             }
         }
         else {
-            moveComponent->moveCollisionYTo(event.b_position.y + other->getSize().y);
+            moveToHalfY(event.b_position.y + other->getSize().y);
         }
     }
 }

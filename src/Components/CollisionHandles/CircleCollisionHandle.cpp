@@ -41,9 +41,15 @@ void CircleCollisionHandle::handleCollisionWithCircle(const CollisionEvent& even
 
     dir /= dir_len;
 
+    // 冲量：沿法向把本方推离对方（双方各自的事件都会执行，碰撞是相互的）
     moveComponent->addSpeed(dir * relativeSpeed_len * 0.28f);
 
-    // 完全分离两个圆形
+    // 位置分离：双方各分摊一半修正距离，避免双方各自移动完整重叠距离导致总分离 2 倍。
+    // 若对方不可移动（如地面），则由本方推完整距离（对方不动）。
     const float move_dis = (this_->getSize().x / 2 + other->getSize().x / 2 - dir_len);
-    moveComponent->addPosition(move_dis * dir);
+    if (other->getMoveAble()) {
+        moveComponent->addPosition(move_dis * 0.5f * dir);
+    } else {
+        moveComponent->addPosition(move_dis * dir);
+    }
 }
