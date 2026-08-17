@@ -28,6 +28,11 @@ public:
 
     [[nodiscard]] float getHeight() const;
 
+    // B4：AABB 登记用
+    [[nodiscard]] sf::Vector2f getSize() const override {
+        return size;
+    }
+
     // B3：中心 = 左上角 + 半尺寸
     [[nodiscard]] sf::Vector2f getCenter() const override;
 

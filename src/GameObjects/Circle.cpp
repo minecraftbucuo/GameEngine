@@ -65,9 +65,12 @@ bool Circle::needGravity() {
     sf::Vector2f dy = sf::Vector2f(0.f, 1.f);
     collision->setCollisionPosition(collision->getCollisionPosition() + dy);
 
-    const auto& game_objects = *getScene()->getCollisionSystem()->getObjects();
+    // B4：空间查询替代全量遍历——只检查探针区域 cell 内的候选对象
+    const sf::Vector2f min = collision->getCollisionPosition();
+    const sf::Vector2f max = min + this->getSize();
+    const auto candidates = getScene()->getCollisionSystem()->queryAABB(min, max);
 
-    for (auto& game_object : game_objects) {
+    for (const auto& game_object : candidates) {
         if (game_object->getTag() == this->getTag()) continue;
         auto other_collision = game_object->getComponent<Collision>();
         if (!other_collision) continue;

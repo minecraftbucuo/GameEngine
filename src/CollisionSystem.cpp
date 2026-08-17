@@ -13,6 +13,7 @@
 #include "Events.h"
 #include <algorithm>
 #include <cmath>
+#include <unordered_set>
 
 namespace {
 
@@ -154,33 +155,12 @@ void CollisionSystem::checkCollisions() {
         return obj->isDestroy();
     });
 
+    // 重建空间哈希网格（B4 broad-phase，O(n)）
+    buildBroadPhase();
+
     // 第一阶段：检测 → Contact 列表（几何基于帧开始时的快照，与事件快照一致）
     std::vector<Contact> contacts;
-
-    for (size_t i = 0; i < objects.size(); i++) {
-        for (size_t j = i + 1; j < objects.size(); j++) {
-            const auto a = objects[i];
-            const auto b = objects[j];
-            if (!a->getMoveAble() && !b->getMoveAble()) continue;
-            if (!a->isActive() || !b->isActive()) continue;
-
-            const auto a_c = a->getComponent<Collision>();
-            if (!a_c || !a_c->getActive()) continue;
-
-            if (const auto b_c = b->getComponent<Collision>();
-                b_c && b_c->getActive() && a_c->checkCollision(*b_c)) {
-                Contact contact;
-                contact.a = a;
-                contact.b = b;
-                contact.a_speed = a->getSpeed();
-                contact.b_speed = b->getSpeed();
-                contact.a_position = a_c->getCollisionPosition();
-                contact.b_position = b_c->getCollisionPosition();
-                computeContact(contact, a_c.get(), b_c.get());
-                contacts.push_back(contact);
-            }
-        }
-    }
+    collectPairs(contacts);
 
     // 第二阶段：迭代求解物理响应
     solveContacts(contacts);
@@ -193,6 +173,98 @@ void CollisionSystem::checkCollisions() {
         EventBus::getInstance().publish("onCollision" + c.b->getTag(),
             CollisionEvent{ c.b, c.a, c.b_speed, c.a_speed, c.b_position, c.a_position });
     }
+}
+
+std::pair<int, int> CollisionSystem::cellOf(const sf::Vector2f& pos) {
+    return {static_cast<int>(std::floor(pos.x / CELL_SIZE)),
+            static_cast<int>(std::floor(pos.y / CELL_SIZE))};
+}
+
+namespace {
+uint64_t makeCellKey(const int cx, const int cy) {
+    return (static_cast<uint64_t>(static_cast<uint32_t>(cx)) << 32) |
+           static_cast<uint32_t>(cy);
+}
+}  // namespace
+
+void CollisionSystem::buildBroadPhase() {
+    grid.clear();
+    for (const auto& obj : objects) {
+        if (!obj->isActive()) continue;
+        const auto collision = obj->getComponent<Collision>();
+        if (!collision || !collision->getActive()) continue;
+        // 对象登记到其碰撞体 AABB 覆盖的**所有** cell：
+        // 大对象（地面/墙等超大 AABB）因此能与远处小对象共享 cell，
+        // 避免"只登记中心 cell + 3x3 邻域"导致的大对象漏检（穿墙）。
+        const sf::Vector2f min = collision->getCollisionPosition();
+        const sf::Vector2f max = min + collision->getSize();
+        const auto [x0, y0] = cellOf(min);
+        const auto [x1, y1] = cellOf(max);
+        for (int cx = x0; cx <= x1; cx++) {
+            for (int cy = y0; cy <= y1; cy++) {
+                grid[makeCellKey(cx, cy)].push_back(obj);
+            }
+        }
+    }
+}
+
+void CollisionSystem::collectPairs(std::vector<Contact>& contacts) {
+    // 一对候选对象的检测（原全量遍历的检测逻辑，抽取为 lambda）
+    auto tryPair = [&contacts](const std::shared_ptr<GameObject>& a,
+                               const std::shared_ptr<GameObject>& b) {
+        if (!a->getMoveAble() && !b->getMoveAble()) return;
+        if (!a->isActive() || !b->isActive()) return;
+
+        const auto a_c = a->getComponent<Collision>();
+        if (!a_c || !a_c->getActive()) return;
+
+        if (const auto b_c = b->getComponent<Collision>();
+            b_c && b_c->getActive() && a_c->checkCollision(*b_c)) {
+            Contact contact;
+            contact.a = a;
+            contact.b = b;
+            contact.a_speed = a->getSpeed();
+            contact.b_speed = b->getSpeed();
+            contact.a_position = a_c->getCollisionPosition();
+            contact.b_position = b_c->getCollisionPosition();
+            computeContact(contact, a_c.get(), b_c.get());
+            contacts.push_back(contact);
+        }
+    };
+
+    // 每个 cell 内两两配对。由于对象登记到 AABB 覆盖的所有 cell，
+    // 任何可能碰撞的对象对必然共享至少一个 cell；同一对可能出现在多个
+    // 共同 cell 中，用规范化 id 对去重，保证每对只检查一次。
+    std::unordered_set<uint64_t> seen;
+    for (const auto& [key, objs] : grid) {
+        (void)key;
+        for (size_t i = 0; i < objs.size(); i++) {
+            for (size_t j = i + 1; j < objs.size(); j++) {
+                const auto& a = objs[i];
+                const auto& b = objs[j];
+                const uint64_t pair_key = (a->getId() < b->getId())
+                    ? (static_cast<uint64_t>(a->getId()) << 32 | b->getId())
+                    : (static_cast<uint64_t>(b->getId()) << 32 | a->getId());
+                if (!seen.insert(pair_key).second) continue;
+                tryPair(a, b);
+            }
+        }
+    }
+}
+
+std::vector<std::shared_ptr<GameObject>> CollisionSystem::queryAABB(
+    const sf::Vector2f& min, const sf::Vector2f& max) const {
+    std::vector<std::shared_ptr<GameObject>> result;
+    const auto [x0, y0] = cellOf(min);
+    const auto [x1, y1] = cellOf(max);
+    for (int cx = x0; cx <= x1; cx++) {
+        for (int cy = y0; cy <= y1; cy++) {
+            const auto it = grid.find(makeCellKey(cx, cy));
+            if (it == grid.end()) continue;
+            result.insert(result.end(), it->second.begin(), it->second.end());
+        }
+    }
+    return result;
 }
 
 void CollisionSystem::solveContacts(std::vector<Contact>& contacts) {

@@ -29,6 +29,12 @@ public:
     // BoxCollision = 左上角 + 半尺寸；CircleCollision = 圆心。
     [[nodiscard]] virtual sf::Vector2f getCenter() const;
 
+    // 返回碰撞体尺寸（B4 用于 AABB 登记）：
+    // BoxCollision = (width, height)；CircleCollision = 包围盒 (2r, 2r)。
+    [[nodiscard]] virtual sf::Vector2f getSize() const {
+        return {};
+    }
+
     // 返回内部存储位置（各形状语义不同：Box = 左上角、Circle = 圆心）。
     // 不建议外部使用，请用 getCollisionPosition()/getCenter()。
     [[nodiscard]] virtual sf::Vector2f getPosition() const;

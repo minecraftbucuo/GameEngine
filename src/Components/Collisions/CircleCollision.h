@@ -20,6 +20,9 @@ public:
     [[nodiscard]] bool checkCollisionWithBox(const BoxCollision& other) const override;
     [[nodiscard]] bool checkCollisionWithCircle(const CircleCollision& other) const override;
     [[nodiscard]] float getRadius() const;
+    [[nodiscard]] sf::Vector2f getSize() const override {
+        return {radius * 2.f, radius * 2.f};
+    }
     [[nodiscard]] sf::Vector2f getPos() const;
     [[nodiscard]] sf::Vector2f getCenter() const override;
     [[nodiscard]] sf::Vector2f getCollisionPosition() const override;

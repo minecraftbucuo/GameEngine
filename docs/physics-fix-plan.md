@@ -19,7 +19,7 @@
 | 阶段 B 重构 | B1 Contact 结构 + 迭代求解器 | ✅ |
 | | B2 逆质量 + 动量守恒冲量 | ✅ |
 | | B3 统一碰撞体坐标语义 | ✅ |
-| | B4 broad-phase（空间哈希） | ⬜ |
+| | B4 broad-phase（空间哈希） | ✅ |
 | | B5 物理参数配置化 | ⬜ |
 | | B6 删除重复逻辑并回归 | ✅ |
 | 阶段 C 收尾 | C1 b 侧空指针判空 | ⬜ |
@@ -185,10 +185,15 @@ GameEngine::start (165fps)
 
 #### B4 broad-phase（空间哈希）
 
-- [ ] **改动**
-  - 在 `CollisionSystem` 内按对象中心分桶（cell 尺寸可取最大对象直径），每帧只检测同桶及邻桶对象，替代全对遍历。
-  - `needGravity` 探测复用同一份 broad-phase 查询（或阶段 C 删除探针后由接触集合替代）。
-- [ ] **完成标准**：100 个球时帧率不低于改造前 30 个球的帧率。
+- [x] **改动**
+  - `src/CollisionSystem.h`：新增空间哈希网格（`grid`：cell 坐标 → 对象列表）+ `queryAABB()` 空间查询接口；`Collision` 基类新增 `getSize()` 虚函数（Box = (w,h)，Circle = 包围盒 (2r,2r)）。
+  - `src/CollisionSystem.cpp`：
+    - `buildBroadPhase()`：对象按碰撞体 **AABB 覆盖的所有 cell** 登记（大对象登记多个 cell），O(总覆盖 cell 数)。
+    - `collectPairs()`：每个 cell 内 `i<j` 配对 + 规范化 id 对全局去重（`unordered_set`），保证每对恰好检查一次。
+    - 检测/求解/事件流程不变，仅候选对来源改为网格。
+  - `Circle.cpp` / `Mario.cpp` 的 `needGravity()` 探针改用 `queryAABB()` 查询探针区域 cell 内的候选对象。
+  - 调优记录：初版按"中心 cell + 3x3 邻域"登记，导致超大 AABB 对象（地面/墙，如 120000px 宽）与远处对象不在彼此邻域内而**漏检穿墙**；改为"登记到 AABB 覆盖的所有 cell"，任意可能碰撞对必然共享 cell，无邻域漏检。
+- [x] **完成标准**：100 个球时帧率不低于改造前 30 个球的帧率；地面/墙等大对象不漏检（不穿墙）。
 
 #### B5 物理参数配置化
 
