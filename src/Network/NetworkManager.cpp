@@ -99,9 +99,11 @@ void NetworkManager::handleEvent(const sf::Event& event) {
     if (network_type == NetworkType::Client) {
         if (event.type == sf::Event::KeyPressed) {
             if (event.key.code == sf::Keyboard::R) {
-                sf::Packet packet;
-                packet << NetworkMsg::ClientRespawn;
-                clientSocket.append(packet);
+                if (players[&clientSocket].expired()) {
+                    sf::Packet packet;
+                    packet << NetworkMsg::ClientRespawn;
+                    clientSocket.append(packet);
+                }
             }
         }
     }
