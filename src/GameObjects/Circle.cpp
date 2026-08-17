@@ -45,15 +45,24 @@ void Circle::start() {
         [this](const CollisionEvent& collisionEvent) {
             if (const auto& handler = this->getComponent<CollisionHandle>()) {
                 handler->handleCollision(collisionEvent);
-                this->getComponent<GravityComponent>()->setActive(false);
+                // 注意：不再在这里 setActive(false) 关闭重力（A5）。
+                // 之前"碰到任何东西就关重力"与 needGravity() 探针、GravityComponent 的
+                // 底部判定三套逻辑互相打架，是抖动源之一。现在静止由碰撞处理的
+                // 法向速度清零（A2）保证，重力保持开启也不会积累速度。
             }
         }
     );
 }
 
 void Circle::update(sf::Time deltaTime) {
+    // 重力开关统一由 needGravity() 探针决定：下方悬空则开启重力，下方有支撑则关闭。
+    // 静止堆叠中的球重力关闭、不累加速度（A5 删除了事件里的关闭，必须在这里补上关闭路径，
+    // 否则重力一旦开启就永远施加，静止的球每帧都在被重力累加速度）。
+    const auto gravity = this->getComponent<GravityComponent>();
     if (needGravity()) {
-        this->getComponent<GravityComponent>()->setActive(true);
+        gravity->setActive(true);
+    } else {
+        gravity->setActive(false);
     }
     GameObject::update(deltaTime);
 }
