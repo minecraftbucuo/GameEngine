@@ -131,6 +131,13 @@ bool isSolverExcluded(const std::shared_ptr<GameObject>& obj) {
     return cls == "Mario" || cls == "Box" || cls == "FireBall";
 }
 
+// 有效逆质量：静态对象（moveAble=false）与求解器排除对象（Mario/Box/FireBall）
+// 不参与动量交换，按 invMass=0（无穷质量）处理，保证冲量/位置修正全部分给对方。
+float invMassOf(const std::shared_ptr<GameObject>& obj) {
+    if (!obj->getMoveAble() || isSolverExcluded(obj)) return 0.f;
+    return obj->getInvMass();
+}
+
 void applyImpulse(const std::shared_ptr<GameObject>& obj, const sf::Vector2f& dv) {
     if (!obj->getMoveAble()) return;
     if (isSolverExcluded(obj)) return;
@@ -206,46 +213,44 @@ void CollisionSystem::solveContacts(std::vector<Contact>& contacts) {
     // 消除"处理顺序依赖 + 快照过期"导致的振荡
     for (int iter = 0; iter < SOLVER_ITERATIONS; iter++) {
         for (auto& c : contacts) {
+            const float inv_ma = invMassOf(c.a);
+            const float inv_mb = invMassOf(c.b);
+            const float inv_sum = inv_ma + inv_mb;
+            if (inv_sum <= 0.f) continue;  // 双方都不可动（理论上已被检测过滤）
+
             const sf::Vector2f va = c.a->getSpeed();
             const sf::Vector2f vb = c.b->getSpeed();
             const float v_rel_n = (va.x - vb.x) * c.normal.x + (va.y - vb.y) * c.normal.y;
             if (v_rel_n >= 0.f) continue;  // 正在分离或相对静止，无需处理
 
             if (-v_rel_n < RESTING_SPEED_THRESHOLD) {
-                // 接触静止：清除双方法向速度，不再注入回弹（避免持续注能微弹跳）
-                const float va_n = va.x * c.normal.x + va.y * c.normal.y;
-                const float vb_n = vb.x * c.normal.x + vb.y * c.normal.y;
-                applyImpulse(c.a, -c.normal * va_n);
-                applyImpulse(c.b, -c.normal * vb_n);
+                // 接触静止：施加 e=0 的冲量消除法向相对速度（完全非弹性），
+                // 速度按逆质量分配，不再注入回弹（避免持续注能微弹跳）
+                const float j = -v_rel_n / inv_sum;
+                applyImpulse(c.a, c.normal * j * inv_ma);
+                applyImpulse(c.b, -c.normal * j * inv_mb);
             } else {
-                // 快速接近：注入分离冲量（回弹）。
-                // 恢复系数模型：分离速度 = e × 接近速度，冲量 = -(1+e) × v_rel_n / (invMa+invMb)。
-                // 质量相等假设下 invMa+invMb = 2（双方可动）或 1（一方静止，其 invMass=0）。
-                // 注意：不除分母会导致双方可动时实际恢复系数变成 1+2e（超弹性，越碰越快）。
-                const bool a_mov = c.a->getMoveAble();
-                const bool b_mov = c.b->getMoveAble();
-                const float restitution = (a_mov && b_mov) ? BOUNCE_FACTOR_MOVING : BOUNCE_FACTOR_STATIC;
-                const float inv_mass_sum = (a_mov && b_mov) ? 2.f : 1.f;
-                const float impulse = -(1.f + restitution) * v_rel_n / inv_mass_sum;
-                applyImpulse(c.a, c.normal * impulse);
-                applyImpulse(c.b, -c.normal * impulse);
+                // 快速接近：回弹冲量（恢复系数模型）。
+                // 冲量 = -(1+e) × v_rel_n / (invMa+invMb)，速度按逆质量分配，
+                // 分离速度 = e × 接近速度（动量守恒）。
+                const bool both_mov = c.a->getMoveAble() && c.b->getMoveAble();
+                const float restitution = both_mov ? BOUNCE_FACTOR_MOVING : BOUNCE_FACTOR_STATIC;
+                const float j = -(1.f + restitution) * v_rel_n / inv_sum;
+                applyImpulse(c.a, c.normal * j * inv_ma);
+                applyImpulse(c.b, -c.normal * j * inv_mb);
             }
         }
     }
 
-    // 位置修正：一次全量分摊（双方可动各推一半，静止方不动）。
+    // 位置修正：一次全量分摊（A4 决定全量最快收敛），按逆质量比例分配。
     // 在速度迭代之后做一次，避免多轮迭代累计 overshoot。
     for (auto& c : contacts) {
-        const bool a_mov = c.a->getMoveAble();
-        const bool b_mov = c.b->getMoveAble();
-        if (a_mov && b_mov) {
-            applyCorrection(c.a, c.normal * c.penetration * 0.5f);
-            applyCorrection(c.b, -c.normal * c.penetration * 0.5f);
-        } else if (a_mov) {
-            applyCorrection(c.a, c.normal * c.penetration);
-        } else if (b_mov) {
-            applyCorrection(c.b, -c.normal * c.penetration);
-        }
+        const float inv_ma = invMassOf(c.a);
+        const float inv_mb = invMassOf(c.b);
+        const float inv_sum = inv_ma + inv_mb;
+        if (inv_sum <= 0.f) continue;
+        applyCorrection(c.a, c.normal * c.penetration * (inv_ma / inv_sum));
+        applyCorrection(c.b, -c.normal * c.penetration * (inv_mb / inv_sum));
     }
 }
 

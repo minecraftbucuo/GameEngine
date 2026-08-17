@@ -17,7 +17,7 @@
 | | A5 统一重力/静止判定（移除事件开关） | ✅ |
 | | A6 编译并验证 demo 叠球 | ✅ |
 | 阶段 B 重构 | B1 Contact 结构 + 迭代求解器 | ✅ |
-| | B2 逆质量 + 动量守恒冲量 | ⬜ |
+| | B2 逆质量 + 动量守恒冲量 | ✅ |
 | | B3 统一碰撞体坐标语义 | ⬜ |
 | | B4 broad-phase（空间哈希） | ⬜ |
 | | B5 物理参数配置化 | ⬜ |
@@ -166,10 +166,13 @@ GameEngine::start (165fps)
 
 #### B2 逆质量 + 动量守恒冲量
 
-- [ ] **改动**
-  - `src/GameObjects/GameObject.h`：用 `float invMass`（`moveAble=false` → `invMass=0`）替代/补充 bool `moveAble`。
-  - 求解器冲量公式：`j = -(1 + e) * v_rel_n / (invMassA + invMassB)`，速度按质量分配更新；位置修正按 `invMass` 比例分配，加 `slop`（如 `0.05f`）与修正上限。
-- [ ] **完成标准**：碰撞后速度变化符合动量守恒直觉；静态物体纹丝不动；两球碰撞速度交换合理。
+- [x] **改动**
+  - `src/GameObjects/GameObject.h`：新增 `float invMass{1.f}` 字段（0 = 无穷质量）+ `getInvMass()/setInvMass()`；与 `moveAble` 并存（求解器组合判断，`moveAble=false` 一律按 invMass=0 处理）。
+  - `src/CollisionSystem.cpp`：新增 `invMassOf()`（静态对象与求解器排除对象 → 0）。
+  - 冲量公式升级为动量守恒模型：`j = -(1+e) × v_rel_n / (invMa + invMb)`，速度按逆质量分配（`va += normal·j·invMa`、`vb -= normal·j·invMb`），分离速度 = e × 接近速度。静止接触改为 e=0 冲量消除相对法向速度（完全非弹性）。
+  - 位置修正按逆质量比例分摊（`penetration × invM/(invMa+invMb)`）；质量相等时与 A1 的"各推一半"行为一致，不同质量对象自动按质量分摊。
+  - 注：slop/修正上限不引入（A4 已决定全量修正最快收敛）。
+- [x] **完成标准**：碰撞后速度变化符合动量守恒直觉（恢复系数 e 精确生效，无超弹性）；静态物体纹丝不动（invMass=0）；两球碰撞速度交换合理；demo 叠球与 SuperMarioScene 行为与 B1 一致或更好。
 
 #### B3 统一碰撞体坐标语义
 

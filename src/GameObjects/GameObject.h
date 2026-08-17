@@ -153,6 +153,17 @@ public:
         return className;
     }
 
+    // 逆质量（invMass）：用于碰撞冲量按质量分配。
+    // 0 = 无穷质量（静态/不参与动量交换）；默认 1 = 单位质量。
+    // 注意：moveAble=false 的对象在求解器中一律按 invMass=0 处理。
+    float getInvMass() const {
+        return invMass;
+    }
+
+    void setInvMass(const float mass) {
+        invMass = mass;
+    }
+
     Scene* getScene() const {
         return scene;
     }
@@ -181,6 +192,7 @@ protected:
     sf::Vector2f speed;
     bool active;
     bool moveAble{true};
+    float invMass{1.f};
     bool started;
     bool is_destroy{false};
     unsigned int id;
