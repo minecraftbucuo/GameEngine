@@ -25,6 +25,9 @@ FireBall::FireBall(const unsigned int owner_id, const float x, const float y, co
 #endif
 
     this->addComponent<Collision, BoxCollision>();
+    // 不参与求解器物理：火球有特殊的弹跳逻辑（保证最低弹跳速度 fireballSpeedY +
+    // 水平碰撞爆炸），通用求解器会破坏"一定能弹起来"的设计。invMass=0 = 无穷质量。
+    this->setInvMass(0.f);
     this->addComponent<GravityComponent>();
 
     this->addComponent<MoveComponent>()->setSpeed(sf::Vector2f(speed_x, CONFIG.game.fireballSpeedY));

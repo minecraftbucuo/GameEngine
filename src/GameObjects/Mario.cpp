@@ -48,6 +48,10 @@ Mario::Mario(const float x, const float y, const bool isPlayer) {
     if (!isPlayer) marioController->setIsPlayer(false);
 
     this->addComponent<Collision, BoxCollision>();
+    // 不参与 CollisionSystem 求解器物理：Mario 的位置/速度由输入与自己的事件物理控制
+    //（落地清零/撞墙手感），求解器介入会破坏手感。invMass=0 = 无穷质量，求解器
+    // 冲量/位置修正自动全部分给对方，自己不被求解器动。
+    this->setInvMass(0.f);
     this->addComponent<GravityComponent>();
     this->addComponent<HealthBar>();
 #ifndef SERVER_BUILD

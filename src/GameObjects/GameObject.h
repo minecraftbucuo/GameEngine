@@ -154,8 +154,10 @@ public:
     }
 
     // 逆质量（invMass）：用于碰撞冲量按质量分配。
-    // 0 = 无穷质量（静态/不参与动量交换）；默认 1 = 单位质量。
-    // 注意：moveAble=false 的对象在求解器中一律按 invMass=0 处理。
+    // 0 = 无穷质量（静态/不参与求解器物理，碰撞冲量与位置修正全部分给对方）；
+    // 默认 1 = 单位质量。
+    // 注意：moveAble=false 的对象在求解器中一律按 invMass=0 处理；
+    // 需要"自己不被求解器动、但仍推动对方"的对象（如 Mario/Box/FireBall）在构造时 setInvMass(0)。
     float getInvMass() const {
         return invMass;
     }

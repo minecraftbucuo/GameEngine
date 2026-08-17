@@ -119,28 +119,16 @@ void computeContact(Contact& c, const Collision* a_c, const Collision* b_c) {
 
 // ---------- 求解辅助 ----------
 
-// 该对象是否参与求解器物理：
-// - Mario（玩家角色）：由自己的事件物理控制（落地清零/撞墙手感），求解器介入会
-//   把输入驱动的水平速度也清掉（跳跃擦到水平物体边缘时动不了）；
-// - Box（问号箱）：自身有 last_y 复位逻辑，不参与碰撞物理，求解器介入会导致"慢慢上天"；
-// - FireBall（火球）：有特殊的弹跳逻辑（保证最低弹跳速度 fireballSpeedY + 水平碰撞爆炸），
-//   通用求解器会破坏"一定能弹起来"的游戏设计。
-// 这些对象在 Contact 中仍会推动对方（对方正常响应），只是自己不被求解器动。
-bool isSolverExcluded(const std::shared_ptr<GameObject>& obj) {
-    const std::string& cls = obj->getClassName();
-    return cls == "Mario" || cls == "Box" || cls == "FireBall";
-}
-
-// 有效逆质量：静态对象（moveAble=false）与求解器排除对象（Mario/Box/FireBall）
-// 不参与动量交换，按 invMass=0（无穷质量）处理，保证冲量/位置修正全部分给对方。
+// 有效逆质量：静态对象（moveAble=false）与 invMass=0 的对象（如 Mario/Box/FireBall，
+// 各自在构造时 setInvMass(0) 声明"不参与求解器物理"）不参与动量交换，
+// 冲量/位置修正全部分给对方（调用处已乘 invMass，invMass=0 时自动为零）。
 float invMassOf(const std::shared_ptr<GameObject>& obj) {
-    if (!obj->getMoveAble() || isSolverExcluded(obj)) return 0.f;
+    if (!obj->getMoveAble()) return 0.f;
     return obj->getInvMass();
 }
 
 void applyImpulse(const std::shared_ptr<GameObject>& obj, const sf::Vector2f& dv) {
     if (!obj->getMoveAble()) return;
-    if (isSolverExcluded(obj)) return;
     if (const auto mc = obj->getComponent<MoveComponent>(); mc && mc->getActive()) {
         mc->addSpeed(dv);
     }
@@ -148,7 +136,6 @@ void applyImpulse(const std::shared_ptr<GameObject>& obj, const sf::Vector2f& dv
 
 void applyCorrection(const std::shared_ptr<GameObject>& obj, const sf::Vector2f& dp) {
     if (!obj->getMoveAble()) return;
-    if (isSolverExcluded(obj)) return;
     if (const auto mc = obj->getComponent<MoveComponent>(); mc && mc->getActive()) {
         mc->addPosition(dp);
     }
@@ -233,7 +220,9 @@ void CollisionSystem::solveContacts(std::vector<Contact>& contacts) {
                 // 快速接近：回弹冲量（恢复系数模型）。
                 // 冲量 = -(1+e) × v_rel_n / (invMa+invMb)，速度按逆质量分配，
                 // 分离速度 = e × 接近速度（动量守恒）。
-                const bool both_mov = c.a->getMoveAble() && c.b->getMoveAble();
+                // 双方都有质量（invMass > 0）才用"移动-移动"的小回弹；
+                // 对方 invMass=0（静态/不参与求解器，如地面、Mario、Box、FireBall）视为撞墙。
+                const bool both_mov = inv_ma > 0.f && inv_mb > 0.f;
                 const float restitution = both_mov ? BOUNCE_FACTOR_MOVING : BOUNCE_FACTOR_STATIC;
                 const float j = -(1.f + restitution) * v_rel_n / inv_sum;
                 applyImpulse(c.a, c.normal * j * inv_ma);

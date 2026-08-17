@@ -157,7 +157,7 @@ GameEngine::start (165fps)
   - `src/CollisionSystem.h`：新增 `Contact { a, b, normal, penetration, a/b_speed, a/b_position }` 结构。
   - `src/CollisionSystem.cpp`：`checkCollisions()` 重构为三段 —— ① 检测产 `std::vector<Contact>`（几何计算集中：circle-circle / circle-box / box-box 的法向与穿透，`normal` 统一"从 b 指向 a"）；② `solveContacts()` 迭代求解（速度 4 轮迭代、每轮用最新速度，位置最后一次全量分摊）；③ 发布事件（仅游戏逻辑）。
   - 物理响应（位置修正/速度冲量）不再走事件：`Circle.cpp`、`Player.cpp`、`BoxGameObject.cpp` 的订阅者改为空；`FireBall.cpp` 的 `handleCollision` 只留水平碰撞爆炸判定。
-  - **排除规则**：`Mario`（玩家角色，保留自己的事件物理与手感）、`Box`（问号箱，自身有 last_y 复位逻辑）、`FireBall`（火球，有保证最低弹跳速度 `fireballSpeedY` + 水平碰撞爆炸的特殊逻辑）不参与求解器物理（`isSolverExcluded`），但对方仍正常响应。
+  - **不参与求解器的对象**：`Mario`（玩家角色，保留自己的事件物理与手感）、`Box`（问号箱，自身有 last_y 复位逻辑）、`FireBall`（火球，有保证最低弹跳速度 `fireballSpeedY` + 水平碰撞爆炸的特殊逻辑）——在各自构造里 `setInvMass(0.f)` 声明"不参与求解器物理"（无穷质量，冲量/位置修正全部分给对方，自己不被求解器动）。不再用类名写死（原 `isSolverExcluded` 已删除）。
   - **回弹区分**：与静态物体（地面/墙）碰撞恢复系数 `BOUNCE_FACTOR_STATIC = 0.28f`（球落地弹跳）；移动物体之间恢复系数 `BOUNCE_FACTOR_MOVING = 0.1f`（抑制堆叠振荡）。冲量模型：分离速度 = e × 接近速度，`impulse = -(1+e) × v_rel_n / (invMa+invMb)`（质量相等假设下双方可动为 2、一方静止为 1；初版漏除分母导致双方可动时实际恢复系数变成 1+2e，球-球"一碰就超级快"；另初版误用 `-e × v_rel_n` 导致无法反向弹起，均已修正）。
   - 调优记录：B1 初版用统一 0.1 回弹导致球/火球弹不起来、求解器介入 Box 导致"慢慢上天"、介入 Mario 导致跳跃擦到水平物体时左右动不了、介入 FireBall 破坏"最低弹跳"设计，均已按上述规则修复（回弹系数 0.5 → 0.28 适配 demo 球弹性）。
   - 网络旁观端修复：`Mario::applyRemoteNetworkSmoothing` 中，远端玩家的**碰撞判定改用服务器权威位置**（`networkTargetPosition`），视觉位置保持平滑——否则旁观端看到其他玩家顶箱子/撞墙时，远端角色因平滑滞后（约 30px+）未到达碰撞位置，本地碰撞响应（如 Box 被顶起）不触发，与服务器判定不一致。Box 本身不需要状态同步（两端各自模拟）。
@@ -168,7 +168,7 @@ GameEngine::start (165fps)
 
 - [x] **改动**
   - `src/GameObjects/GameObject.h`：新增 `float invMass{1.f}` 字段（0 = 无穷质量）+ `getInvMass()/setInvMass()`；与 `moveAble` 并存（求解器组合判断，`moveAble=false` 一律按 invMass=0 处理）。
-  - `src/CollisionSystem.cpp`：新增 `invMassOf()`（静态对象与求解器排除对象 → 0）。
+  - `src/CollisionSystem.cpp`：`invMassOf()` 只检查 `moveAble=false → 0`；Mario/Box/FireBall 通过构造 `setInvMass(0)` 声明不参与（删除原 `isSolverExcluded` 类名写死，改为 GameObject 属性表达）。
   - 冲量公式升级为动量守恒模型：`j = -(1+e) × v_rel_n / (invMa + invMb)`，速度按逆质量分配（`va += normal·j·invMa`、`vb -= normal·j·invMb`），分离速度 = e × 接近速度。静止接触改为 e=0 冲量消除相对法向速度（完全非弹性）。
   - 位置修正按逆质量比例分摊（`penetration × invM/(invMa+invMb)`）；质量相等时与 A1 的"各推一半"行为一致，不同质量对象自动按质量分摊。
   - 注：slop/修正上限不引入（A4 已决定全量修正最快收敛）。

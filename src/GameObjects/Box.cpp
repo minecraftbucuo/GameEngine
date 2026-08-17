@@ -29,6 +29,10 @@ Box::Box(const float x, const float y, const std::string& tag) : BoxGameObject(x
     this->setSize(w, h);
     this->getComponent<Collision, BoxCollision>()->setSize(w, h);
 
+    // 不参与求解器物理：问号箱由自己的顶起/复位逻辑（last_y）控制，
+    // 求解器介入会导致"慢慢上天"。invMass=0 = 无穷质量。
+    this->setInvMass(0.f);
+
     this->addComponent<MoveComponent>();
     this->addComponent<GravityComponent>()->setActive(false);
     className = "Box";
