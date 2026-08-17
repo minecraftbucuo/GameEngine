@@ -32,8 +32,11 @@ void CircleCollision::render(sf::RenderWindow *window) {
 }
 #endif
 
-void CircleCollision::setPosition(const sf::Vector2f &position) {
-    this->position = owner->getPosition() + owner->getSize() * 0.5f;
+// C4：真正使用传入参数（不再忽略并硬取 owner 位置）。
+// 传入的是碰撞体左上角（与基类 Box 语义一致，如 MoveComponent 同步 GameObject 位置时），
+// 内部按圆心存储：position = 左上角 - offset + (r, r)，保证 getCollisionPosition() = 左上角。
+void CircleCollision::setPosition(const sf::Vector2f &_position) {
+    this->position = _position - this->offset + sf::Vector2f(radius, radius);
 }
 
 bool CircleCollision::checkCollision(const Collision &other) const {

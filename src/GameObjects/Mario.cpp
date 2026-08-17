@@ -109,25 +109,27 @@ void Mario::update(sf::Time deltaTime) {
 
 bool Mario::needGravity() {
     if (this->getComponent<HealthBar>()->isDead()) return false;
-    auto collision = this->getComponent<Collision>();
-    sf::Vector2f dy = sf::Vector2f(0.f, 1.f);
-    collision->setCollisionPosition(collision->getCollisionPosition() + dy);
+    // C3：不再"把碰撞体下移 1px 再检测"（探针 hack），改用纯几何 AABB 探测。
+    const auto collision = this->getComponent<Collision>();
+    const sf::Vector2f min = collision->getCollisionPosition();
+    const sf::Vector2f size = collision->getSize();
+    const sf::Vector2f probe_min = min + sf::Vector2f(0.f, 1.f);
+    const sf::Vector2f probe_max = min + size + sf::Vector2f(0.f, 1.f);
 
     // B4：空间查询替代全量遍历——只检查探针区域 cell 内的候选对象
-    const sf::Vector2f min = collision->getCollisionPosition();
-    const sf::Vector2f max = min + this->getSize();
-    const auto candidates = getScene()->getCollisionSystem()->queryAABB(min, max);
+    const auto candidates = getScene()->getCollisionSystem()->queryAABB(probe_min, probe_max);
 
     for (const auto& game_object : candidates) {
         if (game_object->getTag() == this->getTag()) continue;
-        auto other_collision = game_object->getComponent<Collision>();
+        const auto other_collision = game_object->getComponent<Collision>();
         if (!other_collision) continue;
-        if (other_collision->checkCollision(*collision)) {
-            collision->setCollisionPosition(collision->getCollisionPosition() - dy);
+        const sf::Vector2f other_min = other_collision->getCollisionPosition();
+        const sf::Vector2f other_max = other_min + other_collision->getSize();
+        if (probe_min.x < other_max.x && probe_max.x > other_min.x &&
+            probe_min.y < other_max.y && probe_max.y > other_min.y) {
             return false;
         }
     }
-    collision->setCollisionPosition(collision->getCollisionPosition() - dy);
     return true;
 }
 

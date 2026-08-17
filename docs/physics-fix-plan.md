@@ -22,10 +22,10 @@
 | | B4 broad-phase（空间哈希） | ✅ |
 | | B5 物理参数配置化 | ✅ |
 | | B6 删除重复逻辑并回归 | ✅ |
-| 阶段 C 收尾 | C1 b 侧空指针判空 | ⬜ |
-| | C2 typeid hash 分发改显式分发 | ⬜ |
-| | C3 删除 needGravity 探针写法 | ⬜ |
-| | C4 CircleCollision::setPosition 参数问题 | ⬜ |
+| 阶段 C 收尾 | C1 b 侧空指针判空 | ✅ |
+| | C2 typeid hash 分发改显式分发 | ✅ |
+| | C3 删除 needGravity 探针写法 | ✅ |
+| | C4 CircleCollision::setPosition 参数问题 | ✅ |
 
 ---
 
@@ -217,27 +217,26 @@ GameEngine::start (165fps)
 
 #### C1 b 侧空指针判空
 
-- [ ] **改动**
-  - `src/CollisionSystem.cpp:44`：改为 `if (auto b_c = ...; b_c && b_c->getActive() && a_c->checkCollision(*b_c))`。
-- [ ] **完成标准**：往 CollisionSystem 加入无 Collision 组件的对象不再崩溃。
+- [x] **改动**（B1 时已顺带完成）
+  - `src/CollisionSystem.cpp`：检测循环里 `if (const auto b_c = ...; b_c && b_c->getActive() && ...)`——b 无 Collision 组件时安全跳过。
+- [x] **完成标准**：往 CollisionSystem 加入无 Collision 组件的对象不再崩溃。
 
 #### C2 typeid hash 分发改显式分发
 
-- [ ] **改动**
-  - `src/Components/CollisionHandles/CollisionHandle.cpp:15-22`：`collisionHandlers` 的 `typeid().hash_code()` 查表改为显式判断（`dynamic_cast` / 枚举类型标记），或直接用虚函数双分派，去掉 hash 查表。
-- [ ] **完成标准**：行为不变，无 hash 冲突隐患；b 无 Collision 组件时安全返回。
+- [x] **改动**（B6 删除 CollisionHandle 系后自动完成——`typeid().hash_code()` 查表代码已不存在）
+- [x] **完成标准**：无 hash 冲突隐患。
 
 #### C3 删除 needGravity 探针写法
 
-- [ ] **改动**
-  - `src/GameObjects/Circle.cpp:61-79`、`src/GameObjects/Mario.cpp:112-131`：删除“碰撞体下移 1px 探测”写法，改为查询求解器产出的接触集合（是否有接触 + 是否静止）。
-- [ ] **完成标准**：`needGravity` 不再修改碰撞体位置；行为与阶段 B 一致。
+- [x] **改动**
+  - `src/GameObjects/Circle.cpp`、`src/GameObjects/Mario.cpp` 的 `needGravity()`：不再"把碰撞体下移 1px 再检测"（探针 hack 修改碰撞体位置、有副作用），改为**纯几何 AABB 探测**——碰撞体包围盒下移 1px 的区域与候选对象 AABB 重叠即判定"下方有支撑"；候选仍走 B4 的 `queryAABB` 空间查询。
+- [x] **完成标准**：`needGravity` 不再修改碰撞体位置；行为与阶段 B 一致（AABB 为保守包围盒，圆角边缘探测略宽 1px 内，可接受）。
 
 #### C4 CircleCollision::setPosition 参数问题
 
-- [ ] **改动**
-  - `src/Components/Collisions/CircleCollision.cpp:35-37`：`setPosition` 真正使用传入参数（或删除参数、明确语义），与基类接口一致。
-- [ ] **完成标准**：无“忽略参数”的误导接口；代码审查无歧义。
+- [x] **改动**
+  - `src/Components/Collisions/CircleCollision.cpp`：`setPosition` 真正使用传入参数（不再忽略并硬取 owner 位置）。传入为碰撞体左上角（与基类 Box 语义一致），内部按圆心存储（`position = 左上角 - offset + (r,r)`），`getCollisionPosition()` 回环正确；带 offset 时旧实现会多算 offset，新实现修正。
+- [x] **完成标准**：无"忽略参数"的误导接口；代码审查无歧义。
 
 ---
 
