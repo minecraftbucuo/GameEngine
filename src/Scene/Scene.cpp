@@ -56,8 +56,7 @@ void Scene::handleEvent(sf::Event& event) {
 #endif
 
 void Scene::addObjectWithMap(const std::shared_ptr<GameObject>& obj) {
-    obj->setScene(this);
-    game_objects.push_back(obj);
+    addObject(obj);
     game_objects_map[obj->getId()] = obj;
 }
 

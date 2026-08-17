@@ -160,13 +160,6 @@ void SuperMarioScene::addObject(const std::shared_ptr<GameObject>& obj) {
     }
 }
 
-void SuperMarioScene::addObjectWithMap(const std::shared_ptr<GameObject>& obj) {
-    Scene::addObjectWithMap(obj);
-    if (this->collisionSystem && obj->getComponent<Collision>()) {
-        this->collisionSystem->addObject(obj);
-    }
-}
-
 void SuperMarioScene::addObjectWithNetwork(const std::shared_ptr<GameObject>& obj) {
     addObjectWithMap(obj);
     simple_network.addGameObjectAndSync(obj);

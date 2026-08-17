@@ -41,8 +41,6 @@ public:
 
     void addObject(const std::shared_ptr<GameObject>& obj) override;
 
-    void addObjectWithMap(const std::shared_ptr<GameObject>& obj) override;
-
     void addObjectWithNetwork(const std::shared_ptr<GameObject>& obj) override;
 #ifndef SERVER_BUILD
     void handleEvent(sf::Event& event) override;
