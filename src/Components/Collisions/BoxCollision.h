@@ -28,6 +28,9 @@ public:
 
     [[nodiscard]] float getHeight() const;
 
+    // B3：中心 = 左上角 + 半尺寸
+    [[nodiscard]] sf::Vector2f getCenter() const override;
+
     [[nodiscard]] float getPosX() const;
 
     [[nodiscard]] float getPosY() const;

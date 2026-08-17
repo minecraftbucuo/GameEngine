@@ -74,6 +74,11 @@ float BoxCollision::getHeight() const {
     return this->size.y;
 }
 
+// B3：中心 = 左上角（含 offset）+ 半尺寸
+sf::Vector2f BoxCollision::getCenter() const {
+    return getCollisionPosition() + size * 0.5f;
+}
+
 float BoxCollision::getPosX() const {
     return this->position.x + this->offset.x;
 }

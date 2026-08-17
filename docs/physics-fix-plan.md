@@ -18,7 +18,7 @@
 | | A6 编译并验证 demo 叠球 | ✅ |
 | 阶段 B 重构 | B1 Contact 结构 + 迭代求解器 | ✅ |
 | | B2 逆质量 + 动量守恒冲量 | ✅ |
-| | B3 统一碰撞体坐标语义 | ⬜ |
+| | B3 统一碰撞体坐标语义 | ✅ |
 | | B4 broad-phase（空间哈希） | ⬜ |
 | | B5 物理参数配置化 | ⬜ |
 | | B6 删除 Mario 重复逻辑并回归 | ⬜ |
@@ -176,11 +176,12 @@ GameEngine::start (165fps)
 
 #### B3 统一碰撞体坐标语义
 
-- [ ] **改动**
-  - 明确 `getCollisionPosition()` 统一返回碰撞体**左上角**（保留 `CircleCollision` 减半径行为，基类与派生类语义一致并在注释注明）。
-  - 或提供 `getCenter()`/`getShape()` 供求解器使用；`Contact` 里直接携带 center + normal + penetration，事件不再靠“左上角 + GameObject size”拼。
-  - 检查 `CollisionHandle.cpp:33-38`、`CircleCollisionHandle.cpp:33-34` 的推算逻辑改为使用统一语义。
-- [ ] **完成标准**：带 offset 的碰撞体也能正确检测与解析（可加一个带 offset 的测试对象验证）。
+- [x] **改动**
+  - `src/Components/Collisions/Collision.h`：明确 `getCollisionPosition()` 统一返回**碰撞体左上角（含 offset）**（Box = 左上角，Circle = 包围盒左上角），并在注释注明；`getPosition()` 标注为"内部存储位置，不建议外部使用"。
+  - 新增 `getCenter()` 虚函数（基类默认 = 左上角）：`BoxCollision::getCenter()` = 左上角 + 半尺寸；`CircleCollision::getCenter()` = 圆心。
+  - `src/CollisionSystem.cpp`：求解器几何（circle-circle / circle-box / box-box）统一通过 `getCenter()`/`getCollisionPosition()` 取形状几何，不再出现"碰撞位置 + GameObject size"拼接推算。
+  - 死代码 handle（`CollisionHandle.cpp`/`CircleCollisionHandle.cpp` 的"左上角 + size×0.5"推算）保留，B6 清理。
+- [x] **完成标准**：带 offset 的碰撞体（如跑步/跳跃状态的 Mario，x 偏移 12/16px）也能正确检测与解析——求解器几何直接使用碰撞体自身几何（含 offset），不受 GameObject 位置/尺寸推算影响。
 
 #### B4 broad-phase（空间哈希）
 

@@ -59,6 +59,11 @@ sf::Vector2f CircleCollision::getPos() const {
     return this->position + this->offset;
 }
 
+// B3：圆心即中心
+sf::Vector2f CircleCollision::getCenter() const {
+    return this->position + this->offset;
+}
+
 float CircleCollision::getPosX() const {
     return this->position.x + this->offset.x;
 }

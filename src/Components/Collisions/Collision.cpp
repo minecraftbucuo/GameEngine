@@ -24,6 +24,11 @@ sf::Vector2f Collision::getCollisionPosition() const {
     return position + offset;
 }
 
+// 基类默认把左上角当作中心，派生类（Box/Circle）应 override 为真实形状中心
+sf::Vector2f Collision::getCenter() const {
+    return getCollisionPosition();
+}
+
 sf::Vector2f Collision::getPosition() const {
     return position;
 }

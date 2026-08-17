@@ -31,7 +31,7 @@ constexpr float EPSILON = 1e-6f;
 // ---------- 几何：计算法向与穿透深度（normal 统一为"从 b 指向 a"） ----------
 
 void computeCircleCircle(const CircleCollision* a, const CircleCollision* b, Contact& c) {
-    const sf::Vector2f d = a->getPos() - b->getPos();
+    const sf::Vector2f d = a->getCenter() - b->getCenter();
     const float dist = std::sqrt(d.x * d.x + d.y * d.y);
     if (dist > EPSILON) {
         c.normal = d / dist;
@@ -50,7 +50,7 @@ void computeCircleCircle(const CircleCollision* a, const CircleCollision* b, Con
 
 // circle 在 a、box 在 b：normal 从 b(box) 指向 a(circle)
 void computeCircleBox(const CircleCollision* circle, const BoxCollision* box, Contact& c) {
-    const sf::Vector2f center = circle->getPos();
+    const sf::Vector2f center = circle->getCenter();
     const sf::Vector2f min = box->getCollisionPosition();
     const sf::Vector2f max = min + sf::Vector2f(box->getWidth(), box->getHeight());
     const sf::Vector2f closest(std::max(min.x, std::min(center.x, max.x)),
@@ -89,8 +89,8 @@ void computeBoxBox(const BoxCollision* a, const BoxCollision* b, Contact& c) {
     const sf::Vector2f max_b = min_b + sf::Vector2f(b->getWidth(), b->getHeight());
     const float overlap_x = std::min(max_a.x, max_b.x) - std::max(min_a.x, min_b.x);
     const float overlap_y = std::min(max_a.y, max_b.y) - std::max(min_a.y, min_b.y);
-    const sf::Vector2f center_a = (min_a + max_a) * 0.5f;
-    const sf::Vector2f center_b = (min_b + max_b) * 0.5f;
+    const sf::Vector2f center_a = a->getCenter();
+    const sf::Vector2f center_b = b->getCenter();
     if (overlap_x < overlap_y) {
         c.normal = center_a.x < center_b.x ? sf::Vector2f(-1.f, 0.f) : sf::Vector2f(1.f, 0.f);
         c.penetration = overlap_x;
