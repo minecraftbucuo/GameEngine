@@ -12,7 +12,7 @@
 |------|------|------|
 | 阶段 A 短期 | A1 位置修正分摊（双方相互作用） | ⬜ |
 | | A2 圆-圆接触静止检测与法向速度清零 | ✅ |
-| | A3 dir_len==0 除零保护 | ⬜ |
+| | A3 dir_len==0 除零保护 | ✅ |
 | | A4 位置修正限幅 + 双移动物体分摊 | ⬜ |
 | | A5 统一重力/静止判定（移除事件开关） | ⬜ |
 | | A6 编译并验证 demo 叠球 | ⬜ |
@@ -118,11 +118,12 @@ GameEngine::start (165fps)
 
 #### A3 dir_len == 0 除零保护
 
-- [ ] **改动**
-  - `src/Components/CollisionHandles/CircleCollisionHandle.cpp:36-42`：`dir_len < 1e-6f` 时：
+- [x] **改动**
+  - `src/Components/CollisionHandles/CircleCollisionHandle.cpp`（`handleCollisionWithCircle`）：`dir_len < 1e-6f` 时：
     - 不执行 `dir /= dir_len`；
-    - 跳过冲量注入，只做位置分离：分离方向取安全方向（如 `(0,-1)` 或按两球位置差取水平/垂直方向），`move_dis` 用两球半径和。
-- [ ] **完成标准**：两球圆心完全重合（如点击生成在同一坐标）时不再产生 NaN，球正常分开。
+    - 取安全分离方向：能分辨符号时按位置差取轴对齐方向（优先水平），完全重合时固定 `(0,-1)` 向上；
+    - 跳过冲量注入（`degenerate` 时法向无意义），只做位置分离，`move_dis ≈ 两球半径和`。
+- [x] **完成标准**：两球圆心完全重合（如点击生成在同一坐标）时不再产生 NaN，球正常分开。
 
 #### A4 位置修正限幅 + 双移动物体分摊
 
