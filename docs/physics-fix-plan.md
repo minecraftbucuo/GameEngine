@@ -11,7 +11,7 @@
 | 阶段 | 步骤 | 状态 |
 |------|------|------|
 | 阶段 A 短期 | A1 位置修正分摊（双方相互作用） | ⬜ |
-| | A2 圆-圆接触静止检测与法向速度清零 | ⬜ |
+| | A2 圆-圆接触静止检测与法向速度清零 | ✅ |
 | | A3 dir_len==0 除零保护 | ⬜ |
 | | A4 位置修正限幅 + 双移动物体分摊 | ⬜ |
 | | A5 统一重力/静止判定（移除事件开关） | ⬜ |
@@ -108,13 +108,13 @@ GameEngine::start (165fps)
 
 #### A2 圆-圆接触静止检测与法向速度清零
 
-- [ ] **改动**
-  - `src/Components/CollisionHandles/CircleCollisionHandle.cpp:39-48`：
+- [x] **改动**
+  - `src/Components/CollisionHandles/CircleCollisionHandle.cpp`（`handleCollisionWithCircle`）：
     1. 先算法向相对速度 `v_rel_n = dot(a_speed - b_speed, dir)`（dir 已归一化，方向为从 b 指向 a）。
-    2. 若 `v_rel_n < 0`（正在接近）且 `|v_rel_n| < 阈值`（如 `20.f`）→ **接触静止**：把 a 的法向速度清零（`a_speed -= dir * v_rel_n`，即 `setSpeed` 投影去除），不再 `addSpeed(0.28×...)` 注能。
-    3. 若接近速度较大，才保留回弹冲量（系数可先用 `0.28f`，阶段 B 再换恢复系数模型）。
-  - 阈值先定义为文件内常量（如 `constexpr float RESTING_SPEED_THRESHOLD = 20.f;`），阶段 B 再配置化。
-- [ ] **完成标准**：两个球叠在一起（或一个球静止在另一个球顶上）能趋于静止，不再持续微弹跳。
+    2. 若 `v_rel_n < 0`（正在接近）且 `|v_rel_n| < 阈值`（`RESTING_SPEED_THRESHOLD = 20.f`）→ **接触静止**：把本方法向速度清零（`addSpeed(-dir * dot(a_speed, dir))`），不再 `addSpeed(0.28×...)` 注能。
+    3. 若接近速度较大，才保留回弹冲量（系数先用 `0.28f`，阶段 B 换恢复系数模型）。
+  - 阈值定义为文件内匿名 namespace 常量 `RESTING_SPEED_THRESHOLD`，阶段 B 再配置化。
+- [x] **完成标准**：两个球叠在一起（或一个球静止在另一个球顶上）能趋于静止，不再持续微弹跳。
 
 #### A3 dir_len == 0 除零保护
 
