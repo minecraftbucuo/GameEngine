@@ -15,8 +15,8 @@
 | | A3 dir_len==0 除零保护 | ✅ |
 | | A4 位置修正（全量，最快收敛） | ✅ |
 | | A5 统一重力/静止判定（移除事件开关） | ✅ |
-| | A6 编译并验证 demo 叠球 | ⬜ |
-| 阶段 B 重构 | B1 Contact 结构 + 迭代求解器 | ⬜ |
+| | A6 编译并验证 demo 叠球 | ✅ |
+| 阶段 B 重构 | B1 Contact 结构 + 迭代求解器 | ✅ |
 | | B2 逆质量 + 动量守恒冲量 | ⬜ |
 | | B3 统一碰撞体坐标语义 | ⬜ |
 | | B4 broad-phase（空间哈希） | ⬜ |
@@ -153,11 +153,16 @@ GameEngine::start (165fps)
 
 #### B1 Contact 结构 + 迭代求解器
 
-- [ ] **改动**
-  - 新增 `Contact { a, b, normal, penetration, relativeVelocity }` 结构（可放 `CollisionSystem.h` 或新建 `PhysicsSolver.h`）。
-  - `CollisionSystem::checkCollisions()` 检测阶段只负责产出 `std::vector<Contact>`（检测与响应分离）；响应交给求解器对全部 Contact 做 **2~4 次迭代**的“速度冲量 → 位置修正”两步求解，消除快照过期与顺序敏感问题。
-  - 保留/简化事件发布（游戏逻辑如 Mario 受伤仍可用事件，物理响应不再走事件）。
-- [ ] **完成标准**：demo 与 SuperMarioScene 行为与阶段 A 一致或更好；`checkCollisions` 不再直接调 handle。
+- [x] **改动**
+  - `src/CollisionSystem.h`：新增 `Contact { a, b, normal, penetration, a/b_speed, a/b_position }` 结构。
+  - `src/CollisionSystem.cpp`：`checkCollisions()` 重构为三段 —— ① 检测产 `std::vector<Contact>`（几何计算集中：circle-circle / circle-box / box-box 的法向与穿透，`normal` 统一"从 b 指向 a"）；② `solveContacts()` 迭代求解（速度 4 轮迭代、每轮用最新速度，位置最后一次全量分摊）；③ 发布事件（仅游戏逻辑）。
+  - 物理响应（位置修正/速度冲量）不再走事件：`Circle.cpp`、`Player.cpp`、`BoxGameObject.cpp` 的订阅者改为空；`FireBall.cpp` 的 `handleCollision` 只留水平碰撞爆炸判定。
+  - **排除规则**：`Mario`（玩家角色，保留自己的事件物理与手感）、`Box`（问号箱，自身有 last_y 复位逻辑）、`FireBall`（火球，有保证最低弹跳速度 `fireballSpeedY` + 水平碰撞爆炸的特殊逻辑）不参与求解器物理（`isSolverExcluded`），但对方仍正常响应。
+  - **回弹区分**：与静态物体（地面/墙）碰撞恢复系数 `BOUNCE_FACTOR_STATIC = 0.28f`（球落地弹跳）；移动物体之间恢复系数 `BOUNCE_FACTOR_MOVING = 0.1f`（抑制堆叠振荡）。冲量模型：分离速度 = e × 接近速度，`impulse = -(1+e) × v_rel_n / (invMa+invMb)`（质量相等假设下双方可动为 2、一方静止为 1；初版漏除分母导致双方可动时实际恢复系数变成 1+2e，球-球"一碰就超级快"；另初版误用 `-e × v_rel_n` 导致无法反向弹起，均已修正）。
+  - 调优记录：B1 初版用统一 0.1 回弹导致球/火球弹不起来、求解器介入 Box 导致"慢慢上天"、介入 Mario 导致跳跃擦到水平物体时左右动不了、介入 FireBall 破坏"最低弹跳"设计，均已按上述规则修复（回弹系数 0.5 → 0.28 适配 demo 球弹性）。
+  - 网络旁观端修复：`Mario::applyRemoteNetworkSmoothing` 中，远端玩家的**碰撞判定改用服务器权威位置**（`networkTargetPosition`），视觉位置保持平滑——否则旁观端看到其他玩家顶箱子/撞墙时，远端角色因平滑滞后（约 30px+）未到达碰撞位置，本地碰撞响应（如 Box 被顶起）不触发，与服务器判定不一致。Box 本身不需要状态同步（两端各自模拟）。
+  - 迭代求解让相互耦合的接触（堆叠）逐步收敛，消除"处理顺序依赖 + 快照过期"导致的振荡。
+- [x] **完成标准**：demo 叠球稳定且球落地能弹；SuperMarioScene 中 Mario 手感、问号箱、火球行为与阶段 A 一致或更好；`checkCollisions` 不再直接调 handle（物理响应统一在求解器）。
 
 #### B2 逆质量 + 动量守恒冲量
 

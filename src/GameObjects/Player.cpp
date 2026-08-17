@@ -34,10 +34,8 @@ void Player::start() {
     GameObject::start();
     EventBus::getInstance().subscribe<CollisionEvent>(
         "onCollision" + this->tag,
-        [this](const CollisionEvent& collisionEvent) {
-            if (const auto& handler = this->getComponent<CollisionHandle>()) {
-                handler->handleCollision(collisionEvent);
-            }
+        [this](const CollisionEvent&) {
+            // B1：物理响应已由 CollisionSystem 的迭代求解器统一处理，事件仅保留给游戏逻辑。
         }
     );
 }

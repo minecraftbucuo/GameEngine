@@ -42,14 +42,9 @@ void Circle::start() {
     GameObject::start();
     EventBus::getInstance().subscribe<CollisionEvent>(
         "onCollision" + this->tag,
-        [this](const CollisionEvent& collisionEvent) {
-            if (const auto& handler = this->getComponent<CollisionHandle>()) {
-                handler->handleCollision(collisionEvent);
-                // 注意：不再在这里 setActive(false) 关闭重力（A5）。
-                // 之前"碰到任何东西就关重力"与 needGravity() 探针、GravityComponent 的
-                // 底部判定三套逻辑互相打架，是抖动源之一。现在静止由碰撞处理的
-                // 法向速度清零（A2）保证，重力保持开启也不会积累速度。
-            }
+        [this](const CollisionEvent&) {
+            // B1：物理响应（位置修正/速度冲量）已由 CollisionSystem 的迭代求解器统一处理，
+            // 事件仅保留给游戏逻辑；Circle 无游戏逻辑，这里保留空订阅以免 EventBus 告警。
         }
     );
 }
