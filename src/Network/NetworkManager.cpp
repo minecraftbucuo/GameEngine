@@ -302,8 +302,11 @@ void NetworkManager::clientUpdate(const sf::Time& deltaTime) {
         while (packet >> type) {
             if (type == NetworkMsg::SpawnObject || type == NetworkMsg::SpawnPlayer) {
                 LOG_INFO_FMT("Received packet, type: SpawnObject, IsPlayer: {}", type == NetworkMsg::SpawnPlayer);
-                players[&clientSocket] = std::dynamic_pointer_cast<ISerializable>(
+                auto obj = std::dynamic_pointer_cast<ISerializable>(
                     current_scene->spawnEntityWithNetwork(packet));
+                if (type == NetworkMsg::SpawnPlayer) {
+                    players[&clientSocket] = std::move(obj);
+                }
             }
             else if (type == NetworkMsg::UpdateObject) {
                 LOG_TRACE("Received packet, type: UpdateObject");
