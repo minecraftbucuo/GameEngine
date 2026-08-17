@@ -58,6 +58,11 @@ public:
         int shootDelay = 300;
         int fireBallTTL = 10000;
         bool debug = true;
+        // 物理（B5）：碰撞求解参数
+        int solverIterations = 4;           // 迭代求解轮数（堆叠收敛）
+        float restingSpeedThreshold = 40.f; // 接触静止阈值：法向接近速度低于该值视为静止接触（不弹）
+        float restitutionStatic = 0.28f;    // 恢复系数：撞静态物体（地面/墙）
+        float restitutionMoving = 0.1f;     // 恢复系数：移动物体之间（抑制堆叠振荡）
     } game{};
 
     // 便捷访问方法

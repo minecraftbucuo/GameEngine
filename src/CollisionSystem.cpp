@@ -11,22 +11,14 @@
 #include "MoveComponent.h"
 #include "EventBus.h"
 #include "Events.h"
+#include "ConfigManager.h"
 #include <algorithm>
 #include <cmath>
 #include <unordered_set>
 
 namespace {
 
-// 迭代求解轮数：多轮迭代让相互耦合的接触（堆叠）逐步收敛，消除"处理顺序依赖"
-constexpr int SOLVER_ITERATIONS = 4;
-// 接触静止阈值：法向接近速度低于该值视为静止接触，清除法向速度、不再回弹
-constexpr float RESTING_SPEED_THRESHOLD = 40.f;
-// 恢复系数 e：与静态物体（地面/墙）碰撞保留弹跳手感（球落地）；
-// 移动物体之间用小回弹抑制堆叠振荡（球叠球）。
-// 冲量模型：分离速度 = e × 接近速度，冲量 = -(1+e) × v_rel_n
-constexpr float BOUNCE_FACTOR_STATIC = 0.28f;
-constexpr float BOUNCE_FACTOR_MOVING = 0.1f;
-// 几何判定阈值
+// 几何判定阈值（数值稳定性，无需配置）
 constexpr float EPSILON = 1e-6f;
 
 // ---------- 几何：计算法向与穿透深度（normal 统一为"从 b 指向 a"） ----------
@@ -270,7 +262,7 @@ std::vector<std::shared_ptr<GameObject>> CollisionSystem::queryAABB(
 void CollisionSystem::solveContacts(std::vector<Contact>& contacts) {
     // 速度迭代：多轮收敛，每轮使用最新速度，让相互耦合的接触（堆叠）逐步逼近一致解，
     // 消除"处理顺序依赖 + 快照过期"导致的振荡
-    for (int iter = 0; iter < SOLVER_ITERATIONS; iter++) {
+    for (int iter = 0; iter < CONFIG.game.solverIterations; iter++) {
         for (auto& c : contacts) {
             const float inv_ma = invMassOf(c.a);
             const float inv_mb = invMassOf(c.b);
@@ -282,7 +274,7 @@ void CollisionSystem::solveContacts(std::vector<Contact>& contacts) {
             const float v_rel_n = (va.x - vb.x) * c.normal.x + (va.y - vb.y) * c.normal.y;
             if (v_rel_n >= 0.f) continue;  // 正在分离或相对静止，无需处理
 
-            if (-v_rel_n < RESTING_SPEED_THRESHOLD) {
+            if (-v_rel_n < CONFIG.game.restingSpeedThreshold) {
                 // 接触静止：施加 e=0 的冲量消除法向相对速度（完全非弹性），
                 // 速度按逆质量分配，不再注入回弹（避免持续注能微弹跳）
                 const float j = -v_rel_n / inv_sum;
@@ -295,7 +287,8 @@ void CollisionSystem::solveContacts(std::vector<Contact>& contacts) {
                 // 双方都有质量（invMass > 0）才用"移动-移动"的小回弹；
                 // 对方 invMass=0（静态/不参与求解器，如地面、Mario、Box、FireBall）视为撞墙。
                 const bool both_mov = inv_ma > 0.f && inv_mb > 0.f;
-                const float restitution = both_mov ? BOUNCE_FACTOR_MOVING : BOUNCE_FACTOR_STATIC;
+                const float restitution = both_mov ? CONFIG.game.restitutionMoving
+                                                   : CONFIG.game.restitutionStatic;
                 const float j = -(1.f + restitution) * v_rel_n / inv_sum;
                 applyImpulse(c.a, c.normal * j * inv_ma);
                 applyImpulse(c.b, -c.normal * j * inv_mb);

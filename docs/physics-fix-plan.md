@@ -20,7 +20,7 @@
 | | B2 逆质量 + 动量守恒冲量 | ✅ |
 | | B3 统一碰撞体坐标语义 | ✅ |
 | | B4 broad-phase（空间哈希） | ✅ |
-| | B5 物理参数配置化 | ⬜ |
+| | B5 物理参数配置化 | ✅ |
 | | B6 删除重复逻辑并回归 | ✅ |
 | 阶段 C 收尾 | C1 b 侧空指针判空 | ⬜ |
 | | C2 typeid hash 分发改显式分发 | ⬜ |
@@ -197,10 +197,13 @@ GameEngine::start (165fps)
 
 #### B5 物理参数配置化
 
-- [ ] **改动**
-  - `ConfigManager` 增加字段：`restitution`（恢复系数）、`damping`（接触阻尼）、`slop`、`maxCorrection`、`restingSpeedThreshold`。
-  - 替换各 handle 与求解器中的魔法数字（`0.28f`、`2.f`、`150.f`、`0.1f`、`20.f`、`2.f`）。
-- [ ] **完成标准**：改 `config.json` 中物理参数能直接改变 demo 中球的回弹/静止行为。
+- [x] **改动**
+  - `src/Manager/ConfigManager.h`：`GameConfig` 新增 `solverIterations`（迭代轮数）、`restingSpeedThreshold`（接触静止阈值）、`restitutionStatic`（撞静态恢复系数）、`restitutionMoving`（移动-移动恢复系数）。
+  - `src/Manager/ConfigManager.cpp`：`parseGame()` 读取 + `save()` 写回这 4 个字段。
+  - `src/Asset/config.json`：`game` 段新增默认值（4 / 40.0 / 0.28 / 0.1）。
+  - `src/CollisionSystem.cpp`：删除 `SOLVER_ITERATIONS`/`RESTING_SPEED_THRESHOLD`/`BOUNCE_FACTOR_STATIC`/`BOUNCE_FACTOR_MOVING` 常量，改用 `CONFIG.game.*`（include `ConfigManager.h`）。`EPSILON` 为数值稳定性阈值，不配置。
+  - 注：计划中的 `damping`/`slop`/`maxCorrection` 未引入——当前模型采用"接触静止 e=0 冲量吸收"（等效阻尼）与"A4 全量位置修正"（无 slop/上限），无需独立参数。
+- [x] **完成标准**：改 `config.json` 中 `restitutionStatic`/`restingSpeedThreshold` 等能直接改变 demo 中球的回弹/静止行为（无需重编译）。
 
 #### B6 删除重复逻辑并回归
 

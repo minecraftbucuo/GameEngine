@@ -79,6 +79,11 @@ void ConfigManager::parseGame(const json& j) {
     game.shootDelay = j.value("shootDelay", game.shootDelay);
     game.fireballSpeedY = j.value("fireballSpeedY", game.fireballSpeedY);
     game.fireBallTTL = j.value("fireBallTTL", game.fireBallTTL);
+    // 物理（B5）
+    game.solverIterations = j.value("solverIterations", game.solverIterations);
+    game.restingSpeedThreshold = j.value("restingSpeedThreshold", game.restingSpeedThreshold);
+    game.restitutionStatic = j.value("restitutionStatic", game.restitutionStatic);
+    game.restitutionMoving = j.value("restitutionMoving", game.restitutionMoving);
 }
 
 bool ConfigManager::save() {
@@ -115,6 +120,11 @@ bool ConfigManager::save() {
         config["game"]["shootDelay"] = game.shootDelay;
         config["game"]["fireBallTTL"] = game.fireBallTTL;
         config["game"]["debug"] = game.debug;
+        // 物理（B5）
+        config["game"]["solverIterations"] = game.solverIterations;
+        config["game"]["restingSpeedThreshold"] = game.restingSpeedThreshold;
+        config["game"]["restitutionStatic"] = game.restitutionStatic;
+        config["game"]["restitutionMoving"] = game.restitutionMoving;
 
         std::ofstream file(path);
         if (!file.is_open()) {

@@ -40,6 +40,10 @@
         "defaultBlockSize": 64.0,
         "shootDelay": 300,
         "fireBallTTL": 10000,
-        "debug": true
+        "debug": true,
+        "solverIterations": 4,
+        "restingSpeedThreshold": 40.0,
+        "restitutionStatic": 0.28,
+        "restitutionMoving": 0.1
     }
 }
