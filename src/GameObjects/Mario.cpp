@@ -30,10 +30,6 @@ namespace {
     constexpr float LOCAL_POSITION_SNAP_DISTANCE = 120.f;
     // 中等误差每次只修正一部分，让校正过程看起来更平滑。
     constexpr float LOCAL_CORRECTION_RATIO = 0.18f;
-    // 远端玩家不受本地输入控制，可以更贴近服务端快照，但仍然避免每个网络包瞬移。
-    constexpr float REMOTE_POSITION_TOLERANCE = 1.5f;
-    constexpr float REMOTE_POSITION_SNAP_DISTANCE = 180.f;
-    constexpr float REMOTE_CORRECTION_SPEED = 18.f;
 
     // 这里只比较距离大小，不需要开方，避免每个网络同步包都做 sqrt。
     float lengthSquared(const sf::Vector2f& value) {
@@ -102,7 +98,6 @@ void Mario::update(sf::Time deltaTime) {
         }
     }
     GameObject::update(deltaTime);
-    applyRemoteNetworkSmoothing(deltaTime);
     if (this->getPosition().y > static_cast<float>(getScene()->getWindowSize().y)) {
         if (this->getComponent<HealthBar>()->isDead()) return;
         this->getComponent<MoveComponent>()->setPositionY(-this->getSize().y);
@@ -266,14 +261,6 @@ void Mario::deserialize(sf::Packet& packet) {
             // 本地玩家：保留客户端预测手感，只用服务端状态做温和纠偏。
             reconcileLocalPlayer(serverPosition, serverSpeed, is_jump);
         } else if (!isPlayer && nm && nm->isClient()) {
-            // 远端玩家：记录服务端目标点，后续在 update 里逐帧平滑靠近。
-            networkTargetPosition = serverPosition;
-            networkTargetSpeed = serverSpeed;
-            hasNetworkTarget = true;
-            const auto& move_component = this->getComponent<MoveComponent>();
-            move_component->setSpeed(serverSpeed);
-            if (is_jump) this->getComponent<StateMachine>()->setState("MarioJumpState");
-        } else {
             setAuthoritativeState(serverPosition, serverSpeed, is_jump);
         }
     } else if (msg_type == NetworkMsg::ClientInput) {
@@ -299,39 +286,6 @@ void Mario::deserialize(sf::Packet& packet) {
     }
 }
 
-// 只在客户端的远端玩家对象上生效。
-// 收到服务端快照时不立刻 setPosition，而是在每帧逐步靠近目标点，减少远端角色瞬移感。
-void Mario::applyRemoteNetworkSmoothing(const sf::Time deltaTime) {
-    const auto* nm = getScene()->getNetworkManager();
-    if (isPlayer || !hasNetworkTarget || !nm || !nm->isClient()) return;
-
-    const auto& move_component = this->getComponent<MoveComponent>();
-    if (!move_component) return;
-
-    const sf::Vector2f delta = networkTargetPosition - this->getPosition();
-    const float distance_squared = lengthSquared(delta);
-    // 远端对象偏差过大时直接同步，避免长期追不上服务端真实位置。
-    if (distance_squared >= REMOTE_POSITION_SNAP_DISTANCE * REMOTE_POSITION_SNAP_DISTANCE) {
-        move_component->setPosition(networkTargetPosition);
-        move_component->setSpeed(networkTargetSpeed);
-        hasNetworkTarget = false;
-        return;
-    }
-
-    // 已经足够接近时吸附到目标点，避免小数误差导致一直微调。
-    if (distance_squared <= REMOTE_POSITION_TOLERANCE * REMOTE_POSITION_TOLERANCE) {
-        move_component->setPosition(networkTargetPosition);
-        move_component->setSpeed(networkTargetSpeed);
-        hasNetworkTarget = false;
-        return;
-    }
-
-    // 按帧时间计算本帧修正比例，帧率变化时平滑速度也比较稳定。
-    const float correction = clamp01(REMOTE_CORRECTION_SPEED * deltaTime.asSeconds());
-    move_component->addPosition(delta * correction);
-    move_component->setSpeed(networkTargetSpeed);
-}
-
 // 只用于客户端自己的玩家。
 // 本地玩家已经根据输入预测移动，这里只负责用服务端快照纠偏，避免旧快照反复拉扯角色。
 void Mario::reconcileLocalPlayer(const sf::Vector2f& serverPosition, const sf::Vector2f& serverSpeed, const bool isJump) {
@@ -355,7 +309,7 @@ void Mario::reconcileLocalPlayer(const sf::Vector2f& serverPosition, const sf::V
 }
 
 // 无平滑地应用服务端权威位置和速度。
-// 当前主要在本地玩家偏离服务端太远时调用，作为防止长期不同步的兜底。
+// 本地的远端玩家直接同步服务端状态。
 void Mario::setAuthoritativeState(const sf::Vector2f& serverPosition, const sf::Vector2f& serverSpeed, const bool isJump) {
     const auto& move_component = this->getComponent<MoveComponent>();
     if (!move_component) return;
