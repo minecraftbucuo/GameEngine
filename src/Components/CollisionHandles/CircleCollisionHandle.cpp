@@ -11,8 +11,14 @@
 
 namespace {
 // 接触静止判定的接近速度阈值：法向接近速度低于该值视为静止接触，
-// 不再注入回弹冲量（避免重力+冲量持续注能导致的微弹跳）。阶段 B 再配置化。
-constexpr float RESTING_SPEED_THRESHOLD = 20.f;
+// 不再注入回弹冲量（避免重力+冲量持续注能导致的微弹跳）。
+// 调大后堆叠振荡速度（冲击在堆内来回反射的速度）也能被快速吸收，减少"弹簧感"。
+// 阶段 B 再配置化。
+constexpr float RESTING_SPEED_THRESHOLD = 40.f;
+// 球-球回弹系数：调小以抑制堆叠振荡（新球砸在堆顶时向堆内注入的能量）。
+// 注意球-地面弹跳走 box 路径（CollisionHandle.cpp 的 0.28），不受此值影响。
+// 阶段 B 换恢复系数模型。
+constexpr float BOUNCE_FACTOR = 0.1f;
 }
 
 CircleCollisionHandle::CircleCollisionHandle() {
@@ -72,19 +78,21 @@ void CircleCollisionHandle::handleCollisionWithCircle(const CollisionEvent& even
             const float speed_n = event.a_speed.x * dir.x + event.a_speed.y * dir.y;
             moveComponent->addSpeed(-dir * speed_n);
         } else {
-            // 接近速度较大：保留回弹冲量（阶段 B 换恢复系数模型）
+            // 接近速度较大：保留回弹冲量（阶段 B 换恢复系数模型）。
+            // BOUNCE_FACTOR 调小：新球砸到堆顶时向堆内注入的能量少，堆叠不易振荡。
             const float relativeSpeed_len = std::sqrt(
                 relativeSpeed.x * relativeSpeed.x + relativeSpeed.y * relativeSpeed.y);
-            moveComponent->addSpeed(dir * relativeSpeed_len * 0.28f);
+            moveComponent->addSpeed(dir * relativeSpeed_len * BOUNCE_FACTOR);
         }
     }
 
     // 位置分离：双方各分摊一半修正距离，避免双方各自移动完整重叠距离导致总分离 2 倍。
     // 若对方不可移动（如地面），则由本方推完整距离（对方不动）。
-    const float move_dis = (this_->getSize().x / 2 + other->getSize().x / 2 - dir_len);
+    // 全量修正：一帧内完全分开（收敛最快）。曾尝试比例修正/单帧限幅，实测收敛偏慢被否决。
+    const float penetration = this_->getSize().x / 2 + other->getSize().x / 2 - dir_len;
     if (other->getMoveAble()) {
-        moveComponent->addPosition(move_dis * 0.5f * dir);
+        moveComponent->addPosition(penetration * 0.5f * dir);
     } else {
-        moveComponent->addPosition(move_dis * dir);
+        moveComponent->addPosition(penetration * dir);
     }
 }

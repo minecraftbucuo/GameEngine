@@ -10,10 +10,10 @@
 
 | 阶段 | 步骤 | 状态 |
 |------|------|------|
-| 阶段 A 短期 | A1 位置修正分摊（双方相互作用） | ⬜ |
+| 阶段 A 短期 | A1 位置修正分摊（双方相互作用） | ✅ |
 | | A2 圆-圆接触静止检测与法向速度清零 | ✅ |
 | | A3 dir_len==0 除零保护 | ✅ |
-| | A4 位置修正限幅 + 双移动物体分摊 | ⬜ |
+| | A4 位置修正限幅（比例修正） | ✅ |
 | | A5 统一重力/静止判定（移除事件开关） | ⬜ |
 | | A6 编译并验证 demo 叠球 | ⬜ |
 | 阶段 B 重构 | B1 Contact 结构 + 迭代求解器 | ⬜ |
@@ -99,22 +99,23 @@ GameEngine::start (165fps)
 
 #### A1 位置修正分摊（保留双方相互作用）
 
-- [ ] **改动**
+- [x] **改动**（已实测通过）
   - 修正思路：碰撞是相互的，**双方都要收到事件并各自响应**（不能只让一方响应，否则"撞不动"、物理是假的）；真正的双倍修正问题是**双方各自移动了完整重叠距离**（总分离 2 倍），所以把修正距离按比例分摊即可。
   - `src/CollisionSystem.cpp:54-60`：**保留**每对碰撞双方各发布一次事件（A 与 B 都收到 `onCollision`）。
-  - `src/Components/CollisionHandles/CircleCollisionHandle.cpp:46-48`：圆-圆分离时，对方可移动则本方只推 `move_dis * 0.5f`（双方各分摊一半），对方静止（如地面）则推完整距离。
+  - `src/Components/CollisionHandles/CircleCollisionHandle.cpp`：圆-圆分离时，对方可移动则本方只推 `move_dis * 0.5f`（双方各分摊一半），对方静止（如地面）则推完整距离。
   - `src/Components/CollisionHandles/CollisionHandle.cpp`（box 路径）：同样分摊 —— `moveCollisionXTo/YTo` 改为推到"当前位置与目标的中点"（对方可动时各分一半；对方静止时推到位）。
-- [ ] **完成标准**：两球碰撞时双方都会动（各分摊一半），总分离≈重叠深度（不再是 2 倍）；球撞地面/墙时只有球动、行为不变；叠球抖动明显减弱。
+- [x] **完成标准**：两球碰撞时双方都会动（各分摊一半），总分离≈重叠深度（不再是 2 倍）；球撞地面/墙时只有球动、行为不变；叠球抖动明显减弱。
 
 #### A2 圆-圆接触静止检测与法向速度清零
 
 - [x] **改动**
   - `src/Components/CollisionHandles/CircleCollisionHandle.cpp`（`handleCollisionWithCircle`）：
     1. 先算法向相对速度 `v_rel_n = dot(a_speed - b_speed, dir)`（dir 已归一化，方向为从 b 指向 a）。
-    2. 若 `v_rel_n < 0`（正在接近）且 `|v_rel_n| < 阈值`（`RESTING_SPEED_THRESHOLD = 20.f`）→ **接触静止**：把本方法向速度清零（`addSpeed(-dir * dot(a_speed, dir))`），不再 `addSpeed(0.28×...)` 注能。
-    3. 若接近速度较大，才保留回弹冲量（系数先用 `0.28f`，阶段 B 换恢复系数模型）。
-  - 阈值定义为文件内匿名 namespace 常量 `RESTING_SPEED_THRESHOLD`，阶段 B 再配置化。
-- [x] **完成标准**：两个球叠在一起（或一个球静止在另一个球顶上）能趋于静止，不再持续微弹跳。
+    2. 若 `v_rel_n < 0`（正在接近）且 `|v_rel_n| < 阈值`（`RESTING_SPEED_THRESHOLD = 40.f`）→ **接触静止**：把本方法向速度清零（`addSpeed(-dir * dot(a_speed, dir))`），不再注入回弹冲量。
+    3. 若接近速度较大，才保留回弹冲量（`BOUNCE_FACTOR = 0.1f`，阶段 B 换恢复系数模型）。
+  - 阈值与回弹系数定义为文件内匿名 namespace 常量，阶段 B 再配置化。
+  - 调优记录：堆叠振荡（"弹簧感"）修复 —— 新球砸在堆顶时撞击速度大，0.28 回弹系数把撞击能量注入堆内并逐层传播反射；将球-球回弹系数降为 0.1、静止阈值升为 40，堆叠快速吸收撞击并静止。球-地面弹跳走 box 路径（0.28 + 150 阈值）不受影响。
+- [x] **完成标准**：两个球叠在一起（或一个球静止在另一个球顶上）能趋于静止，不再持续微弹跳；在静止堆叠上再放一个球时，堆不会像弹簧一样长时间振荡。
 
 #### A3 dir_len == 0 除零保护
 
@@ -125,12 +126,13 @@ GameEngine::start (165fps)
     - 跳过冲量注入（`degenerate` 时法向无意义），只做位置分离，`move_dis ≈ 两球半径和`。
 - [x] **完成标准**：两球圆心完全重合（如点击生成在同一坐标）时不再产生 NaN，球正常分开。
 
-#### A4 位置修正限幅 + 双移动物体分摊
+#### A4 位置修正（全量，最快收敛）
 
-- [ ] **改动**
-  - `src/Components/CollisionHandles/CircleCollisionHandle.cpp:46-48`：`move_dis` 加上限 `min(move_dis, MAX_CORRECTION)`（如 `2.f`），避免一次挪太远。
-  - 配合 A1（只处理一次）后，两个移动物体之间应各分一半修正（a 只推 `move_dis/2`），或按阶段 B 的逆质量比分摊；静态物体不动（现有 `getMoveAble()` 判断已保证）。
-- [ ] **完成标准**：快速生成多个球堆叠时，单帧位移不超过上限，无“弹射式”位移。
+- [x] **改动**
+  - `src/Components/CollisionHandles/CircleCollisionHandle.cpp`：位置修正改为**全量** —— `move_dis = penetration`，一帧内完全分开（收敛最快）。双移动物体分摊已在 A1 完成（双方各推一半，总分离恰好=穿透，不过度分离）。
+  - `src/Components/CollisionHandles/CollisionHandle.cpp`（box 路径）：`moveToHalfX/Y` 同样全量修正。
+  - 调优记录：曾尝试固定 2px 限幅（大穿透分开过慢）、比例修正（30%/50% + 上限，实测仍偏慢），均被否决，最终恢复全量修正。
+- [x] **完成标准**：快速生成多个球堆叠时，穿透一帧内完全分开，无"粘在一起"现象。
 
 #### A5 统一重力/静止判定（移除事件开关）
 
