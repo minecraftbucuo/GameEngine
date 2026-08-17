@@ -65,7 +65,7 @@ public:
     virtual void addObjectWithMap(const std::shared_ptr<GameObject>& obj);
 
     virtual void addObjectWithNetwork(const std::shared_ptr<GameObject>& obj) {
-
+        addObjectWithMap(obj);
     }
 
     std::shared_ptr<GameObject> findGameObjectById(unsigned int id);
