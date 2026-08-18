@@ -131,12 +131,13 @@
 - **原子性保证**：纯新增头文件，无任何现有代码引用它，编译必然通过
 
 #### Step 3 — PhysicsWorld（场景级 b2World 管理）
-- [ ] 新建 `src/Physics/PhysicsWorld.h/.cpp`，封装 `b2World`、重力、`step(dt)` 固定步累加器
-- [ ] 提供 `createBody(def)` / `destroyBody(body)` 接口
-- [ ] 读取 `CONFIG.game.*` 物理参数
+- [x] 新建 `src/Physics/PhysicsWorld.h/.cpp`，封装 `b2World`、重力、`step(dt)` 固定步累加器
+- [x] 提供 `createBody(def)` / `destroyBody(body)` 接口
+- [x] 读取 `CONFIG.game.*` 物理参数（ConfigManager 扩展 physics 字段）
 - **验证**：构造 PhysicsWorld，step 100 次不崩溃
 - **新增文件**：`src/Physics/PhysicsWorld.h`、`src/Physics/PhysicsWorld.cpp`
-- **原子性保证**：纯新增类，未接入任何 Scene，编译通过且对运行时零影响
+- **改动文件**：`src/Manager/ConfigManager.h`（加 physics 参数）、`src/Manager/ConfigManager.cpp`（parse/save）
+- **原子性保证**：纯新增类，未接入任何 Scene；ConfigManager 新字段有安全默认值，现有 config.json 无对应字段时用默认值
 
 ---
 

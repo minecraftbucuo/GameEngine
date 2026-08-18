@@ -58,6 +58,10 @@ public:
         int shootDelay = 300;
         int fireBallTTL = 10000;
         bool debug = true;
+        // Box2D 物理参数
+        int physicsVelocityIterations = 8;
+        int physicsPositionIterations = 3;
+        float physicsFixedStep = 1.0f / 60.0f;
     } game{};
 
     // 便捷访问方法
