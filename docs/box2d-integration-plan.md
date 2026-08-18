@@ -123,10 +123,10 @@
 - **原子性保证**：仅新增依赖与链接，不改任何现有源码逻辑；若 Box2D 拉取失败，关 `BUILD_WITH_BOX2D` 即恢复
 
 #### Step 2 — 坐标/单位转换工具
-- [ ] 新建 `src/Physics/PhysicsTypes.h`，定义 `PPM`、`toMeters()`、`toPixels()`
-- [ ] 定义 `BodyType` 枚举映射 `b2BodyType`
-- [ ] CMake 里把 `src/Physics` 加入 include path
-- **验证**：单元测试/断言：`toPixels(toMeters(128)) == 128`
+- [x] 新建 `src/Physics/PhysicsTypes.h`，定义 `PPM`、`toMeters()`、`toPixels()`、向量转换
+- [x] 定义 `BodyType` 枚举映射 `b2BodyType`
+- [x] CMake 里把 `src/Physics` 加入 include path
+- **验证**：`toPixels(toMeters(128))` ≈ 128（浮点精度内）
 - **新增文件**：`src/Physics/PhysicsTypes.h`
 - **原子性保证**：纯新增头文件，无任何现有代码引用它，编译必然通过
 

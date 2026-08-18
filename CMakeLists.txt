@@ -97,6 +97,7 @@ target_include_directories(
         ${SRC_DIR}/State
         ${SRC_DIR}/Manager
         ${SRC_DIR}/Network
+        ${SRC_DIR}/Physics
 
         ${LIB_DIR}
         ${SFML_ROOT}/include
