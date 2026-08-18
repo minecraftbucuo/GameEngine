@@ -30,6 +30,10 @@ public:
     void setShapeCircle(float radius);
     // 固定旋转（如角色不旋转）
     void setFixedRotation(bool fixed);
+    // 碰撞过滤（categoryBits=自身所属分组，maskBits=能碰撞的分组）
+    void setCollisionFilter(uint16 categoryBits, uint16 maskBits);
+    // 用 groupIndex：同正数始终碰撞，同负数始终不碰撞
+    void setCollisionGroup(int16 groupIndex);
 
     // 施加力/冲量（像素单位，内部转米）
     void applyLinearImpulse(const sf::Vector2f& impulse);
@@ -56,4 +60,8 @@ private:
     float friction = 0.3f;
     float restitution = 0.0f;
     bool fixedRotation = false;
+    // 碰撞过滤（默认全通过）
+    uint16 categoryBits = 0x0001;
+    uint16 maskBits = 0xFFFF;
+    int16 groupIndex = 0;
 };

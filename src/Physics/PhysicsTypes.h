@@ -40,4 +40,16 @@ enum class BodyType : int {
     Dynamic = b2_dynamicBody
 };
 
+// 碰撞分组 categoryBits（每个分组占一位，可组合）
+namespace Category {
+    inline constexpr uint16 Player    = 0x0001;
+    inline constexpr uint16 Enemy     = 0x0002;
+    inline constexpr uint16 Ground    = 0x0004;
+    inline constexpr uint16 Brick     = 0x0008;
+    inline constexpr uint16 Projectile= 0x0010;
+    inline constexpr uint16 Trigger   = 0x0020;
+    inline constexpr uint16 All       = 0xFFFF;
+    inline constexpr uint16 None      = 0x0000;
+} // namespace Category
+
 } // namespace physics

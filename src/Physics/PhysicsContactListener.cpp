@@ -58,4 +58,11 @@ void PhysicsContactListener::EndContact(b2Contact* contact) {
     EventBus::getInstance().publish("onCollisionEnd" + b->getTag(), event);
 }
 
+void PhysicsContactListener::PreSolve(b2Contact* contact, const b2Manifold* /*oldManifold*/) {
+    // 默认不干预。具体对象（如单向砖块）迁移时可在 owner 上检查标签，
+    // 用 contact->SetEnabled(false) 禁用本次接触。
+    // 示例：若 a 是玩家、b 是砖块，且法线向上（玩家从下方撞），则 SetEnabled(false) 让玩家穿过。
+    (void)contact;
+}
+
 } // namespace physics

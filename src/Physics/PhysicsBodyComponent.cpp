@@ -56,6 +56,9 @@ void PhysicsBodyComponent::start() {
         fd.restitution = restitution;
         // userData 存 GameObject 指针，ContactListener 用它组装事件
         fd.userData.pointer = reinterpret_cast<uintptr_t>(owner);
+        fd.filter.categoryBits = categoryBits;
+        fd.filter.maskBits = maskBits;
+        fd.filter.groupIndex = groupIndex;
         body->CreateFixture(&fd);
     } else {
         // 圆形
@@ -68,6 +71,9 @@ void PhysicsBodyComponent::start() {
         fd.friction = friction;
         fd.restitution = restitution;
         fd.userData.pointer = reinterpret_cast<uintptr_t>(owner);
+        fd.filter.categoryBits = categoryBits;
+        fd.filter.maskBits = maskBits;
+        fd.filter.groupIndex = groupIndex;
         body->CreateFixture(&fd);
     }
 }
@@ -108,6 +114,31 @@ void PhysicsBodyComponent::setShapeCircle(float radius) {
 
 void PhysicsBodyComponent::setFixedRotation(bool fixed) {
     fixedRotation = fixed;
+}
+
+void PhysicsBodyComponent::setCollisionFilter(uint16 catBits, uint16 maskBits) {
+    categoryBits = catBits;
+    this->maskBits = maskBits;
+    // 若 body 已创建，实时更新所有 fixture 的 filter
+    if (body) {
+        for (b2Fixture* f = body->GetFixtureList(); f; f = f->GetNext()) {
+            b2Filter filter = f->GetFilterData();
+            filter.categoryBits = catBits;
+            filter.maskBits = maskBits;
+            f->SetFilterData(filter);
+        }
+    }
+}
+
+void PhysicsBodyComponent::setCollisionGroup(int16 gIdx) {
+    groupIndex = gIdx;
+    if (body) {
+        for (b2Fixture* f = body->GetFixtureList(); f; f = f->GetNext()) {
+            b2Filter filter = f->GetFilterData();
+            filter.groupIndex = gIdx;
+            f->SetFilterData(filter);
+        }
+    }
 }
 
 void PhysicsBodyComponent::applyLinearImpulse(const sf::Vector2f& impulse) {

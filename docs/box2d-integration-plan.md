@@ -176,12 +176,12 @@
 - **原子性保证**：listener 仅在 `usePhysics=true` 的场景里生效，现有场景不受影响
 
 #### Step 7 — 碰撞过滤与分组
-- [ ] 利用 `b2Filter`（categoryBits/maskBits/groupIndex）定义分组（玩家、敌人、地面、抛体、触发器）
-- [ ] 在 `PhysicsBodyComponent` 创建参数里支持设置 filter（默认全通过）
-- [ ] 单向碰撞（如玩家从下方撞砖块）用 `b2Contact` 的 `SetEnabled` 在 PreSolve 处理
+- [x] 利用 `b2Filter`（categoryBits/maskBits/groupIndex）定义分组（Player/Enemy/Ground/Brick/Projectile/Trigger）
+- [x] 在 `PhysicsBodyComponent` 支持 `setCollisionFilter`/`setCollisionGroup`（默认全通过）
+- [x] `PhysicsContactListener` 加 `PreSolve` 钩子（默认空，单向碰撞逻辑留待具体对象迁移时实现）
 - **验证**：两个 body 设互斥 mask，不再触发碰撞事件
-- **改动文件**：`src/Physics/PhysicsBodyComponent.h/.cpp`、`src/Physics/PhysicsContactListener.cpp`（加 PreSolve）
-- **原子性保证**：filter 默认全通过（0xFFFF/0xFFFF），旧调用方式行为不变
+- **改动文件**：`src/Physics/PhysicsTypes.h`（加 Category 常量）、`src/Physics/PhysicsBodyComponent.h/.cpp`、`src/Physics/PhysicsContactListener.h/.cpp`
+- **原子性保证**：filter 默认全通过（categoryBits=0x0001, maskBits=0xFFFF），PreSolve 默认空实现，现有行为不变
 
 ---
 

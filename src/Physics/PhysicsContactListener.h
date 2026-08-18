@@ -18,6 +18,8 @@ class PhysicsContactListener : public b2ContactListener {
 public:
     void BeginContact(b2Contact* contact) override;
     void EndContact(b2Contact* contact) override;
+    // PreSolve：可在此用 SetEnabled(false) 禁用本次接触（单向碰撞用）
+    void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) override;
 
 private:
     // 从 fixture userData 取 GameObject*
