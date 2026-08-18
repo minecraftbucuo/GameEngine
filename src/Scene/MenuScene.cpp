@@ -63,6 +63,10 @@ void MenuScene::initScene() {
         getSceneManager()->loadScene("SettingsScene");
     });
 
+    makeButton(L"物理测试", 5, [&]() -> void {
+        getSceneManager()->loadScene("PhysicsTestScene");
+    });
+
     // 初始化背景粒子
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> distX(0.f, winW);

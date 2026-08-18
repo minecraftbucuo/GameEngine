@@ -12,6 +12,7 @@
 #include "GameScene3D.h"
 #include "MenuScene.h"
 #include "SettingsScene.h"
+#include "PhysicsTestScene.h"
 #endif
 #include "SuperMarioScene.h"
 #include "FrameManager.h"
@@ -67,6 +68,7 @@ void GameEngine::init() {
     scene_manager->addScene<SuperMarioScene>(window);
     scene_manager->addScene<MenuScene>(window);
     scene_manager->addScene<SettingsScene>(window);
+    scene_manager->addScene<PhysicsTestScene>(window);
     scene_manager->loadScene("MenuScene");
 #else
     scene_manager->addScene<SuperMarioScene>();

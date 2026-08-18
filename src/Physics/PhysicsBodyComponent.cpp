@@ -36,11 +36,17 @@ void PhysicsBodyComponent::start() {
     }
 
     // body 定义
+    // Box2D 的 position 是质心，GameObject 的 position 是左上角，需转换
+    sf::Vector2f halfSize = owner->getSize() * 0.5f;
     b2BodyDef def;
     def.type = bodyType;
-    def.position = physics::toMeters(owner->getPosition());
+    def.position = physics::toMeters(owner->getPosition() + halfSize);
     def.fixedRotation = fixedRotation;
     body = world->createBody(&def);
+    LOG_INFO("PhysicsBodyComponent::start() - owner=" + std::to_string(owner->getId())
+             + " tag=" + owner->getTag()
+             + " bodyType=" + std::to_string(static_cast<int>(bodyType))
+             + " posMeters=(" + std::to_string(def.position.x) + "," + std::to_string(def.position.y) + ")");
 
     // fixture 形状
     if (shapeType == ShapeType::Box) {
@@ -80,9 +86,10 @@ void PhysicsBodyComponent::start() {
 
 void PhysicsBodyComponent::update(const sf::Time& deltaTime) {
     if (!body || !owner) return;
-    // 把 b2Body 位置（米）回写到 owner->position（像素）
+    // 把 b2Body 位置（质心，米）回写到 owner->position（左上角，像素）
     b2Vec2 pos = body->GetPosition();
-    owner->position = physics::toPixels(pos);
+    sf::Vector2f halfSize = owner->getSize() * 0.5f;
+    owner->position = physics::toPixels(pos) - halfSize;
 }
 
 void PhysicsBodyComponent::setBodyType(physics::BodyType type) {

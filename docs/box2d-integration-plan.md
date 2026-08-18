@@ -188,11 +188,12 @@
 ### 阶段四：最小闭环验证（一次新增场景）
 
 #### Step 8 — 新建 Box2D 测试场景
-- [ ] 新建 `src/Scene/PhysicsTestScene.h/.cpp`，构造时 `usePhysics = true`
-- [ ] 放一个动态方块 + 一块静态地面，验证下落、堆叠、弹性
-- [ ] 在 `GameEngine::init` 注册该场景，MenuScene 加入口
-- **验证**：进入测试场景，方块落到地面弹起后静止；其他场景行为不变
-- **新增文件**：`src/Scene/PhysicsTestScene.h/.cpp`
+- [x] 新建 `src/Scene/PhysicsTestScene.h/.cpp`，构造时 `usePhysics = true`
+- [x] 放两个动态方块（不同密度/弹性）+ 一块静态地面，验证下落、弹起
+- [x] 在 `GameEngine::init` 注册该场景，MenuScene 加"物理测试"入口
+- [x] ESC 返回菜单
+- **验证**：进入测试场景，方块从空中落下，撞地弹起后静止
+- **新增文件**：`src/Scene/PhysicsTestScene.h/.cpp`（内含 PhysicsBox/PhysicsGround 类）
 - **改动文件**：`src/GameEngine.cpp`（注册场景）、`src/Scene/MenuScene.cpp`（加按钮）
 - **原子性保证**：新增场景独立，仅在用户主动进入时才激活物理；现有场景未受影响
 

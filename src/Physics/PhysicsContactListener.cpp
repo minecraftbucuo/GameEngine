@@ -8,6 +8,7 @@
 #include "EventBus.h"
 #include "Events.h"
 #include "PhysicsTypes.h"
+#include "Logger.h"
 
 namespace physics {
 
@@ -20,7 +21,15 @@ GameObject* PhysicsContactListener::getGameObject(b2Contact* contact, const bool
 void PhysicsContactListener::BeginContact(b2Contact* contact) {
     GameObject* a = getGameObject(contact, true);
     GameObject* b = getGameObject(contact, false);
-    if (!a || !b) return;
+    if (!a || !b) {
+        LOG_WARN("PhysicsContactListener::BeginContact - a or b is null");
+        return;
+    }
+
+    LOG_INFO("PhysicsContactListener::BeginContact - a.tag=" + a->getTag()
+             + " b.tag=" + b->getTag()
+             + " a.pos=(" + std::to_string(a->getPosition().x) + "," + std::to_string(a->getPosition().y) + ")"
+             + " b.pos=(" + std::to_string(b->getPosition().x) + "," + std::to_string(b->getPosition().y) + ")");
 
     // 组装 CollisionEvent，通过 EventBus 发布到现有订阅者
     const sf::Vector2f a_pos = a->getPosition();
@@ -34,10 +43,17 @@ void PhysicsContactListener::BeginContact(b2Contact* contact) {
 
     // 从场景找回 shared_ptr
     Scene* scene = a->getScene();
-    if (!scene) return;
+    if (!scene) {
+        LOG_WARN("PhysicsContactListener::BeginContact - scene is null, a.tag=" + a->getTag());
+        return;
+    }
     auto objA = scene->findGameObjectById(a->getId());
     auto objB = scene->findGameObjectById(b->getId());
-    if (!objA || !objB) return;
+    if (!objA || !objB) {
+        LOG_WARN("PhysicsContactListener::BeginContact - findGameObjectById failed, a.id=" + std::to_string(a->getId())
+                 + " b.id=" + std::to_string(b->getId()));
+        return;
+    }
 
     CollisionEvent event{ objA, objB, a_speed, b_speed, a_pos, b_pos };
     EventBus::getInstance().publish("onCollision" + a->getTag(), event);
@@ -51,6 +67,8 @@ void PhysicsContactListener::EndContact(b2Contact* contact) {
     GameObject* a = getGameObject(contact, true);
     GameObject* b = getGameObject(contact, false);
     if (!a || !b) return;
+
+    LOG_INFO("PhysicsContactListener::EndContact - a.tag=" + a->getTag() + " b.tag=" + b->getTag());
 
     // 发布结束事件（新事件名，不影响现有订阅者）
     CollisionEvent event{ nullptr, nullptr, {}, {}, a->getPosition(), b->getPosition() };
