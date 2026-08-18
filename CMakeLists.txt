@@ -56,6 +56,25 @@ if (WIN32 AND WIN_STATIC_LINK)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
 endif ()
 
+# ── Box2D 物理引擎接入 ──────────────────────────────────────────────
+# 原子性：纯新增依赖，不改任何现有源码逻辑；关 BUILD_WITH_BOX2D 即恢复原状态
+option(BUILD_WITH_BOX2D "Build with Box2D physics engine" ON)
+if (BUILD_WITH_BOX2D)
+    message(STATUS "Building with Box2D physics engine")
+    include(FetchContent)
+    FetchContent_Declare(
+        Box2D
+        GIT_REPOSITORY https://github.com/erincatto/box2d.git
+        GIT_TAG v2.4.1
+    )
+    # Box2D 默认会编译示例和测试，关闭以加速构建
+    set(BUILD_SHARED_LIBS OFF)
+    set(BOX2D_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(BOX2D_BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(Box2D)
+endif ()
+# ───────────────────────────────────────────────────────────────────
+
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
@@ -167,6 +186,11 @@ else ()
     endif ()
 
     target_link_libraries(${PROJECT_NAME} PRIVATE ${LINK_LIBRARIES})
+endif ()
+
+# 链接 Box2D（无论 SFML 用何种方式都需附加）
+if (BUILD_WITH_BOX2D)
+    target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 endif ()
 
 if (NOT BUILD_FOR_SERVER)

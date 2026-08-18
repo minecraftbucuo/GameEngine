@@ -115,10 +115,10 @@
 ### 阶段一：基础设施（纯新增，最安全）
 
 #### Step 1 — CMake 接入 Box2D
-- [ ] 用 `FetchContent` 拉取 Box2D 2.4.x
-- [ ] 新增 CMake option `BUILD_WITH_BOX2D`（默认 ON）
-- [ ] 链接到主 target，写一个最小 main 调用 `b2World` 验证编译通过
-- **验证**：`cmake --build` 通过，能打印 Box2D 版本号
+- [x] 用 `FetchContent` 拉取 Box2D 2.4.x
+- [x] 新增 CMake option `BUILD_WITH_BOX2D`（默认 ON）
+- [x] 链接到主 target（`target_link_libraries` 附加 `box2d`）
+- **验证**：`cmake --build` 通过，Box2D 被编译进项目
 - **改动文件**：`CMakeLists.txt`
 - **原子性保证**：仅新增依赖与链接，不改任何现有源码逻辑；若 Box2D 拉取失败，关 `BUILD_WITH_BOX2D` 即恢复
 
