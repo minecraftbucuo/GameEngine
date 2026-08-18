@@ -11,6 +11,7 @@
 class GameObject;
 class CollisionSystem;
 class SceneManager;
+namespace physics { class PhysicsWorld; }
 class Scene {
 public:
 #ifndef SERVER_BUILD
@@ -20,7 +21,7 @@ public:
     explicit Scene() : scene_name("Scene") {}
     explicit Scene(std::string _name) : scene_name(std::move(_name)) {}
 #endif
-    virtual ~Scene() = default;
+    virtual ~Scene();
 
     // 场景初始化方法
     virtual void init();
@@ -122,6 +123,11 @@ public:
         return nullptr;
     }
 
+    // ── Box2D 物理世界 ──
+    // 子类构造时设 usePhysics = true 即启用物理，默认 false 不影响现有行为
+    bool usePhysics = false;
+    [[nodiscard]] physics::PhysicsWorld* getPhysicsWorld() const;
+
     virtual NetworkManager::NetworkType getNetworkType() const {
         return NetworkManager::NetworkType::None;
     }
@@ -139,4 +145,7 @@ protected:
     SceneManager* scene_manager{};
     NetworkManager* network_manager{};
     bool is_init = false;
+
+    // 物理世界（仅 usePhysics=true 时创建，析构在 Scene.cpp 处理）
+    physics::PhysicsWorld* physics_world{};
 };

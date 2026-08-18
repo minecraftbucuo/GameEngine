@@ -3,15 +3,30 @@
 //
 
 #include <Scene.h>
+#include "PhysicsWorld.h"
+
+// 析构定义放这里，确保 PhysicsWorld 完整类型可见
+Scene::~Scene() {
+    delete physics_world;
+    physics_world = nullptr;
+}
 
 void Scene::init() {
 #ifndef SERVER_BUILD
     this->setCamera(window);
 #endif
     GameObject::resetIdCounter();
+    // 仅当场景启用物理时创建物理世界
+    if (usePhysics && !physics_world) {
+        physics_world = new physics::PhysicsWorld();
+    }
 }
 
 void Scene::update(sf::Time deltaTime) {
+    // 物理世界推进（在对象 update 前，保证 PhysicsBodyComponent 同步最新位置）
+    if (physics_world) {
+        physics_world->step(deltaTime);
+    }
     // 删除已销毁的 GameObject
     std::erase_if(game_objects, [](const auto& obj) {
         return obj->isDestroy();
@@ -86,6 +101,10 @@ void Scene::removeObjectById(const unsigned int id) {
 
 void Scene::setSceneManager(SceneManager* _scene_manager) {
     scene_manager = _scene_manager;
+}
+
+physics::PhysicsWorld* Scene::getPhysicsWorld() const {
+    return physics_world;
 }
 
 #ifndef SERVER_BUILD

@@ -143,25 +143,22 @@
 
 ### 阶段二：组件层（新增 + 一次基类扩展）
 
-#### Step 4 — PhysicsBodyComponent（封装 b2Body）
-- [ ] 新建 `src/Physics/PhysicsBodyComponent.h/.cpp`，继承 `Component`
-- [ ] `start()` 时向所属场景的 PhysicsWorld 创建 `b2Body`，挂 fixture
-- [ ] `update()` 时把 `b2Body` 位置/角度回写到 `owner->position`（像素）
-- [ ] 析构时销毁 body
-- **验证**：手动构造 Component 并 attach 到对象，能创建/销毁 body 不崩溃
+#### Step 4+5 — PhysicsBodyComponent + Scene 集成（合并为一个原子提交）
+- [x] 新建 `src/Physics/PhysicsBodyComponent.h/.cpp`，继承 `Component`
+- [x] `start()` 时向所属场景的 PhysicsWorld 创建 `b2Body`，挂 fixture（支持矩形/圆形）
+- [x] `update()` 时把 `b2Body` 位置回写到 `owner->position`（像素）
+- [x] 析构时销毁 body，避免悬挂指针
+- [x] 提供 `applyLinearImpulse`/`applyForceToCenter`/`setLinearVelocity`/`setTransform` 等 API
+- [x] `Scene` 增加 `physics_world` 成员（默认 `nullptr`）与 `getPhysicsWorld()`
+- [x] `Scene` 增加 `bool usePhysics = false` 开关
+- [x] `Scene::init()` 当 `usePhysics==true` 才创建 PhysicsWorld
+- [x] `Scene::update()` 当 `physics_world` 非空才调用 `step(dt)`（在对象 update 前）
+- [x] `GameObject` 加 `friend PhysicsBodyComponent`（允许写 position）
+- **验证**：所有现有场景 `usePhysics` 默认 false，行为完全不变；新组件未被任何对象使用
 - **新增文件**：`src/Physics/PhysicsBodyComponent.h/.cpp`
-- **原子性保证**：纯新增组件，没有任何 GameObject 使用它，运行时零影响
-
-#### Step 5 — Scene 集成 PhysicsWorld（向后兼容扩展）
-- [ ] `Scene` 增加 `std::unique_ptr<PhysicsWorld> physics_world` 成员（默认 `nullptr`）
-- [ ] 增加 `bool usePhysics = false` 开关
-- [ ] 增加 `getPhysicsWorld()` 访问器
-- [ ] `Scene::init()` 中当 `usePhysics==true` 才创建 PhysicsWorld
-- [ ] `Scene::update()` 中当 `physics_world` 非空才调用 `step(dt)`
-- [ ] `Scene::exit()` 中 reset
-- **验证**：所有现有场景 `usePhysics` 默认 false，行为与之前完全一致
-- **改动文件**：`src/Scene/Scene.h`、`src/Scene/Scene.cpp`
-- **原子性保证**：新成员默认 `nullptr`/`false`，所有现有 Scene 子类无需改动，`step()` 不被调用，运行时行为不变
+- **改动文件**：`src/Scene/Scene.h`、`src/Scene/Scene.cpp`、`src/GameObjects/GameObject.h`
+- **合并原因**：PhysicsBodyComponent::start() 依赖 `Scene::getPhysicsWorld()`，两者必须同 commit 才能编译通过
+- **原子性保证**：Scene 新成员默认 `nullptr`/`false`，所有现有 Scene 子类零改动；PhysicsBodyComponent 未被任何对象使用
 
 ---
 

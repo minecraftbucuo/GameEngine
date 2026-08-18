@@ -12,10 +12,12 @@
 #include "Logger.h"
 
 class Scene;
+class PhysicsBodyComponent;
 
 class GameObject {
     friend class MoveComponent;
     friend class StateMachine;
+    friend class PhysicsBodyComponent;
 
 public:
     GameObject();
