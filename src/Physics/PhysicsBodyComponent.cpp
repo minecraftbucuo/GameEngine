@@ -54,6 +54,8 @@ void PhysicsBodyComponent::start() {
         fd.density = density;
         fd.friction = friction;
         fd.restitution = restitution;
+        // userData 存 GameObject 指针，ContactListener 用它组装事件
+        fd.userData.pointer = reinterpret_cast<uintptr_t>(owner);
         body->CreateFixture(&fd);
     } else {
         // 圆形
@@ -65,6 +67,7 @@ void PhysicsBodyComponent::start() {
         fd.density = density;
         fd.friction = friction;
         fd.restitution = restitution;
+        fd.userData.pointer = reinterpret_cast<uintptr_t>(owner);
         body->CreateFixture(&fd);
     }
 }

@@ -165,14 +165,15 @@
 ### 阶段三：碰撞桥接（纯新增 + API 扩展）
 
 #### Step 6 — ContactListener → EventBus 桥接
-- [ ] 新建 `src/Physics/PhysicsContactListener.h/.cpp`，继承 `b2ContactListener`
-- [ ] `BeginContact`：从 `fixture->GetUserData()` 取 `GameObject*`，组装 `CollisionEvent`，发 EventBus
-- [ ] `EndContact`：发 `"onCollisionEnd"+tag`（新事件，旧代码不订阅则无影响）
-- [ ] `PhysicsWorld` 持有该 listener 并在构造时 `SetContactListener`
-- **验证**：构造 PhysicsWorld + 两个 body 相撞，能触发 `"onCollision"+tag`
+- [x] 新建 `src/Physics/PhysicsContactListener.h/.cpp`，继承 `b2ContactListener`
+- [x] `BeginContact`：从 `fixture->GetUserData()` 取 `GameObject*`，组装 `CollisionEvent`，发 EventBus
+- [x] `EndContact`：发 `"onCollisionEnd"+tag`（新事件，旧代码不订阅则无影响）
+- [x] `PhysicsWorld` 持有该 listener 并在构造时 `SetContactListener`
+- [x] `PhysicsBodyComponent` 创建 fixture 时存 `userData = GameObject*`
+- **验证**：两个 body 相撞，能触发现有 `"onCollision"+tag` 订阅者
 - **新增文件**：`src/Physics/PhysicsContactListener.h/.cpp`
-- **改动文件**：`src/Physics/PhysicsWorld.h/.cpp`（仅加 listener 成员与 SetContactListener 调用）
-- **原子性保证**：listener 默认空操作，未接入任何场景的 PhysicsWorld 实例（因 `usePhysics` 默认 false），运行时零影响
+- **改动文件**：`src/Physics/PhysicsWorld.h/.cpp`（加 listener 成员）、`src/Physics/PhysicsBodyComponent.cpp`（存 userData）
+- **原子性保证**：listener 仅在 `usePhysics=true` 的场景里生效，现有场景不受影响
 
 #### Step 7 — 碰撞过滤与分组
 - [ ] 利用 `b2Filter`（categoryBits/maskBits/groupIndex）定义分组（玩家、敌人、地面、抛体、触发器）

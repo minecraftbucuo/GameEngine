@@ -10,6 +10,8 @@
 
 namespace physics {
 
+class PhysicsContactListener;
+
 class PhysicsWorld {
 public:
     PhysicsWorld();
@@ -33,7 +35,8 @@ public:
     const b2World* getWorld() const;
 
 private:
-    std::unique_ptr<b2World> world;
+    b2World* world{};
+    PhysicsContactListener* contactListener{};
     float accumulator = 0.0f;
     float fixedStep = 1.0f / 60.0f;
     int velocityIterations = 8;

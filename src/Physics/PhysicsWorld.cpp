@@ -3,6 +3,7 @@
 //
 
 #include "PhysicsWorld.h"
+#include "PhysicsContactListener.h"
 #include "ConfigManager.h"
 #include "PhysicsTypes.h"
 
@@ -16,10 +17,19 @@ PhysicsWorld::PhysicsWorld() {
 
     // 重力向量：Y 向下（SFML 坐标系），像素/s² → m/s²
     const float gravityMps = physics::toMeters(CONFIG.game.gravity);
-    world = std::make_unique<b2World>(b2Vec2(0.0f, gravityMps));
+    world = new b2World(b2Vec2(0.0f, gravityMps));
+
+    // 接触监听器，桥接到 EventBus
+    contactListener = new PhysicsContactListener();
+    world->SetContactListener(contactListener);
 }
 
-PhysicsWorld::~PhysicsWorld() = default;
+PhysicsWorld::~PhysicsWorld() {
+    delete contactListener;
+    contactListener = nullptr;
+    delete world;
+    world = nullptr;
+}
 
 void PhysicsWorld::step(const sf::Time& frameTime) {
     if (!world) return;
@@ -61,11 +71,11 @@ void PhysicsWorld::clear() {
 }
 
 b2World* PhysicsWorld::getWorld() {
-    return world.get();
+    return world;
 }
 
 const b2World* PhysicsWorld::getWorld() const {
-    return world.get();
+    return world;
 }
 
 } // namespace physics
