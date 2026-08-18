@@ -46,7 +46,7 @@ public:
                 event(data);
             }
         } else {
-            LOG_WARN_FMT("{} not found", eventName);
+            // LOG_WARN_FMT("{} not found", eventName);
         }
     }
 

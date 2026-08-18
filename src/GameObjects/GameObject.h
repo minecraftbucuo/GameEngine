@@ -181,6 +181,7 @@ protected:
     sf::Vector2f position;
     sf::Vector2f size;
     sf::Vector2f speed;
+    float rotation = 0.0f; // 度数，用于物理体旋转同步
     bool active;
     bool moveAble{true};
     bool started;

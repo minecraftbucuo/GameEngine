@@ -30,7 +30,9 @@ public:
     void setShapeCircle(float radius);
     // 固定旋转（如角色不旋转）
     void setFixedRotation(bool fixed);
-    // 碰撞过滤（categoryBits=自身所属分组，maskBits=能碰撞的分组）
+    // 线性/角阻尼（空气阻力，抑制抖动）
+    void setLinearDamping(float damping);
+    void setAngularDamping(float damping);
     void setCollisionFilter(uint16 categoryBits, uint16 maskBits);
     // 用 groupIndex：同正数始终碰撞，同负数始终不碰撞
     void setCollisionGroup(int16 groupIndex);
@@ -43,6 +45,8 @@ public:
 
     // 直接设置位置/角度（用于网络同步或 kinematic）
     void setTransform(const sf::Vector2f& position, float angle = 0.0f);
+    // 设置初始角度（start 前调用，start 时应用）
+    void setInitialAngle(float angle);
 
     b2Body* getBody();
     const b2Body* getBody() const;
@@ -60,6 +64,9 @@ private:
     float friction = 0.3f;
     float restitution = 0.0f;
     bool fixedRotation = false;
+    float initialAngle = 0.0f;
+    float linearDamping = 0.0f;
+    float angularDamping = 0.0f;
     // 碰撞过滤（默认全通过）
     uint16 categoryBits = 0x0001;
     uint16 maskBits = 0xFFFF;

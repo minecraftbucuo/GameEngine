@@ -26,11 +26,6 @@ void PhysicsContactListener::BeginContact(b2Contact* contact) {
         return;
     }
 
-    LOG_INFO("PhysicsContactListener::BeginContact - a.tag=" + a->getTag()
-             + " b.tag=" + b->getTag()
-             + " a.pos=(" + std::to_string(a->getPosition().x) + "," + std::to_string(a->getPosition().y) + ")"
-             + " b.pos=(" + std::to_string(b->getPosition().x) + "," + std::to_string(b->getPosition().y) + ")");
-
     // 组装 CollisionEvent，通过 EventBus 发布到现有订阅者
     const sf::Vector2f a_pos = a->getPosition();
     const sf::Vector2f b_pos = b->getPosition();
@@ -67,8 +62,6 @@ void PhysicsContactListener::EndContact(b2Contact* contact) {
     GameObject* a = getGameObject(contact, true);
     GameObject* b = getGameObject(contact, false);
     if (!a || !b) return;
-
-    LOG_INFO("PhysicsContactListener::EndContact - a.tag=" + a->getTag() + " b.tag=" + b->getTag());
 
     // 发布结束事件（新事件名，不影响现有订阅者）
     CollisionEvent event{ nullptr, nullptr, {}, {}, a->getPosition(), b->getPosition() };

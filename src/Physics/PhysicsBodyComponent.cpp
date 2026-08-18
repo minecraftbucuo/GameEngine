@@ -43,10 +43,11 @@ void PhysicsBodyComponent::start() {
     def.position = physics::toMeters(owner->getPosition() + halfSize);
     def.fixedRotation = fixedRotation;
     body = world->createBody(&def);
-    LOG_INFO("PhysicsBodyComponent::start() - owner=" + std::to_string(owner->getId())
-             + " tag=" + owner->getTag()
-             + " bodyType=" + std::to_string(static_cast<int>(bodyType))
-             + " posMeters=(" + std::to_string(def.position.x) + "," + std::to_string(def.position.y) + ")");
+    if (initialAngle != 0.0f) {
+        body->SetTransform(body->GetPosition(), initialAngle);
+    }
+    body->SetLinearDamping(linearDamping);
+    body->SetAngularDamping(angularDamping);
 
     // fixture 形状
     if (shapeType == ShapeType::Box) {
@@ -90,6 +91,8 @@ void PhysicsBodyComponent::update(const sf::Time& deltaTime) {
     b2Vec2 pos = body->GetPosition();
     sf::Vector2f halfSize = owner->getSize() * 0.5f;
     owner->position = physics::toPixels(pos) - halfSize;
+    // 同步旋转角度（弧度→度数）
+    owner->rotation = body->GetAngle() * 180.0f / 3.14159265f;
 }
 
 void PhysicsBodyComponent::setBodyType(physics::BodyType type) {
@@ -121,6 +124,20 @@ void PhysicsBodyComponent::setShapeCircle(float radius) {
 
 void PhysicsBodyComponent::setFixedRotation(bool fixed) {
     fixedRotation = fixed;
+}
+
+void PhysicsBodyComponent::setInitialAngle(float angle) {
+    initialAngle = angle;
+}
+
+void PhysicsBodyComponent::setLinearDamping(float damping) {
+    linearDamping = damping;
+    if (body) body->SetLinearDamping(damping);
+}
+
+void PhysicsBodyComponent::setAngularDamping(float damping) {
+    angularDamping = damping;
+    if (body) body->SetAngularDamping(damping);
 }
 
 void PhysicsBodyComponent::setCollisionFilter(uint16 catBits, uint16 maskBits) {
