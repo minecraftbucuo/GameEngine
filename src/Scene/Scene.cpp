@@ -4,6 +4,7 @@
 
 #include <Scene.h>
 #include "PhysicsWorld.h"
+#include "ConfigManager.h"
 
 // 析构定义放这里，确保 PhysicsWorld 完整类型可见
 Scene::~Scene() {
@@ -54,6 +55,10 @@ void Scene::render(sf::RenderWindow* _window) {
         if (obj->isActive()) {
             obj->render(_window);
         }
+    }
+    // Box2D 调试绘制：开关跟随 CONFIG.game.debug，关闭时零开销
+    if (physics_world && CONFIG.game.debug) {
+        physics_world->renderDebug(_window);
     }
 }
 

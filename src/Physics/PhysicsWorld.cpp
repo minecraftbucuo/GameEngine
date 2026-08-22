@@ -6,6 +6,10 @@
 #include "PhysicsContactListener.h"
 #include "ConfigManager.h"
 #include "PhysicsTypes.h"
+#ifndef SERVER_BUILD
+#include "PhysicsDebugDraw.h"
+#include <SFML/Graphics/RenderWindow.hpp>
+#endif
 
 namespace physics {
 
@@ -22,9 +26,21 @@ PhysicsWorld::PhysicsWorld() {
     // 接触监听器，桥接到 EventBus
     contactListener = new PhysicsContactListener();
     world->SetContactListener(contactListener);
+
+#ifndef SERVER_BUILD
+    // 调试绘制（形状 + 质心变换轴；不含 e_pairBit 的宽相位配对连线）
+    debugDraw = new PhysicsDebugDraw();
+    debugDraw->SetFlags(b2Draw::e_shapeBit | b2Draw::e_centerOfMassBit);
+    world->SetDebugDraw(debugDraw);
+#endif
 }
 
 PhysicsWorld::~PhysicsWorld() {
+#ifndef SERVER_BUILD
+    if (world) world->SetDebugDraw(nullptr);
+    delete debugDraw;
+    debugDraw = nullptr;
+#endif
     delete contactListener;
     contactListener = nullptr;
     delete world;
@@ -77,5 +93,14 @@ b2World* PhysicsWorld::getWorld() {
 const b2World* PhysicsWorld::getWorld() const {
     return world;
 }
+
+#ifndef SERVER_BUILD
+void PhysicsWorld::renderDebug(sf::RenderWindow* window) {
+    if (!world || !debugDraw || !window) return;
+    debugDraw->setWindow(window);
+    world->DebugDraw();
+    debugDraw->drawVelocities(world); // 速度方向箭头
+}
+#endif
 
 } // namespace physics

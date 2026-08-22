@@ -8,9 +8,12 @@
 #include <SFML/System/Time.hpp>
 #include <memory>
 
+namespace sf { class RenderWindow; }
+
 namespace physics {
 
 class PhysicsContactListener;
+class PhysicsDebugDraw;
 
 class PhysicsWorld {
 public:
@@ -34,9 +37,17 @@ public:
     b2World* getWorld();
     const b2World* getWorld() const;
 
+#ifndef SERVER_BUILD
+    // 调试绘制：绘制所有 body 形状/质心/接触点（CONFIG.game.debug 时由 Scene::render 调用）
+    void renderDebug(sf::RenderWindow* window);
+#endif
+
 private:
     b2World* world{};
     PhysicsContactListener* contactListener{};
+#ifndef SERVER_BUILD
+    PhysicsDebugDraw* debugDraw{};
+#endif
     float accumulator = 0.0f;
     float fixedStep = 1.0f / 60.0f;
     int velocityIterations = 8;

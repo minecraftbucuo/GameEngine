@@ -220,11 +220,11 @@
 ### 阶段六：可视化（可选增强）
 
 #### Step 14 — Box2D Debug Draw
-- [ ] 实现 `b2Draw` 子类，用 SFML 绘制 body 边界/质心/接触点
-- [ ] 由 `CONFIG.game.debug` 控制开关（复用现有 debug 习惯）
-- [ ] `PhysicsWorld` 持有 debugDraw，`Scene::render` 后调用
+- [x] 实现 `b2Draw` 子类，用 SFML 绘制 body 边界/质心/接触点
+- [x] 由 `CONFIG.game.debug` 控制开关（复用现有 debug 习惯）
+- [x] `PhysicsWorld` 持有 debugDraw，`Scene::render` 后调用
 - **验证**：开启 debug 后能看到所有 body 的形状与接触法线
-- **新增文件**：`src/Physics/PhysicsDebugDraw.h/.cpp`
+- **新增文件**：`src/Physics/PhysicsDebugDraw.h/.cpp`（`#ifndef SERVER_BUILD` 包裹，server 不编译 SFML Graphics）
 - **改动文件**：`src/Physics/PhysicsWorld.h/.cpp`、`src/Scene/Scene.cpp`
 - **原子性保证**：debugDraw 默认关闭，仅 `CONFIG.game.debug==true` 才绘制，关闭时零开销
 
