@@ -3,8 +3,12 @@
 ## 一、目标
 
 为本引擎接入 Box2D 物理引擎，提供真实的刚体物理（质量、冲量、摩擦、弹性、堆叠），
-替代目前手写的重力/运动/碰撞系统。采用**渐进式迁移**策略：新物理系统与旧系统共存，
-逐步把现有玩法（Mario、地面、砖块、火球）迁到 Box2D，最后清理旧代码。
+与现有手写物理系统（Gravity/Move/CollisionSystem）**长期并存、按场景可选**。
+
+> **2026-08-18 方向调整**：原计划是渐进迁移现有玩法到 Box2D 后删除旧物理。
+> 实际验证后决定：现有玩法（Mario 等）保留旧物理（够用且手感已调好），
+> Box2D 作为**第二套可选物理引擎**供新场景使用。
+> 原 Step 9~13（玩法迁移）与 Step 15~17（旧物理清理）已取消。
 
 ---
 
@@ -199,66 +203,21 @@
 
 ---
 
-### 阶段五：迁移现有玩法（一个对象一个 commit）
+### 阶段五：玩法迁移（已取消）
 
-> 每个迁移步骤必须**一次性完成该对象的所有改动**（GameObject + Controller + 相关组件），
-> 保证中间不存在"半迁移"状态。迁移完成后该对象停用旧物理组件。
+> **2026-08-18 决定不迁移**：现有玩法（Mario/Ground/Brick/FireBall）的手写物理够用且手感已调好，
+> 保留旧物理。Box2D 供新场景选用。若未来某玩法需要真实刚体物理（堆叠、滚动、弹性），
+> 可参照 PhysicsTestScene 的模式单独迁移该场景。
 
-#### Step 9 — 迁移 Mario（动态体）
-- [ ] `Mario` 增加 `PhysicsBodyComponent`（动态 body）
-- [ ] `Mario` 停用 `GravityComponent`（移除或 setActive(false)）
-- [ ] `MarioController::jump()` 改为 `ApplyLinearImpulse`（向上冲量）
-- [ ] `MarioController::runLeft()/runRight()` 改为 `SetLinearVelocity`（保留 x，保留 y）
-- [ ] `MarioController::update()` 中持续上升力改为冲量一次性施加
-- [ ] 远端玩家（非本地）用 kinematic body，`SetTransform` 同步服务端位置
-- [ ] `SuperMarioScene` 设 `usePhysics = true`
-- **验证**：Mario 能跑、能跳、落地停止，手感与旧版相近；其他场景不受影响
-- **改动文件**：`src/GameObjects/Mario.h/.cpp`、`src/Components/MarioController.cpp`、`src/Scene/SuperMarioScene.cpp`
-- **原子性保证**：Mario 的所有物理改动在一个 commit 内完成，SuperMarioScene 是唯一受影响场景；其他场景 `usePhysics` 仍为 false
-- **回滚**：`git revert` 后 Mario 恢复旧物理，SuperMarioScene 恢复 `usePhysics=false`
+#### Step 9~12 — ~~迁移 Mario/Ground/Brick/FireBall~~（已取消）
+- [x] ~~迁移决定~~ → 改为保留旧物理，双引擎并存
 
-#### Step 10 — 迁移 Ground（静态体）
-- [ ] `Ground` 增加 `PhysicsBodyComponent`（静态 body）
-- [ ] `Ground` 停用 `BoxCollision`（Box2D 已检测），保留渲染
-- [ ] 确认 Mario 踩在 Ground 上不穿模
-- **验证**：SuperMarioScene 中 Mario 落地停在 Ground 上
-- **改动文件**：`src/GameObjects/Ground.h/.cpp`
-- **原子性保证**：仅改 Ground 一个类；若回滚，Ground 恢复旧 BoxCollision，Mario 仍能用旧碰撞
-
-#### Step 11 — 迁移 Brick（静态体 + PreSolve）
-- [ ] `Brick` 增加 `PhysicsBodyComponent`（静态 body）
-- [ ] `Brick` 停用 `BoxCollision`
-- [ ] "被撞顶"逻辑改为监听 PreSolve 接触法线判断（向上法线 = 从下方撞）
-- [ ] 确认 Mario 从下方撞砖块触发既有砖块逻辑
-- **验证**：Mario 从下方撞砖块，砖块按既有逻辑响应（弹起/破碎）
-- **改动文件**：`src/GameObjects/Brick.h/.cpp`
-- **原子性保证**：仅改 Brick 一个类，独立 commit，可单独回滚
-
-#### Step 12 — 迁移 FireBall（抛体）
-- [ ] `FireBall` 增加 `PhysicsBodyComponent`（动态体，忽略重力或自定义重力缩放）
-- [ ] 初速度改为 `SetLinearVelocity`
-- [ ] TTL 销毁逻辑保留，destroy 时由 PhysicsBodyComponent 析构 body
-- [ ] 碰撞事件仍走 EventBus（ContactListener 已桥接）
-- **验证**：火球按抛物线飞行，撞墙/敌人触发既有事件
-- **改动文件**：`src/GameObjects/FireBall.h/.cpp`
-- **原子性保证**：仅改 FireBall 一个类，独立 commit
+#### Step 13 — ~~服务端权威物理同步~~（已取消）
+- [x] ~~网络物理同步~~ → 随迁移取消；旧物理的网络同步维持现状
 
 ---
 
-### 阶段六：网络同步
-
-#### Step 13 — 服务端权威物理同步
-- [ ] 服务端 `SuperMarioScene` 设 `usePhysics = true`，跑 Box2D
-- [ ] 客户端预测 + 服务端校正（沿用现有 `reconcileLocalPlayer` 思路）
-- [ ] 远端玩家用 kinematic body，`SetTransform` 直接同步服务端位置
-- [ ] 网络包只传位置/速度/朝向，不传 Box2D 内部状态
-- **验证**：双人联机，远端玩家移动平滑，碰撞一致
-- **改动文件**：`src/GameObjects/Mario.cpp`、`src/Network/NetworkManager.cpp`、`src/Scene/SuperMarioScene.cpp`
-- **原子性保证**：仅在 `BUILD_FOR_SERVER` 或 `isClient()` 分支内改动，单机模式行为不变
-
----
-
-### 阶段七：清理与可视化
+### 阶段六：可视化（可选增强）
 
 #### Step 14 — Box2D Debug Draw
 - [ ] 实现 `b2Draw` 子类，用 SFML 绘制 body 边界/质心/接触点
@@ -269,29 +228,8 @@
 - **改动文件**：`src/Physics/PhysicsWorld.h/.cpp`、`src/Scene/Scene.cpp`
 - **原子性保证**：debugDraw 默认关闭，仅 `CONFIG.game.debug==true` 才绘制，关闭时零开销
 
-#### Step 15 — 移除 GravityComponent
-- [ ] 全局搜索确认无 GameObject 添加 `GravityComponent`（Mario 已迁）
-- [ ] 删除 `src/Components/GravityComponent.h/.cpp`
-- [ ] 删除 CMake glob 自动收录的引用
-- **验证**：全量编译通过，所有场景运行正常
-- **删除文件**：`src/Components/GravityComponent.h`、`src/Components/GravityComponent.cpp`
-- **原子性保证**：删除前已确认无引用（Step 9 已停用），删除后编译必然通过
-- **回滚**：`git revert` 恢复文件
-
-#### Step 16 — 移除 CollisionSystem（可选）
-- [ ] 确认所有场景已迁到 Box2D，`CollisionSystem` 不再被调用
-- [ ] 若有非物理场景仍需 AABB 检测，保留；否则删除
-- **验证**：全量编译通过
-- **删除文件**：`src/CollisionSystem.h/.cpp`（视情况）
-- **原子性保证**：删除前已确认 `Scene::getCollisionSystem()` 无调用方，或调用方已迁移
-
-#### Step 17 — 精简 MoveComponent
-- [ ] 移除 `MoveComponent` 中已被 PhysicsBodyComponent 取代的 `update()` 积分逻辑
-- [ ] 保留 `setSpeed`/`addSpeed` 等纯速度访问器（网络同步仍需）
-- [ ] 保留 `drawArrow` debug 工具
-- **验证**：全量编译通过，已迁移对象由 Box2D 驱动位置
-- **改动文件**：`src/Components/MoveComponent.cpp`
-- **原子性保证**：仅删除已被取代的积分代码，保留访问器；未迁移对象（若有）仍可调用
+#### Step 15~17 — ~~移除旧物理代码~~（已取消）
+- [x] ~~删除 GravityComponent / CollisionSystem / 精简 MoveComponent~~ → 旧物理长期保留，不删除
 
 ---
 
@@ -349,20 +287,45 @@ Step 1 (CMake)
        └─ Step 3 (PhysicsWorld)
             ├─ Step 4 (PhysicsBodyComponent)
             │    └─ Step 5 (Scene 集成)
-            │         └─ Step 8 (测试场景) ← 最小闭环完成
-            │              ├─ Step 9 (Mario)
-            │              │    ├─ Step 10 (Ground)
-            │              │    ├─ Step 11 (Brick)
-            │              │    └─ Step 12 (FireBall)
-            │              │         └─ Step 13 (网络同步)
-            │              │              ├─ Step 14 (DebugDraw)
-            │              │              ├─ Step 15 (删 GravityComponent)
-            │              │              ├─ Step 16 (删 CollisionSystem)
-            │              │              └─ Step 17 (精简 MoveComponent)
-            │              └─ Step 6 (ContactListener) ← 可在 Step 8 前做
+            │         └─ Step 8 (测试场景) ← 最小闭环完成 ✅ 接入目标达成
+            │              └─ Step 14 (DebugDraw，可选)
+            │              └─ Step 9~13 (玩法迁移) ← 已取消
+            │              └─ Step 15~17 (旧物理清理) ← 已取消
             └─ Step 7 (碰撞过滤)
 ```
 
-**关键路径**：1 → 2 → 3 → 4 → 5 → 8（最小闭环）→ 9 → 10/11/12（并行可）→ 13 → 14/15/16/17（并行可）
+**关键路径**：1 → 2 → 3 → 4+5 → 6 → 7 → 8 ✅ **已全部完成**（双引擎并存目标达成）
 
-每完成一步，提交一次 git，便于回滚。
+---
+
+## 九、最终架构：双物理引擎可选
+
+### 选择方式
+
+| 层级 | 开关 | 说明 |
+|------|------|------|
+| 编译期 | `BUILD_WITH_BOX2D`（CMake option，默认 ON） | OFF 时 Box2D 不编译，二进制不含 Box2D |
+| 场景级 | `Scene::usePhysics`（默认 false） | `true` → Box2D；`false` → 旧物理 |
+
+### 两套系统的边界
+
+| | 旧物理（手写） | 新物理（Box2D） |
+|---|---|---|
+| 组件 | GravityComponent / MoveComponent / BoxCollision | PhysicsBodyComponent |
+| 世界 | CollisionSystem（O(n²) AABB） | PhysicsWorld（b2World + 固定步） |
+| 碰撞事件 | `"onCollision"+tag` | 同样发 `"onCollision"+tag`（ContactListener 桥接） |
+| 能力 | 速度积分 + AABB 检测，手感已调好 | 质量/冲量/摩擦/弹性/旋转/堆叠 |
+| 使用场景 | SuperMarioScene 等现有玩法 | PhysicsTestScene 及未来新场景 |
+
+### 使用 Box2D 的新场景写法（参照 PhysicsTestScene）
+
+1. Scene 构造时 `usePhysics = true`
+2. GameObject 构造时 `addComponent(make_shared<PhysicsBodyComponent>(...))`，先 `addObjectWithMap` 再 `start()`
+3. 需要碰撞回调时订阅 `"onCollision"+tag`（与旧物理事件契约一致）
+4. 手感调参：密度/摩擦/弹性/阻尼（见 PhysicsBodyComponent 的 setter）
+
+### 注意事项（双引擎共存的纪律）
+
+- **同一场景不混用**：一个场景要么全 Box2D（`usePhysics=true`），要么全旧物理，否则位置双重积分
+- **同一对象不双挂**：挂了 PhysicsBodyComponent 就不要再挂 GravityComponent/MoveComponent
+- 碰撞事件契约统一（`"onCollision"+tag`），玩法代码可无感切换订阅来源
