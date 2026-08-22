@@ -6,15 +6,17 @@
 
 ## 项目简介
 
-GameEngine 是一个基于 C++20 和 SFML 2.6.1 的个人学习型游戏框架原型。项目参考 Unity 的组件化思想组织游戏对象，包含场景管理、资源管理、碰撞检测、事件总线、基础物理、相机、动画帧管理、简单 3D 渲染示例和 TCP 联机同步示例。
+GameEngine 是一个基于 C++20 和 SFML 2.6.1 的个人学习型游戏框架原型。项目参考 Unity 的组件化思想组织游戏对象，包含场景管理、资源管理、碰撞检测、事件总线、双物理引擎（手写物理 + 可选 Box2D）、相机、动画帧管理、简单 3D 渲染示例和 TCP 联机同步示例。
 
-它还不是完整意义上的通用游戏引擎，更适合作为学习项目，用来理解一个小型游戏框架如何把对象、组件、场景、资源、输入、碰撞和网络同步组织在一起。
+它还不是完整意义上的通用游戏引擎，更适合作为学习项目，用来理解一个小型游戏框架如何把对象、组件、场景、资源、输入、碰撞、物理和网络同步组织在一起。
 
 ## 功能特性
 
 - 组件化 GameObject 系统：通过 `GameObject` + `Component` 组合对象行为。
-- 场景管理：支持菜单场景、2D Demo 场景、3D Demo 场景和 SuperMario 场景切换。
+- 场景管理：支持菜单场景、2D Demo 场景、3D Demo 场景、Box2D 物理测试场景和 SuperMario 场景切换。
 - 碰撞系统：支持矩形、圆形碰撞体和碰撞处理器。
+- 双物理引擎可选：手写物理（重力/移动/碰撞组件）与 Box2D 2.4 刚体物理按场景共存，互不干扰。
+- Box2D 物理引擎：质量、冲量、摩擦、弹性、旋转、堆叠，固定时间步 60Hz，碰撞事件桥接到统一事件总线，附调试可视化（形状轮廓/质心轴/速度箭头）。
 - 事件总线：用于组件和系统之间解耦通信。
 - 基础物理与控制：移动、重力、跳跃、相机跟随等组件。
 - 资源管理：统一加载纹理、音效、音乐、字体、动画帧和 OBJ 模型。
@@ -26,6 +28,7 @@ GameEngine 是一个基于 C++20 和 SFML 2.6.1 的个人学习型游戏框架�
 
 - 语言：C++20
 - 图形 / 音频 / 网络：SFML 2.6.1
+- 物理引擎：Box2D 2.4.1（可选，CMake `BUILD_WITH_BOX2D` 开关，默认开启）
 - 配置解析：nlohmann/json
 - 构建系统：CMake 3.20+
 - 可选开发环境：CLion、Nix Flakes
@@ -45,7 +48,8 @@ GameEngine 是一个基于 C++20 和 SFML 2.6.1 的个人学习型游戏框架�
     ├── GameObjects/           # 玩家、Mario、砖块、按钮、3D 对象等
     ├── Manager/               # 资源、配置、场景、帧动画、日志管理
     ├── Network/               # TCP 客户端、协议、序列化和同步逻辑
-    ├── Scene/                 # 菜单、2D、3D、SuperMario 场景
+    ├── Physics/               # Box2D 封装：世界、刚体组件、碰撞监听、调试绘制
+    ├── Scene/                 # 菜单、2D、3D、物理测试、SuperMario 场景
     ├── State/                 # Mario 状态机
     ├── GameEngine.h           # 引擎初始化与主循环
     └── main.cpp               # 程序入口
@@ -59,7 +63,7 @@ GameEngine 是一个基于 C++20 和 SFML 2.6.1 的个人学习型游戏框架�
 - CMake 3.20 或更高版本
 - SFML 2.6.1
 
-项目会优先查找系统安装的 SFML；如果没有找到，会尝试使用 `lib/` 目录下随项目提供的 SFML。
+项目会优先查找系统安装的 SFML；如果没有找到，会尝试使用 `lib/` 目录下随项目提供的 SFML。也可以在 CMake 中设置 `BUILD_SFML_FROM_SOURCE=ON` 从源码构建 SFML（适合无法安装预编译 SFML 的环境）。
 
 ### Windows / Linux
 
@@ -83,7 +87,7 @@ Windows 下通常是：
 .\build\bin\GameEngine.exe
 ```
 
-构建完成后，CMake 会把 `src/Asset/` 复制到可执行文件目录下，因此程序运行时会从 `build/bin/Asset/` 读取资源和配置。
+构建时 CMake 会把 `src/Asset/` 同步到可执行文件目录下，因此程序运行时会从 `build/bin/Asset/` 读取资源和配置。
 
 ### Nix 开发环境
 
@@ -145,6 +149,8 @@ cmake --build build-server
 - 超级玛丽 Server：在当前进程内启动服务器。
 - 3D 渲染：打开一个简单的 3D 对象渲染与控制示例。
 - Demo：打开基础 2D 物理、碰撞、相机和对象示例。
+- 设置：修改窗口宽高与帧率上限。
+- 物理测试：Box2D 刚体物理示例（下落、堆叠、斜面、弹性球、可控玩家）。
 
 SuperMario 默认网络配置位于 `src/Asset/config.json`：
 
@@ -164,7 +170,7 @@ SuperMario 默认网络配置位于 `src/Asset/config.json`：
 ### SuperMario 场景
 
 - `A` / `D`：左右移动
-- `W`：跳跃
+- `W` 或 `空格`：跳跃
 - `J`：发射火球
 - `R`：死亡后重生
 - `Esc`：返回菜单
@@ -175,6 +181,15 @@ SuperMario 默认网络配置位于 `src/Asset/config.json`：
 - `A` / `D`：控制玩家左右移动
 - `W`：跳跃
 - `Esc`：返回菜单
+
+### Box2D 物理测试场景
+
+- `A` / `D`：控制玩家方块左右移动
+- `空格`：跳跃
+- 鼠标左键：在点击处生成弹性球
+- `R`：重置场景
+- `Esc`：返回菜单
+- `config.json` 的 `game.debug` 为 true 时，叠加显示 Box2D 调试图（形状轮廓、质心/旋转轴、速度箭头）
 
 ### 相机 / 3D 示例
 
@@ -191,7 +206,7 @@ SuperMario 默认网络配置位于 `src/Asset/config.json`：
 - `window`：窗口宽高、标题和帧率上限。
 - `assets`：纹理、音效、音乐、字体、动画帧、OBJ 模型路径。
 - `network`：服务器 IP、端口、tickRate 和超时时间。
-- `game`：重力、玩家速度、跳跃力度、火球速度、方块尺寸、射击冷却等参数。
+- `game`：重力、玩家速度、跳跃力度、火球速度、方块尺寸、射击冷却、物理步长/迭代次数（`physicsFixedStep` / `physicsVelocityIterations` / `physicsPositionIterations`）等参数。
 
 如果程序找不到配置文件，会使用代码中的默认配置。
 
@@ -235,6 +250,30 @@ SuperMario 默认网络配置位于 `src/Asset/config.json`：
 - `src/Components/Collisions/CircleCollision.h`
 - `src/Components/CollisionHandles/CollisionHandle.h`
 
+### 物理系统（双引擎可选）
+
+引擎同时保留两套物理，按场景选择，互不干扰：
+
+- **手写物理**：`GravityComponent` / `MoveComponent` + `CollisionSystem`，速度积分 + AABB 检测，现有玩法（SuperMario 等）使用。
+- **Box2D 2.4**：真实刚体物理（质量/冲量/摩擦/弹性/旋转/堆叠），固定时间步 60Hz，像素↔米换算内置，碰撞事件经 `b2ContactListener` 桥接为统一的 `"onCollision"+tag` 事件总线事件，玩法代码无感切换。
+
+选择方式：
+
+- 场景级：构造 Scene 时设 `usePhysics = true` 即启用 Box2D（默认 false 用手写物理）。
+- 编译级：CMake `BUILD_WITH_BOX2D`（默认 ON），关闭后 Box2D 不参与编译。
+
+注意：同一场景不混用两套物理（避免位置双重积分），同一对象不双挂物理组件。
+
+相关文件：
+
+- `src/Physics/PhysicsTypes.h` — PPM 坐标换算、BodyType、碰撞分组
+- `src/Physics/PhysicsWorld.h` — b2World 封装、固定步累加器、调试绘制入口
+- `src/Physics/PhysicsBodyComponent.h` — 刚体组件（形状/密度/摩擦/弹性/冲量 API）
+- `src/Physics/PhysicsContactListener.h` — 碰撞事件桥接 EventBus
+- `src/Physics/PhysicsDebugDraw.h` — SFML 调试绘制（形状/质心轴/速度箭头）
+- `src/Scene/PhysicsTestScene.h` — 物理测试场景（新场景接入参照）
+- `docs/box2d-integration-plan.md` — 接入设计与决策记录
+
 ### 资源与配置
 
 资源由 `AssetManager` 统一加载，配置由 `ConfigManager` 读取。引擎启动时会加载 SuperMario 场景需要的纹理、声音和动画帧。
@@ -262,14 +301,15 @@ SuperMario 默认网络配置位于 `src/Asset/config.json`：
 1. 新建一个类继承 `Scene`。
 2. 在 `init()` 中创建并添加游戏对象。
 3. 如需碰撞检测，创建 `CollisionSystem` 并在 `addObject()` 中注册带碰撞组件的对象。
-4. 在 `GameEngine::init()` 中通过 `scene_manager->addScene<YourScene>(window)` 注册场景。
-5. 通过 `SceneManager::loadScene("YourSceneName")` 切换场景。
+4. 如需 Box2D 物理，构造时设 `usePhysics = true`，对象挂 `PhysicsBodyComponent`（参照 `PhysicsTestScene`）。
+5. 在 `GameEngine::init()` 中通过 `scene_manager->addScene<YourScene>(window)` 注册场景。
+6. 通过 `SceneManager::loadScene("YourSceneName")` 切换场景。
 
 ## 如何添加一个新对象
 
 1. 新建一个类继承 `GameObject`。
 2. 在构造函数中设置位置、尺寸、贴图或模型。
-3. 用 `addComponent<T>()` 添加移动、碰撞、重力、控制等组件。
+3. 用 `addComponent<T>()` 添加移动、碰撞、重力、控制等组件（Box2D 场景用 `PhysicsBodyComponent` 替代移动/重力组件）。
 4. 如需网络同步，实现或复用 `ISerializable` 的序列化逻辑。
 5. 在场景中调用 `addObject()` 或 `addObjectWithNetwork()` 添加对象。
 
