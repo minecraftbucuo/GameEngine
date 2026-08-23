@@ -13,7 +13,8 @@ public:
     Toggle(float x, float y, float w, float h, bool initialState = false);
 
     void update(eng::Time deltaTime) override;
-    void render(sf::RenderWindow* window) override;
+
+    void render(eng::Renderer& renderer) override;
     void handleEvent(const eng::EngineEvent& event) override;
 
     void setState(bool state);

@@ -57,6 +57,9 @@ public:
     void drawPolygon(const std::vector<Vec2f>& points, Color c);   // 实心凸多边形
     void drawCircle(Vec2f center, float radius, Color c, bool filled = true,
                     float outlineThickness = 0.f, Color outlineColor = Color::White);
+    // 圆角矩形：填充色 + 可选描边（先画外扩描边层再画填充层）
+    void drawRoundedRect(const FloatRect& r, float radius, Color fillColor,
+                         float outlineThickness = 0.f, Color outlineColor = Color::White);
     // text 按 UTF-8 解释（中文可直接传入）
     void drawText(FontHandle h, const std::string& text, Vec2f pos,
                   unsigned size, Color c);

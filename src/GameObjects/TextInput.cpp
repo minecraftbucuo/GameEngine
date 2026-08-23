@@ -6,30 +6,50 @@
 #ifndef SERVER_BUILD
 #include "TextInput.h"
 #include "AssetManager.h"
+#include "Render/Renderer.h"
 #include "Scene.h"
 #include <cmath>
-#include <algorithm>
 
-TextInput::TextInput(float x, float y, float w, float h, const sf::String& placeholder) {
+// ── UTF-8 codepoint 编解码（SDL3 迁移 6d：sf::String UTF-32 存储改为 UTF-8）──
+
+// 追加一个 codepoint（非法范围编码为 U+FFFD）
+static void utf8Append(std::string& s, const char32_t cp) {
+    if (cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF)) {
+        s += "\xEF\xBF\xBD";
+        return;
+    }
+    if (cp < 0x80) {
+        s += static_cast<char>(cp);
+    } else if (cp < 0x800) {
+        s += static_cast<char>(0xC0 | (cp >> 6));
+        s += static_cast<char>(0x80 | (cp & 0x3F));
+    } else if (cp < 0x10000) {
+        s += static_cast<char>(0xE0 | (cp >> 12));
+        s += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+        s += static_cast<char>(0x80 | (cp & 0x3F));
+    } else {
+        s += static_cast<char>(0xF0 | (cp >> 18));
+        s += static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
+        s += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+        s += static_cast<char>(0x80 | (cp & 0x3F));
+    }
+}
+
+// 删除末尾一个 codepoint（退格）
+static void utf8PopBack(std::string& s) {
+    if (s.empty()) return;
+    s.pop_back();
+    // 续字节（10xxxxxx）继续删，直到前导字节被删掉
+    while (!s.empty() && (static_cast<unsigned char>(s.back()) & 0xC0) == 0x80) {
+        s.pop_back();
+    }
+}
+
+TextInput::TextInput(float x, float y, float w, float h, const std::string& placeholder) {
     position = {x, y};
     size = {w, h};
     this->placeholder = placeholder;
-
-    // 初始化显示文本
-    displayText.setFont(AssetManager::getInstance().getFont());
-    displayText.setCharacterSize(16);
-    displayText.setFillColor(textColor);
-    displayText.setPosition(position.x + 10.f, position.y + (h - 16.f) * 0.5f);
-
-    // 初始化占位符文本
-    placeholderText = displayText;
-    placeholderText.setString(placeholder);
-    placeholderText.setFillColor(placeholderColor);
-
-    // 初始化光标
-    cursor.setSize(eng::Vec2f(2.f, h * 0.6f));
-    cursor.setFillColor(textColor);
-    cursor.setPosition(position.x + 10.f, position.y + (h - h * 0.6f) * 0.5f);
+    font = AssetManager::getInstance().getFontHandle();
 
     this->tag = "TextInput:" + std::to_string(this->id);
     className = "TextInput";
@@ -50,36 +70,29 @@ void TextInput::update(eng::Time deltaTime) {
     }
 }
 
-void TextInput::render(sf::RenderWindow* window) {
-    // 绘制背景
-    eng::Color bg = focused ? focusedBgColor : bgColor;
-    eng::Color outline = focused ? focusedOutlineColor : outlineColor;
+void TextInput::render(eng::Renderer& renderer) {
+    // 背景（含 1.5px 描边）
+    const eng::Color bg = focused ? focusedBgColor : bgColor;
+    const eng::Color outline = focused ? focusedOutlineColor : outlineColor;
+    renderer.drawRect(eng::FloatRect(position, size), bg, true, 1.5f, outline);
 
-    // 使用矩形绘制
-    sf::RectangleShape bgRect(size);
-    bgRect.setPosition(position);
-    bgRect.setFillColor(bg);
-    bgRect.setOutlineColor(outline);
-    bgRect.setOutlineThickness(1.5f);
-    window->draw(bgRect);
-
-    // 绘制文本或占位符
-    if (text.isEmpty()) {
-        window->draw(placeholderText);
+    // 文本或占位符（垂直居中：字号 16，基线偏移按迁移前 (h-16)/2 布局）
+    const eng::Vec2f textPos(position.x + 10.f, position.y + (size.y - static_cast<float>(FONT_SIZE)) * 0.5f);
+    if (text.empty()) {
+        renderer.drawText(font, placeholder, textPos, FONT_SIZE, placeholderColor);
     } else {
-        window->draw(displayText);
+        renderer.drawText(font, text, textPos, FONT_SIZE, textColor);
     }
 
-    // 绘制光标
+    // 光标：x = 文本宽度处
     if (focused && cursorVisible) {
-        // 计算光标位置
         float textWidth = 0.f;
-        if (!text.isEmpty()) {
-            eng::FloatRect bounds = displayText.getLocalBounds();
-            textWidth = bounds.width;
+        if (!text.empty()) {
+            textWidth = renderer.measureText(font, text, FONT_SIZE).x;
         }
-        cursor.setPosition(position.x + 10.f + textWidth, cursor.getPosition().y);
-        window->draw(cursor);
+        renderer.drawRect(eng::FloatRect(position.x + 10.f + textWidth,
+                                         position.y + (size.y - size.y * 0.6f) * 0.5f,
+                                         2.f, size.y * 0.6f), textColor);
     }
 }
 
@@ -100,26 +113,23 @@ void TextInput::handleEvent(const eng::EngineEvent& event) {
             return;
         }
 
-        // 字符集过滤
+        // 字符集过滤（allowedChars 为 ASCII 集合，非 ASCII 一律拒绝，与迁移前一致）
         if (!allowedChars.empty() && codePoint != 8) {
-            char ch = static_cast<char>(codePoint);
-            if (allowedChars.find(ch) == std::string::npos) {
+            if (codePoint >= 128 || allowedChars.find(static_cast<char>(codePoint)) == std::string::npos) {
                 return;
             }
         }
 
         // 处理退格
         if (codePoint == 8) {
-            if (!text.isEmpty()) {
-                text = text.substring(0, text.getSize() - 1);
-                displayText.setString(text);
+            if (!text.empty()) {
+                utf8PopBack(text);
                 cursorBlinkTimer = 0.f;
                 cursorVisible = true;
             }
         } else {
             // 添加字符
-            text += static_cast<sf::Uint32>(codePoint);
-            displayText.setString(text);
+            utf8Append(text, codePoint);
             cursorBlinkTimer = 0.f;
             cursorVisible = true;
         }
@@ -135,16 +145,15 @@ void TextInput::handleEvent(const eng::EngineEvent& event) {
     }
 }
 
-void TextInput::setString(const sf::String& str) {
+void TextInput::setString(const std::string& str) {
     text = str;
-    displayText.setString(text);
 }
 
-sf::String TextInput::getString() const {
+const std::string& TextInput::getString() const {
     return text;
 }
 
-void TextInput::setOnConfirm(std::function<void(const sf::String&)>&& callback) {
+void TextInput::setOnConfirm(std::function<void(const std::string&)> callback) {
     onConfirm = std::move(callback);
 }
 

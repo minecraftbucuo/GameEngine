@@ -6,22 +6,24 @@
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <functional>
+#include <string>
 #include "GameObject.h"
+#include "Render/Handles.h"
 
 class TextInput : public GameObject {
 public:
-    TextInput(float x, float y, float w, float h, const sf::String& placeholder = "");
+    TextInput(float x, float y, float w, float h, const std::string& placeholder = "");
 
     void update(eng::Time deltaTime) override;
-    void render(sf::RenderWindow* window) override;
+    void render(eng::Renderer& renderer) override;
     void handleEvent(const eng::EngineEvent& event) override;
 
-    void setString(const sf::String& str);
-    [[nodiscard]] sf::String getString() const;
+    void setString(const std::string& str);
+    [[nodiscard]] const std::string& getString() const;
 
-    void setOnConfirm(std::function<void(const sf::String&)>&& callback);
+    void setOnConfirm(std::function<void(const std::string&)> callback);
 
-    // 限制可输入字符集（为空则不限制）
+    // 限制可输入字符集（为空则不限制；ASCII 集合语义与迁移前一致）
     void setAllowedChars(const std::string& chars);
 
 private:
@@ -31,15 +33,15 @@ private:
     eng::Vec2f size;
     float cornerRadius = 8.f;
 
-    sf::String text;
-    sf::String placeholder;
-    sf::Text displayText;
-    sf::Text placeholderText;
+    // 文本（SDL3 迁移 6d：sf::String → UTF-8 std::string）
+    std::string text;
+    std::string placeholder;
+    eng::FontHandle font;
+    static constexpr unsigned FONT_SIZE = 16;
 
     bool focused = false;
 
     // 光标
-    sf::RectangleShape cursor;
     float cursorBlinkTimer = 0.f;
     bool cursorVisible = true;
     static constexpr float BLINK_INTERVAL = 0.5f;
@@ -53,7 +55,7 @@ private:
     eng::Color placeholderColor = {100, 108, 128};
 
     // 回调
-    std::function<void(const sf::String&)> onConfirm;
+    std::function<void(const std::string&)> onConfirm;
 
     // 允许输入的字符集（空字符串=不限制）
     std::string allowedChars;

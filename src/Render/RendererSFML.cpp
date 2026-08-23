@@ -7,6 +7,8 @@
 // Renderer 的 SFML 实现：内部持有 sf::RenderWindow，绘制命令逐条转发 SFML 图形 API。
 #include "Render/Renderer.h"
 
+#include <algorithm>
+#include <cmath>
 #include <SFML/Graphics.hpp>
 
 #include "Core/EventConvertSFML.h"
@@ -158,6 +160,60 @@ void Renderer::drawCircle(const Vec2f center, const float radius, const Color c,
         shape.setOutlineThickness(thickness);
     }
     window->draw(shape);
+}
+
+// 实心圆角矩形（矩形拼直边 + TriangleFan 画四角）；描边 = 先画外扩层再画填充层覆盖
+static void fillRoundedRect(sf::RenderWindow* window, const eng::FloatRect& r, const float radius,
+                            const sf::Color color) {
+    const float rad = std::min(radius, std::min(r.width, r.height) * 0.5f);
+    const float x = r.left, y = r.top, w = r.width, h = r.height;
+
+    // 中间水平矩形 + 左右矩形（覆盖四角之间的直边区域）
+    sf::RectangleShape rects[3] = {
+        sf::RectangleShape(eng::Vec2f(w - 2 * rad, h)),
+        sf::RectangleShape(eng::Vec2f(rad, h - 2 * rad)),
+        sf::RectangleShape(eng::Vec2f(rad, h - 2 * rad)),
+    };
+    rects[0].setPosition(x + rad, y);
+    rects[1].setPosition(x, y + rad);
+    rects[2].setPosition(x + w - rad, y + rad);
+    for (auto& rect : rects) {
+        rect.setFillColor(color);
+        window->draw(rect);
+    }
+
+    // 四角 TriangleFan（角度：0=右, PI/2=上；SFML y 向下故 sin 取反）
+    constexpr int cornerPoints = 8;
+    constexpr float PI = 3.14159265f;
+    const struct { eng::Vec2f center; float a0, a1; } corners[] = {
+        {{x + w - rad, y + rad},      0.f,          PI / 2.f},     // 右上
+        {{x + w - rad, y + h - rad},  3 * PI / 2.f, 2 * PI},       // 右下
+        {{x + rad,      y + h - rad}, PI,           3 * PI / 2.f}, // 左下
+        {{x + rad,      y + rad},     PI / 2.f,     PI},           // 左上
+    };
+    for (const auto& corner : corners) {
+        sf::VertexArray va(sf::TriangleFan);
+        va.append(sf::Vertex(corner.center, color));
+        for (int i = 0; i <= cornerPoints; ++i) {
+            const float angle = corner.a0 + (corner.a1 - corner.a0) * i / cornerPoints;
+            va.append(sf::Vertex(
+                eng::Vec2f(corner.center.x + std::cos(angle) * rad,
+                           corner.center.y - std::sin(angle) * rad), color));
+        }
+        window->draw(va);
+    }
+}
+
+void Renderer::drawRoundedRect(const FloatRect& r, const float radius, const Color fillColor,
+                               const float outlineThickness, const Color outlineColor) {
+    if (!window) return;
+    if (outlineThickness > 0.f) {
+        fillRoundedRect(window,
+                        FloatRect(r.left - outlineThickness, r.top - outlineThickness,
+                                  r.width + outlineThickness * 2, r.height + outlineThickness * 2),
+                        radius + outlineThickness, outlineColor);
+    }
+    fillRoundedRect(window, r, radius, fillColor);
 }
 
 void Renderer::drawText(const FontHandle h, const std::string& text, const Vec2f pos,

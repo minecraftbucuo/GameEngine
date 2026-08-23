@@ -5,6 +5,7 @@
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Toggle.h"
+#include "Render/Renderer.h"
 #include "Scene.h"
 #include <cmath>
 
@@ -25,35 +26,19 @@ void Toggle::update(eng::Time deltaTime) {
     currentKnobX += (targetKnobX - currentKnobX) * t;
 }
 
-void Toggle::render(sf::RenderWindow* window) {
+void Toggle::render(eng::Renderer& renderer) {
     const float h = size.y;
     const float r = h * 0.5f;
-    eng::Color trackColor = state ? trackOnColor : trackOffColor;
+    const eng::Color trackColor = state ? trackOnColor : trackOffColor;
 
-    // 左半圆
-    sf::CircleShape leftCap(r);
-    leftCap.setFillColor(trackColor);
-    leftCap.setPosition(position.x, position.y);
-    window->draw(leftCap);
-
-    // 中间矩形（覆盖左右圆之间的区域）
-    sf::RectangleShape middle(eng::Vec2f(size.x - h, h));
-    middle.setPosition(position.x + r, position.y);
-    middle.setFillColor(trackColor);
-    window->draw(middle);
-
-    // 右半圆
-    sf::CircleShape rightCap(r);
-    rightCap.setFillColor(trackColor);
-    rightCap.setPosition(position.x + size.x - h, position.y);
-    window->draw(rightCap);
+    // 轨道：左右两端圆 + 中间矩形（同色重叠拼合，与原 CircleShape 行为一致）
+    renderer.drawCircle(eng::Vec2f(position.x + r, position.y + r), r, trackColor);
+    renderer.drawRect(eng::FloatRect(position.x + r, position.y, size.x - h, h), trackColor);
+    renderer.drawCircle(eng::Vec2f(position.x + size.x - r, position.y + r), r, trackColor);
 
     // 滑块（圆形）
-    float knobRadius = r * 0.75f;
-    sf::CircleShape knob(knobRadius);
-    knob.setFillColor(knobColor);
-    knob.setPosition(currentKnobX - knobRadius, position.y + r - knobRadius);
-    window->draw(knob);
+    const float knobRadius = r * 0.75f;
+    renderer.drawCircle(eng::Vec2f(currentKnobX, position.y + r), knobRadius, knobColor);
 }
 
 void Toggle::handleEvent(const eng::EngineEvent& event) {

@@ -7,24 +7,17 @@
 #include "Button.h"
 #include "AssetManager.h"
 #include "GameObject.h"
+#include "Render/Renderer.h"
 #include "Scene.h"
+#include <algorithm>
 #include <cmath>
 
-Button::Button(const float x, const float y, const float w, const float h, const sf::String& button_text) {
+Button::Button(const float x, const float y, const float w, const float h, const std::string& button_text) {
     position = {x, y};
     size = {w, h};
 
-    text.setFont(AssetManager::getInstance().getFont());
-    text.setString(button_text);
-    const float scale = std::min(h * 0.7f / text.getLocalBounds().height, w * 0.7f / text.getLocalBounds().width);
-    text.setScale(scale, scale);
-    text.setFillColor({30, 30, 46});
-    text.setPosition(x + (w - text.getGlobalBounds().width) * 0.5f,
-                     y + (h - text.getGlobalBounds().height) * 0.5f);
-
-    textShadow = text;
-    textShadow.setFillColor({0, 0, 0, 80});
-    textShadow.setPosition(text.getPosition().x + 1.5f, text.getPosition().y + 1.5f);
+    font = AssetManager::getInstance().getFontHandle();
+    label = button_text;
 
     this->tag = "Button:" + std::to_string(this->id);
     className = "Button";
@@ -37,7 +30,7 @@ void Button::update(eng::Time deltaTime) {
     currentScale += (targetScale - currentScale) * t;
 }
 
-void Button::render(sf::RenderWindow* window) {
+void Button::render(eng::Renderer& renderer) {
     StateColors colors = normalColors;
     if (is_pressed) {
         colors = pressedColors;
@@ -50,20 +43,21 @@ void Button::render(sf::RenderWindow* window) {
     const eng::Vec2f scaledSize = size * currentScale;
     const eng::Vec2f scaledPos = center - scaledSize * 0.5f;
 
-    drawRoundedRect(window, scaledPos, scaledSize, cornerRadius * currentScale, colors.fill, colors.outline, outlineThickness);
+    renderer.drawRoundedRect(eng::FloatRect(scaledPos, scaledSize),
+                             cornerRadius * currentScale, colors.fill,
+                             outlineThickness, colors.outline);
 
-    // 文字缩放并居中
-    const float baseTextScale = std::min(size.y * 0.7f / text.getLocalBounds().height, size.x * 0.7f / text.getLocalBounds().width);
-    const float scaledTextScale = baseTextScale * currentScale;
-    text.setScale(scaledTextScale, scaledTextScale);
-    textShadow.setScale(scaledTextScale, scaledTextScale);
+    // 文字缩放并居中：基准字号测量 → 实际字号 = 基准 × (适配缩放 × 动画缩放)
+    const eng::Vec2f base = renderer.measureText(font, label, BASE_FONT_SIZE);
+    const float fitScale = std::min(size.y * 0.7f / base.y, size.x * 0.7f / base.x);
+    const unsigned glyphSize = static_cast<unsigned>(
+        std::max(1.f, static_cast<float>(BASE_FONT_SIZE) * fitScale * currentScale));
+    const eng::Vec2f glyphSize2 = renderer.measureText(font, label, glyphSize);
 
-    text.setPosition(center.x - text.getGlobalBounds().width * 0.5f,
-                     center.y - text.getGlobalBounds().height * 0.5f);
-    textShadow.setPosition(text.getPosition().x + 1.5f, text.getPosition().y + 1.5f);
-
-    window->draw(textShadow);
-    window->draw(text);
+    const eng::Vec2f textPos(center - glyphSize2 * 0.5f);
+    const eng::Vec2f shadowOffset(1.5f, 1.5f);
+    renderer.drawText(font, label, textPos + shadowOffset, glyphSize, eng::Color(0, 0, 0, 80));
+    renderer.drawText(font, label, textPos, glyphSize, eng::Color(30, 30, 46));
 }
 
 void Button::handleEvent(const eng::EngineEvent& event) {
@@ -92,86 +86,10 @@ void Button::setOnClick(std::function<void()>&& _onClick) {
 void Button::setToRectCenter(const float x, const float y, const float w, const float h) {
     position.x = x + w * 0.5f - size.x * 0.5f;
     position.y = y + h * 0.5f - size.y * 0.5f;
-    text.setPosition(x + (w - text.getGlobalBounds().width) * 0.5f,
-                     y + (h - text.getGlobalBounds().height) * 0.5f);
-    textShadow.setPosition(text.getPosition().x + 1.5f, text.getPosition().y + 1.5f);
 }
 
 void Button::runOnClick() const {
     if (onClick) onClick();
-}
-
-void Button::drawRoundedRect(sf::RenderWindow* window, eng::Vec2f pos, eng::Vec2f size,
-                              float radius, const eng::Color& fillColor, const eng::Color& outlineColor, float outlineThickness) {
-    radius = std::min(radius, std::min(size.x, size.y) * 0.5f);
-
-    // 先画边框（更大的圆角矩形），再画填充覆盖，形成边框效果
-    if (outlineThickness > 0.f) {
-        const eng::Vec2f outPos = pos - eng::Vec2f(outlineThickness, outlineThickness);
-        const eng::Vec2f outSize = size + eng::Vec2f(outlineThickness * 2, outlineThickness * 2);
-        const float outRadius = radius + outlineThickness;
-        drawFilledRoundedRect(window, outPos, outSize, outRadius, outlineColor);
-    }
-    drawFilledRoundedRect(window, pos, size, radius, fillColor);
-}
-
-void Button::drawFilledRoundedRect(sf::RenderWindow* window, eng::Vec2f pos, eng::Vec2f size,
-                                     float radius, const eng::Color& color) {
-    // 用矩形拼直边 + TriangleFan 画四角
-    const float r = radius;
-    const float w = size.x;
-    const float h = size.y;
-
-    // 中间水平矩形（覆盖左右圆角之间的区域）
-    sf::RectangleShape centerRect(eng::Vec2f(w - 2 * r, h));
-    centerRect.setPosition(pos.x + r, pos.y);
-    centerRect.setFillColor(color);
-    window->draw(centerRect);
-
-    // 左侧矩形（覆盖上下圆角之间的区域）
-    sf::RectangleShape leftRect(eng::Vec2f(r, h - 2 * r));
-    leftRect.setPosition(pos.x, pos.y + r);
-    leftRect.setFillColor(color);
-    window->draw(leftRect);
-
-    // 右侧矩形
-    sf::RectangleShape rightRect(eng::Vec2f(r, h - 2 * r));
-    rightRect.setPosition(pos.x + w - r, pos.y + r);
-    rightRect.setFillColor(color);
-    window->draw(rightRect);
-
-    // 四个圆角用 TriangleFan
-    const int cornerPoints = 8;
-    constexpr float PI = 3.14159265f;
-
-    struct Corner {
-        eng::Vec2f center;
-        float startAngle; // 弧度
-        float endAngle;
-    };
-
-    // 顺时针：右上、右下、左下、左上
-    // 角度：0=右, PI/2=上, PI=左, 3PI/2=下（数学坐标系，y向上）
-    // SFML y向下，所以 sin 取反
-    Corner corners[] = {
-        {{pos.x + w - r, pos.y + r},     0.f,         PI / 2.f},    // 右上：0°→90°
-        {{pos.x + w - r, pos.y + h - r}, 3*PI / 2.f,  2 * PI},      // 右下：270°→360°
-        {{pos.x + r, pos.y + h - r},     PI,          3*PI / 2.f},  // 左下：180°→270°
-        {{pos.x + r, pos.y + r},         PI / 2.f,    PI},          // 左上：90°→180°
-    };
-
-    for (const auto& corner : corners) {
-        sf::VertexArray va(sf::TriangleFan);
-        va.append(sf::Vertex(corner.center, color));
-        for (int i = 0; i <= cornerPoints; ++i) {
-            const float angle = corner.startAngle + (corner.endAngle - corner.startAngle) * i / cornerPoints;
-            va.append(sf::Vertex(
-                eng::Vec2f(corner.center.x + std::cos(angle) * r,
-                             corner.center.y - std::sin(angle) * r),
-                color));
-        }
-        window->draw(va);
-    }
 }
 
 #endif
