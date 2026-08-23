@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.20)
 option(BUILD_FOR_SERVER "Build headless server (no renderer/audio)" OFF)
 # ON ：全部依赖静态链入 exe（单文件发布，编译慢体积大）
 # OFF：动态链接（exe 小、编译快，运行需 SDL3.dll 等陪同）
-option(BUILD_STATIC "Statically link all dependencies into the exe" OFF)
+option(BUILD_STATIC "Statically link all dependencies into the exe" ON)
 # ═══════════════════════════════════════════════════════════════
 
 if (BUILD_FOR_SERVER)
@@ -41,10 +41,19 @@ endif ()
 include(FetchContent)
 set(BOX2D_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BOX2D_BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+# GIT_SHALLOW：浅克隆（depth=1，丢弃 git 历史）
+# GIT_SUBMODULES：只拉用到的子模块（见下方各卫星库声明）。
+# 两者缺一不可：不裁子模块时，SDL_image 会把 libjxl/libavif 等十几个
+# 被禁用后端的依赖仓库也全量拖进 .git/modules（实测 _deps 超 2GB）。
+# EXCLUDE_FROM_ALL：依赖目标不进默认 all，被主目标链接时才编（省 SDL3_test 等）
+# SYSTEM：依赖头文件走 -isystem，第三方告警不扰编译输出
 FetchContent_Declare(
     Box2D
     GIT_REPOSITORY https://github.com/erincatto/box2d.git
     GIT_TAG v2.4.1
+    GIT_SHALLOW 1
+    EXCLUDE_FROM_ALL
+    SYSTEM
 )
 FetchContent_MakeAvailable(Box2D)
 
@@ -55,7 +64,7 @@ FetchContent_MakeAvailable(Box2D)
 # 用不到的关掉以省编译时间与体积。
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)   # vendored freetype 兼容 CMake 4
 
-# SDL_image：资源全为 PNG（内置 stb 解码零外部依赖），裁掉其余格式
+# SDL_image：资源全为 PNG，裁掉其余格式；PNG 走 vendored libpng+zlib
 set(SDLIMAGE_JPG OFF)
 set(SDLIMAGE_TIF OFF)
 set(SDLIMAGE_WEBP OFF)
@@ -83,11 +92,18 @@ FetchContent_Declare(
     SDL
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-3.4.14
+    GIT_SHALLOW 1
+    EXCLUDE_FROM_ALL
+    SYSTEM
 )
 FetchContent_Declare(
     SDL_net
     GIT_REPOSITORY https://github.com/libsdl-org/SDL_net.git
     GIT_TAG 4dd9d8418e9781d10481fd6177e3a1064ca201fe   # main 2026-06-17
+    # 不加 GIT_SHALLOW：tag 为 commit hash 时浅克隆不保证成功（CMake 文档警示），
+    # 且本库仅 17MB 无利可图
+    EXCLUDE_FROM_ALL
+    SYSTEM
 )
 if (NOT BUILD_FOR_SERVER)
     # 客户端专属卫星库
@@ -95,16 +111,28 @@ if (NOT BUILD_FOR_SERVER)
         SDL_image
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
         GIT_TAG release-3.2.0
+        GIT_SHALLOW 1
+        GIT_SUBMODULES external/libpng external/zlib   # 仅 PNG 后端所需
+        EXCLUDE_FROM_ALL
+        SYSTEM
     )
     FetchContent_Declare(
         SDL_ttf
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_ttf.git
         GIT_TAG release-3.2.0
+        GIT_SHALLOW 1
+        GIT_SUBMODULES external/freetype               # harfbuzz/plutosvg 已禁用不拉
+        EXCLUDE_FROM_ALL
+        SYSTEM
     )
     FetchContent_Declare(
         SDL_mixer
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
         GIT_TAG release-3.2.0
+        GIT_SHALLOW 1
+        GIT_SUBMODULES external/ogg external/vorbis    # 其余格式已禁用不拉
+        EXCLUDE_FROM_ALL
+        SYSTEM
     )
 endif ()
 # SDL 在前：SDL_net 经 SDL3::SDL3 目标找到它
