@@ -215,7 +215,7 @@ eng::Vec2f Mario::getCenter() {
     return this->position + getComponent<Collision>()->getOffset() + this->size * 0.5f;
 }
 
-void Mario::serialize(sf::Packet& packet, const NetworkMsg type) {
+void Mario::serialize(eng::Packet& packet, const NetworkMsg type) {
     if (type == NetworkMsg::SpawnObject) {  // 交给Scene处理
         packet << type << this->getId();   // 给 NetworkManager 判断是哪种操作和定位对象的 ID
 
@@ -247,7 +247,7 @@ void Mario::serialize(sf::Packet& packet, const NetworkMsg type) {
     // }
 }
 
-void Mario::deserialize(sf::Packet& packet) {
+void Mario::deserialize(eng::Packet& packet) {
     NetworkMsg msg_type;
     packet >> msg_type;
 

@@ -3,10 +3,11 @@
 //
 
 #pragma once
+#include <chrono>
 #include <memory>
 #include "ISerializable.h"
 #include <string>
-#include <SFML/Network.hpp>
+#include <SFML/Network.hpp>   // N3 过渡：sf::TcpListener 仍用，N4 换 NET_Server 后移除
 
 #include "ConfigManager.h"
 #include "GameObject.h"
@@ -62,14 +63,14 @@ public:
 
 private:
     inline static const std::string CLIENT_TOKEN = "minecraftbucuo/mario";
-    inline static const sf::Time VERIFY_TIMEOUT = sf::seconds(10);
+    inline static const std::chrono::steady_clock::duration VERIFY_TIMEOUT = std::chrono::seconds(10);
 
     NetworkType network_type = NetworkType::None;
     unsigned int port = CONFIG.network.port;
     TcpClient clientSocket;
     sf::TcpListener listener;
     std::vector<std::shared_ptr<TcpClient>> clients;
-    std::vector<std::pair<TcpClient, sf::Clock>> unverified;
+    std::vector<std::pair<TcpClient, std::chrono::steady_clock::time_point>> unverified;
     std::unordered_map<TcpClient*, std::weak_ptr<ISerializable>> players;
     // 需要同步的游戏对象
     std::vector<std::weak_ptr<ISerializable>> game_objects;

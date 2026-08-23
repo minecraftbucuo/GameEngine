@@ -199,3 +199,28 @@ N5  SFML 全仓移除：CMake 三套分支清零 + lib/ 目录删除 + 验收
   `target_link_libraries(SDL3_net)`，N4 才链。
 - 影响：服务端构建首次拉取并编译 SDL 本体 + SDL_net 静态库（编译时间增加属预期，
   计划风险 #3 兑现，一次到位）；客户端行为零变化（SDL 本体同 tag 不会重编）。
+
+### N3 完成（2026-08-23）
+
+**类型层切换：游戏层 sf::Packet/sf::Socket::Status/sf::Clock 全部清零，传输层仍 SFML。**
+
+- [TcpClient.h](file:///e:/Projects/GameEngine/src/Network/TcpClient.h) 重写：
+  - 对外契约 `eng::Packet` + 自有 `Status` 四态枚举；`getSocket()` 移除，
+    改暴露 `sendImmediate`（握手单发）/ `acceptFrom` / `getRemoteAddress` / `getRemotePort`
+  - 传输层 sf::TcpSocket **裸字节** + 自研组帧：
+    发送 = uint32 大端长度前缀 + payload（已核 SFML 2.6.1 TcpSocket.cpp L267 htonl 源码），
+    内核缓冲满时暂存 m_sendBuf 待下帧冲刷（复刻 sf Partial 语义）；
+    接收 = 4096B 裸收 → m_recvBuf 拆帧状态机 → 完整包弹出
+- [NetworkProtocol.h](file:///e:/Projects/GameEngine/src/Network/NetworkProtocol.h)：
+  枚举 operator<</>> 模板删除（eng::Packet 已内置同语义模板），只留协议定义
+- [ISerializable.h](file:///e:/Projects/GameEngine/src/Network/ISerializable.h)：契约签名切 eng::Packet
+- [NetworkManager.h](file:///e:/Projects/GameEngine/src/Network/NetworkManager.h)/.cpp：
+  全部 sf::Packet→eng::Packet、sf::Socket::Status→TcpClient::Status（listener 除外）、
+  sf::Clock→std::chrono::steady_clock、VERIFY_TIMEOUT→chrono::seconds(10)
+- 游戏层 7 文件纯类型替换：MarioController.cpp(6处)、Mario.h/.cpp、FireBall.h/.cpp、
+  Scene.h、SuperMarioScene.h/.cpp（逻辑零改动）
+- **真实 socket 回环互通测试 6/6 全过**（测试程序用后已删）：聚合发送→sf::Packet 解包、
+  sf::Packet 发送→自研拆帧、背靠背三帧粘包拆分、对端关闭→Disconnected。
+  等价于实测"新旧 exe 可互联"。
+- 残留 sf（计划内，N4 清）：TcpClient.h 传输层、NetworkManager 的 listener 两处。
+- 待用户验证：双版本编译 + 双客户端联机回归（连接/验证/生成/同步/火球/重生/断开）。

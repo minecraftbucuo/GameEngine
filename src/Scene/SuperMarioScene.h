@@ -31,7 +31,7 @@ public:
 
     std::shared_ptr<GameObject> spawnEntityWithNetwork() override;
 
-    std::shared_ptr<GameObject> spawnEntityWithNetwork(sf::Packet& packet) override;
+    std::shared_ptr<GameObject> spawnEntityWithNetwork(eng::Packet& packet) override;
 
     void initStaticObjects();
 

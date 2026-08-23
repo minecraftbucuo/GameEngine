@@ -69,7 +69,7 @@ std::shared_ptr<GameObject> SuperMarioScene::spawnEntityWithNetwork() {
     return obj;
 }
 
-std::shared_ptr<GameObject> SuperMarioScene::spawnEntityWithNetwork(sf::Packet& packet) {
+std::shared_ptr<GameObject> SuperMarioScene::spawnEntityWithNetwork(eng::Packet& packet) {
     unsigned int id;
     ObjectType obj_type;
     packet >> id >> obj_type;

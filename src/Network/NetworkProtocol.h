@@ -1,29 +1,12 @@
 //
 // Created by MINEC on 2026/5/8.
+// SDL_net 迁移 N3：枚举 operator<</>> 已内置于 eng::Packet（Packet.h 模板），
+// 原 sf::Packet 版枚举模板删除；此处只保留协议消息定义。
 //
 
 #pragma once
 #include <cstdint>
-
-// 1. 发送：通用枚举重载
-template <typename T>
-std::enable_if_t<std::is_enum_v<T>, sf::Packet&>
-operator <<(sf::Packet& packet, const T& enumVal) {
-    // 使用 std::underlying_type 获取枚举的实际底层类型（如 uint8_t 或 int）
-    using Underlying = std::underlying_type_t<T>;
-    return packet << static_cast<Underlying>(enumVal);
-}
-
-// 2. 接收：通用枚举重载
-template <typename T>
-std::enable_if_t<std::is_enum_v<T>, sf::Packet&>
-operator >>(sf::Packet& packet, T& enumVal) {
-    using Underlying = std::underlying_type_t<T>;
-    Underlying val;
-    packet >> val;
-    enumVal = static_cast<T>(val);
-    return packet;
-}
+#include "Packet.h"
 
 enum class NetworkMsg : uint8_t {
     SpawnPlayer = 0,

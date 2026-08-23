@@ -29,9 +29,9 @@ public:
 
     eng::Vec2f getCenter() override;
 
-    void serialize(sf::Packet& packet, NetworkMsg type) override;
+    void serialize(eng::Packet& packet, NetworkMsg type) override;
 
-    void deserialize(sf::Packet& packet) override;
+    void deserialize(eng::Packet& packet) override;
 
 private:
     // 客户端本地玩家的服务端校正：小误差忽略，中等误差软修正，大误差直接同步。

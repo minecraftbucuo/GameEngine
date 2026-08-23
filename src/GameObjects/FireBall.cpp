@@ -151,7 +151,7 @@ void FireBall::handleCollision(const CollisionEvent& event) {
     }
 }
 
-void FireBall::serialize(sf::Packet& packet, const NetworkMsg type) {
+void FireBall::serialize(eng::Packet& packet, const NetworkMsg type) {
     // NetworkManager 检测到火球的产生后自动调用通知所有的客户端
     if (type == NetworkMsg::SpawnFireBall || type == NetworkMsg::SpawnObject) {
         // 交给 Scene 处理
@@ -161,7 +161,7 @@ void FireBall::serialize(sf::Packet& packet, const NetworkMsg type) {
     }
 }
 
-void FireBall::deserialize(sf::Packet& packet) {
+void FireBall::deserialize(eng::Packet& packet) {
 }
 
 unsigned int FireBall::getOwnerId() const {

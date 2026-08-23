@@ -37,20 +37,19 @@ bool NetworkManager::connectToServer(const std::string& address) {
     }
     LOG_INFO_FMT("Connecting to server at {}:{}", address, port);
 
-    if (clientSocket.connect(address, port,
-                             sf::seconds(CONFIG.network.timeout)) != sf::Socket::Done) {
+    if (clientSocket.connect(address, port, CONFIG.network.timeout) != TcpClient::Status::Done) {
         LOG_WARN("Failed to connect to server!");
         return false;
     }
 
     // 发送验证 Packet
-    sf::Packet verifyPacket;
+    eng::Packet verifyPacket;
     verifyPacket << CLIENT_TOKEN;
-    clientSocket.getSocket().send(verifyPacket);
+    clientSocket.sendImmediate(verifyPacket);
 
     // 等待服务端返回验证结果
-    sf::Packet resultPacket;
-    if (clientSocket.receive(resultPacket) != sf::Socket::Done) {
+    eng::Packet resultPacket;
+    if (clientSocket.receive(resultPacket) != TcpClient::Status::Done) {
         LOG_WARN("Failed to receive verifying response!");
         return false;
     }
@@ -100,8 +99,8 @@ void NetworkManager::handleEvent(const eng::EngineEvent& event) {
         if (event.type == eng::EventType::KeyPress) {
             if (event.key == eng::Key::R) {
                 if (players[&clientSocket].expired()) {
-                    sf::Packet packet;
-                    packet << NetworkMsg::ClientRespawn;
+                eng::Packet packet;
+                packet << NetworkMsg::ClientRespawn;
                     clientSocket.append(packet);
                 }
             }
@@ -110,12 +109,11 @@ void NetworkManager::handleEvent(const eng::EngineEvent& event) {
 }
 
 void NetworkManager::receiveNewConnection() {
-    if (const auto newClient = TcpClient(); listener.accept(newClient.getSocket()) == sf::Socket::Done) {
+    if (const auto newClient = TcpClient(); newClient.acceptFrom(listener)) {
         newClient.setBlocking(false);
-        unverified.emplace_back(newClient, sf::Clock());
+        unverified.emplace_back(newClient, std::chrono::steady_clock::now());
         LOG_INFO_FMT("New TCP connection established with {}:{}",
-            newClient.getSocket().getRemoteAddress().toString(),
-            newClient.getSocket().getRemotePort());
+            newClient.getRemoteAddress(), newClient.getRemotePort());
     }
 }
 
@@ -124,7 +122,7 @@ void NetworkManager::initClientScene(const std::shared_ptr<TcpClient>& newClient
     // 给客户端发送当前场景信息
     for (auto it = game_objects.begin(); it != game_objects.end();) {
         if (const auto obj = it->lock()) {
-            sf::Packet packet;
+            eng::Packet packet;
             obj->serialize(packet, NetworkMsg::SpawnObject);
             newClient->append(packet);
             ++it;
@@ -138,7 +136,7 @@ void NetworkManager::initClientScene(const std::shared_ptr<TcpClient>& newClient
     const auto newPlayer = current_scene->spawnEntityWithNetwork();
     players[newClient.get()] = std::dynamic_pointer_cast<ISerializable>(newPlayer);
 
-    sf::Packet packet;
+    eng::Packet packet;
     // 发送新玩家信息给新玩家自己
     players[newClient.get()].lock()->serialize(packet, NetworkMsg::SpawnPlayer);
     newClient->append(packet);
@@ -156,16 +154,16 @@ void NetworkManager::verifyClient() {
     // 验证 TCP 连接是否由 Mario 客户端发起
     // 并且检查客户端是否连接过长时间而没有发送任何 Packet
     for (auto it = unverified.begin(); it != unverified.end();) {
-        auto& [client, clock] = *it;
-        if (sf::Packet verifyPacket; client.receive(verifyPacket) == sf::Socket::Done) {
+        auto& [client, connectedAt] = *it;
+        if (eng::Packet verifyPacket; client.receive(verifyPacket) == TcpClient::Status::Done) {
             std::string token;
             verifyPacket >> token;
             if (token == CLIENT_TOKEN) {
-                sf::Packet resultPacket;
+                eng::Packet resultPacket;
                 constexpr bool success = true;
                 std::string message = "Hello brave Mario!";
                 resultPacket << success << message;
-                client.getSocket().send(resultPacket);
+                client.sendImmediate(resultPacket);
                 initClientScene(std::make_shared<TcpClient>(client));
                 it = unverified.erase(it); // 已验证，从未验证列表中删除
             } else {
@@ -173,7 +171,7 @@ void NetworkManager::verifyClient() {
                 it = unverified.erase(it);
                 LOG_WARN_FMT("Wrong client token with '{}'", token);
             }
-        } else if (const sf::Time elapsed = clock.getElapsedTime(); elapsed >= VERIFY_TIMEOUT) {
+        } else if (const auto elapsed = std::chrono::steady_clock::now() - connectedAt; elapsed >= VERIFY_TIMEOUT) {
             client.disconnect(); // 关闭超时连接，防止 DDoS
             it = unverified.erase(it);
             LOG_WARN("No verify packet sent from client and time out");
@@ -189,7 +187,7 @@ void NetworkManager::respawnPlayer(const std::shared_ptr<TcpClient>& client) {
     players[client.get()] = std::dynamic_pointer_cast<ISerializable>(newPlayer);
 
     // 发送玩家重生信息给其他客户端
-    sf::Packet packet;
+    eng::Packet packet;
     players[client.get()].lock()->serialize(packet, NetworkMsg::SpawnObject);
     for (const auto& _client : clients) {
         if (_client == client) continue;
@@ -221,10 +219,10 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
             players.erase(client.get());
         }
 
-        sf::Packet packet;
-        sf::Socket::Status status = client->receive(packet);
+        eng::Packet packet;
+        TcpClient::Status status = client->receive(packet);
         // 客户端断开连接处理
-        if (status == sf::Socket::Error || status == sf::Socket::Disconnected) {
+        if (status == TcpClient::Status::Error || status == TcpClient::Status::Disconnected) {
             if (player) {
                 const unsigned int id = player->getNetworkId();
                 removeIdsMap[id] = true;
@@ -240,7 +238,7 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
             continue;
         }
         // 处理玩家的输入操作
-        while (status == sf::Socket::Done) {
+        while (status == TcpClient::Status::Done) {
             // 客户端会把一帧内产生的多个输入消息合并进同一个 Packet。
             // 这里必须把 Packet 内的消息全部读完，否则松开按键等后续输入会被忽略。
             NetworkMsg msg_type;
@@ -266,7 +264,7 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
     // 通知所有在线玩家删除不在线的玩家
     for (const auto& client : clients) {
         for (const auto& id : removeIdsMap | std::views::keys) {
-            sf::Packet packet;
+            eng::Packet packet;
             packet << NetworkMsg::RemoveObject << id;
             client->append(packet);
         }
@@ -279,7 +277,7 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
     LOG_TRACE("Sending update packets to clients");
     for (const auto& client : clients) {
         for (const auto& obj : game_objects) {
-            sf::Packet packet;
+            eng::Packet packet;
             obj.lock()->serialize(packet, NetworkMsg::UpdateObject);
             if (packet.getDataSize() == 0) {
                 continue;
@@ -290,14 +288,14 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
 }
 
 void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
-    sf::Packet packet;
-    sf::Socket::Status status = clientSocket.receive(packet);
-    if (status == sf::Socket::Error || status == sf::Socket::Disconnected) {
+    eng::Packet packet;
+    TcpClient::Status status = clientSocket.receive(packet);
+    if (status == TcpClient::Status::Error || status == TcpClient::Status::Disconnected) {
         network_type = NetworkType::None;
         LOG_WARN("Server disconnected");
         return;
     }
-    while (status == sf::Socket::Done) {
+    while (status == TcpClient::Status::Done) {
         NetworkMsg type;
         while (packet >> type) {
             if (type == NetworkMsg::SpawnObject || type == NetworkMsg::SpawnPlayer) {
@@ -343,7 +341,7 @@ void NetworkManager::addGameObjectAndSync(const std::shared_ptr<GameObject>& obj
     if (this->network_type == NetworkType::Server) {
         // 向所有客户端广播新对象
         for (const auto& client : clients) {
-            sf::Packet spawn_packet;
+            eng::Packet spawn_packet;
             serializable_obj->serialize(spawn_packet, NetworkMsg::SpawnObject);
             client->append(spawn_packet);
         }

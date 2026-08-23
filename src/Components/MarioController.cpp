@@ -64,7 +64,7 @@ void MarioController::handleEvent(const eng::EngineEvent& event) {
             w_is_pressed = false;
             auto* nm = owner->getScene()->getNetworkManager();
             if (nm && nm->isClient()) {
-                sf::Packet packet;
+                eng::Packet packet;
                 packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
                 packet << InputType::JumpRelease;
                 nm->getClientSocket().append(packet);
@@ -107,7 +107,7 @@ void MarioController::jump(const bool play_sound) {
 
         auto* nm = owner->getScene()->getNetworkManager();
         if (nm && nm->isClient()) {
-            sf::Packet packet;
+            eng::Packet packet;
             packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
             packet << InputType::Jump;
             nm->getClientSocket().append(packet);
@@ -124,7 +124,7 @@ void MarioController::runLeft() const {
 
     auto* nm = owner->getScene()->getNetworkManager();
     if (nm && nm->isClient()) {
-        sf::Packet packet;
+        eng::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::RunLeft;
         nm->getClientSocket().append(packet);
@@ -140,7 +140,7 @@ void MarioController::runRight() const {
 
     auto* nm = owner->getScene()->getNetworkManager();
     if (nm && nm->isClient()) {
-        sf::Packet packet;
+        eng::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::RunRight;
         nm->getClientSocket().append(packet);
@@ -156,7 +156,7 @@ void MarioController::stopRun() const {
 
     auto* nm = owner->getScene()->getNetworkManager();
     if (nm && nm->isClient()) {
-        sf::Packet packet;
+        eng::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::StopRun;
         nm->getClientSocket().append(packet);
@@ -184,7 +184,7 @@ void MarioController::shoot(const bool play_sound) {
     auto* network_manager = owner->getScene()->getNetworkManager();
     const auto current_scene = owner->getScene();
     if (network_manager && network_manager->isClient()) {
-        sf::Packet packet;
+        eng::Packet packet;
         packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
         packet << InputType::Shoot;
         network_manager->getClientSocket().append(packet);

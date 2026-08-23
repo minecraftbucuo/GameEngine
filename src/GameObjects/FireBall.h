@@ -26,9 +26,9 @@ public:
 
     void handleCollision(const CollisionEvent& event);
 
-    void serialize(sf::Packet& packet, NetworkMsg type) override;
+    void serialize(eng::Packet& packet, NetworkMsg type) override;
 
-    void deserialize(sf::Packet& packet) override;
+    void deserialize(eng::Packet& packet) override;
 
     unsigned int getOwnerId() const;
 
