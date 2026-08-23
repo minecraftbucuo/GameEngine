@@ -39,7 +39,9 @@ endif ()
 
 # ── 依赖一：Box2D v2.4（物理，引擎核心依赖，两端共用）─────────────
 include(FetchContent)
-set(BOX2D_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+# 注意：v2.4 无 BOX2D_BUILD_EXAMPLES（2.3 时代开关名），testbed 默认 ON 且
+# 无条件拉 extern/glfw 等；无图形环境（Linux 服务器）会因缺 RandR 头配置失败
+set(BOX2D_BUILD_TESTBED OFF CACHE BOOL "" FORCE)
 set(BOX2D_BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
 # GIT_SHALLOW：浅克隆（depth=1，丢弃 git 历史）
 # GIT_SUBMODULES：只拉用到的子模块（见下方各卫星库声明）。
