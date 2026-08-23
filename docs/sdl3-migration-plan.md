@@ -537,14 +537,19 @@ SFML 退缩为以下实现面文件的内部细节（Step 9~11 逐个替换/删�
 - **原子性保证**：所有调用方早已走 Renderer/Handle 抽象，本提交只动
   实现文件选择 + Types.h + 音频双分支；出问题关 BUILD_WITH_SDL3 即回 SFML
 
-#### Step 11 — 删除脚手架与 SFML 残留
-- [ ] 删除 `RendererSFML.cpp`、`EventConvertSFML.h/.cpp`、`AssetManager` 的 SFML 内部实现、
-      一切过渡期 `#ifdef`
-- [ ] 全仓清理：除 `src/Network/` 外 `#include <SFML/...>` 为零
-      （`sfml-network` 头在 Network/ 内继续使用）
-- [ ] CMake 移除 SFML graphics/window/audio/system 的 FetchContent/链接
-- **验证**：编译通过 + 全场景回归；`grep -r "sf::" src/` 仅 Network/ 目录有命中
-- **原子性保证**：纯删除死代码，Step 10 后这些文件已无人引用
+#### Step 11 — 删除脚手架与 SFML 残留 ✅ 2026-08-23 完成（迁移收官）
+- [x] 删除 4 文件：`RendererSFML.cpp`、`EventConvertSFML.h/.cpp`、`AssetManager.cpp`（SFML 版）
+- [x] `AssetManager.h` 去 `#ifdef ENGINE_SDL3` 双分支 → SDL3 单实现；
+      `MarioController.h/.cpp` 去 SFML 音频分支；两 SDL3 实现文件去宏去守卫
+- [x] `ENGINE_SDL3` 宏全仓清零（源码与 CMake 均不再定义/引用）
+- [x] CMake 单后端终态：客户端无条件拉取 SDL3 全家并链接（`BUILD_WITH_SDL3` 开关删除）；
+      SFML 只剩 network+system（`find_package` 组件收窄、graphics/window/audio 的
+      FetchContent 开关与链接段全部删除，连带 OpenAL/flac/vorbis/freetype 传递依赖清零）
+- [x] 全仓验证：`grep "#include <SFML" src/` 仅 Network/ 两文件（范围外）；
+      `grep "ENGINE_SDL3" src/ CMakeLists.txt` 零命中
+- **验证**：客户端+服务端双版本编译通过 + 全场景回归
+- **收官状态**：窗口/渲染/输入/音频 = SDL3；网络 = sfml-network（范围外）；
+  渲染栈 SFML 依赖（graphics/window/audio/system 链接与其传递依赖）全部移除
 
 ---
 

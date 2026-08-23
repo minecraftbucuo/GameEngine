@@ -3,11 +3,9 @@
 //
 #ifndef SERVER_BUILD
 
-// 【SDL3 终态实现 — 迁移 Step 9 纯新增；Step 10 生效（替换 AssetManager.cpp 的 SFML 版）】
-// AssetManager 的 SDL3 内部实现：贴图走 SDL_image（surface 懒上传纹理），
-// 音频走 SDL_mixer 3.2 track API（MIX_LoadAudio 全量预解码，对齐 sf::SoundBuffer 语义）。
-// 只在定义了 ENGINE_SDL3 时参与编译（挂在 EngineSDL3 编译验证目标上）。
-#if defined(ENGINE_SDL3)
+// AssetManager 的 SDL3 实现（迁移 Step 11 起唯一后端）：贴图走 SDL_image
+// （surface 懒上传纹理），音频走 SDL_mixer 3.2 track API（MIX_LoadAudio 全量
+// 预解码，对齐原 sf::SoundBuffer 语义）。
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>   // SDL3_image 3.2 已无 IMG_Init：解码器自动注册
@@ -194,5 +192,4 @@ MIX_Audio* AssetManager::getSoundBuffer(const std::string& name) {
     return soundBuffers[name];
 }
 
-#endif // ENGINE_SDL3
 #endif // SERVER_BUILD

@@ -3,11 +3,9 @@
 //
 #ifndef SERVER_BUILD
 
-// 【SDL3 终态实现 — 迁移 Step 9 纯新增；Step 10 由 CMake 切换生效（替换 RendererSFML.cpp）】
-// Renderer 的 SDL3 实现：窗口 + 事件泵 + 绘制命令 + 相机 + 文字缓存。
-// 每条命令的语义与脚手架 RendererSFML.cpp 逐条对齐，差异点在注释中说明。
-// 本文件只在定义了 ENGINE_SDL3 时参与编译（Step 9 起挂在 EngineSDL3 编译验证目标上）。
-#if defined(ENGINE_SDL3)
+// Renderer 的 SDL3 实现（迁移 Step 11 起唯一后端）：
+// 窗口 + 事件泵 + 绘制命令 + 相机 + 文字缓存。
+// 历史语义对齐注释（"与脚手架一致"等）指向迁移期已删除的 RendererSFML.cpp。
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -867,5 +865,4 @@ Vec2i getMousePosition() {
 
 } // namespace eng::Input
 
-#endif // ENGINE_SDL3
 #endif // SERVER_BUILD

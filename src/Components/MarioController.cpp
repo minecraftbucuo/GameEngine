@@ -15,33 +15,24 @@
 #include "Scene.h"
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
-#ifdef ENGINE_SDL3
 #include <SDL3_mixer/SDL_mixer.h>
-#endif
 #endif
 
 MarioController::~MarioController() {
 #ifndef SERVER_BUILD
-#ifdef ENGINE_SDL3
     if (jump_track) MIX_DestroyTrack(jump_track);
     if (shoot_track) MIX_DestroyTrack(shoot_track);
-#endif
 #endif
 }
 
 void MarioController::start() {
 #ifndef SERVER_BUILD
-#ifdef ENGINE_SDL3
-    // SDL3 迁移 Step 10：常驻 track 绑定预解码音频（sf::Sound::setBuffer 的等价物）
+    // 常驻 track 绑定预解码音频（原 sf::Sound::setBuffer 的等价物）
     auto& am = AssetManager::getInstance();
     jump_track = MIX_CreateTrack(am.getMixer());
     if (jump_track) MIX_SetTrackAudio(jump_track, am.getSoundBuffer("small_jump"));
     shoot_track = MIX_CreateTrack(am.getMixer());
     if (shoot_track) MIX_SetTrackAudio(shoot_track, am.getSoundBuffer("fireball"));
-#else
-    jump_sound.setBuffer(AssetManager::getInstance().getSoundBuffer("small_jump"));
-    shoot_sound.setBuffer(AssetManager::getInstance().getSoundBuffer("fireball"));
-#endif
 #endif
     jump_timer.setCallback([this]() -> void { this->w_is_pressed = false; });
     shoot_timer.setCallback([&]() -> void { could_shoot = true; });
@@ -106,12 +97,7 @@ void MarioController::jump(const bool play_sound) {
         moveComponent->setSpeedY(-CONFIG.game.jumpForce);
 #ifndef SERVER_BUILD
         if (play_sound) {
-#ifdef ENGINE_SDL3
             if (jump_track) { MIX_StopTrack(jump_track, 0); MIX_PlayTrack(jump_track, 0); }
-#else
-            jump_sound.stop();
-            jump_sound.play();
-#endif
             LOG_TRACE("jump sound play!");
         }
 #endif
@@ -191,12 +177,7 @@ void MarioController::shoot(const bool play_sound) {
     shoot_timer.start(CONFIG.game.shootDelay);
 #ifndef SERVER_BUILD
     if (play_sound) {
-#ifdef ENGINE_SDL3
         if (shoot_track) { MIX_StopTrack(shoot_track, 0); MIX_PlayTrack(shoot_track, 0); }
-#else
-        shoot_sound.stop();
-        shoot_sound.play();
-#endif
         LOG_TRACE("shoot sound play!");
     }
 #endif

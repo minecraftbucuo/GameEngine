@@ -10,10 +10,9 @@
 #include "Core/Event.h"
 #include "Render/Handles.h"
 
-// 引擎渲染器（SDL3 迁移 Step 5）
+// 引擎渲染器（SDL3 迁移 Step 5 引入，Step 11 起唯一后端）
 // 职责：窗口 + 事件泵 + 渲染命令 三合一。
-// 头文件零第三方 include；实现文件整体替换（脚手架期 RendererSFML.cpp，
-// SDL3 终态 RendererSDL3.cpp），游戏层代码不随实现变化。
+// 头文件零第三方 include；实现在 RendererSDL3.cpp，游戏层代码不感知后端。
 namespace eng {
 
 class Renderer {

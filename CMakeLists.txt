@@ -22,22 +22,17 @@ if (BUILD_SFML_FROM_SOURCE)
         GIT_REPOSITORY https://github.com/SFML/SFML.git
         GIT_TAG 2.6.1
     )
+    # SDL3 迁移 Step 11：渲染栈已换 SDL3，SFML 只剩 network+system 给 Network/ 用
     set(BUILD_SHARED_LIBS OFF)
     set(SFML_BUILD_AUDIO OFF)
     set(SFML_BUILD_NETWORK ON)
     set(SFML_BUILD_GRAPHICS OFF)
     set(SFML_BUILD_WINDOW OFF)
-    if (NOT BUILD_FOR_SERVER)
-        set(SFML_BUILD_AUDIO ON)
-        set(SFML_BUILD_GRAPHICS ON)
-        set(SFML_BUILD_WINDOW ON)
-    endif ()
     FetchContent_MakeAvailable(SFML)
     set(SFML_ROOT "${sfml_SOURCE_DIR}")
 else ()
-    # 设置 SFML 路径
-    # 优先尝试系统提供的 SFML
-    find_package(SFML 2.6 COMPONENTS system network graphics window audio QUIET)
+    # 设置 SFML 路径（仅 network + system，Network/ 模块迁移范围外保留）
+    find_package(SFML 2.6 COMPONENTS system network QUIET)
     if (SFML_FOUND)
         message(STATUS "Using system SFML: ${SFML_DIR}")
     else ()
@@ -75,15 +70,12 @@ if (BUILD_WITH_BOX2D)
 endif ()
 # ───────────────────────────────────────────────────────────────────
 
-# ── SDL3 依赖接入（SDL3 迁移 Step 8）─────────────────────────────────
-# 原子性：仅拉取并编译依赖，不链接进主目标、不改任何源文件；
-# Step 10 切换 Renderer 实现时才 target_link_libraries；关 BUILD_WITH_SDL3 即恢复原状态。
+# ── SDL3 渲染栈（迁移 Step 11 起唯一后端，客户端构建无条件拉取）──────
 # 版本对齐（已核实各卫星库源码 CMakeLists 的 SDL_REQUIRED_VERSION）：
 #   mixer 3.2.0 要求 SDL≥3.4.0，ttf 3.2.0 要求 ≥3.2.6，image 3.2.0 要求 ≥3.2.0
 #   → SDL 核心 3.4.14（2026-08，3.4 系列 ABI 稳定）满足全部。
-option(BUILD_WITH_SDL3 "Fetch and build SDL3 + satellite libraries (SDL3 migration Step 8)" ON)
-if (BUILD_WITH_SDL3 AND NOT BUILD_FOR_SERVER)
-    message(STATUS "Building with SDL3 ecosystem (not linked into target yet - SDL3 migration Step 8)")
+if (NOT BUILD_FOR_SERVER)
+    message(STATUS "Building with SDL3 ecosystem (renderer backend)")
     include(FetchContent)
 
     # vendored freetype 声明 cmake_minimum_required(3.0)，CMake 4.x 已移除 <3.5 兼容；
@@ -154,23 +146,6 @@ set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 file(GLOB_RECURSE SRC CONFIGURE_DEPENDS ${SRC_DIR}/*.cpp)
 
-# ── SDL3 迁移 Step 10：主目标切换 ────────────────────────────────────
-# SDL3_ACTIVE=ON：渲染/窗口/输入/音频走 SDL3 实现（RendererSDL3 + AssetManagerSDL3），
-#                Network/ 仍链 sfml-network+sfml-system（迁移范围外）；
-# SDL3_ACTIVE=OFF（BUILD_WITH_SDL3=OFF）：完整回滚到 SFML 脚手架路径。
-if (BUILD_WITH_SDL3 AND NOT BUILD_FOR_SERVER)
-    set(SDL3_ACTIVE ON)
-endif ()
-
-if (SDL3_ACTIVE)
-    list(FILTER SRC EXCLUDE REGEX "RendererSFML\\.cpp$")
-    list(FILTER SRC EXCLUDE REGEX "EventConvertSFML\\.cpp$")
-    list(FILTER SRC EXCLUDE REGEX "AssetManager\\.cpp$")
-else ()
-    list(FILTER SRC EXCLUDE REGEX "RendererSDL3\\.cpp$")
-    list(FILTER SRC EXCLUDE REGEX "AssetManagerSDL3\\.cpp$")
-endif ()
-
 add_executable(${PROJECT_NAME} ${SRC})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 if (BUILD_FOR_SERVER)
@@ -194,111 +169,39 @@ target_include_directories(
         ${SFML_ROOT}/include
 )
 
-if (SDL3_ACTIVE)
-    # SDL3 迁移 Step 10：渲染/窗口/输入/音频全部 SDL3；Network/ 仍需 sfml-network/system
-    target_compile_definitions(${PROJECT_NAME} PRIVATE ENGINE_SDL3)
+# ── 链接（SDL3 迁移 Step 11 单后端终态）─────────────────────────────
+# 客户端：渲染/窗口/输入/音频 = SDL3 全家；
+# 客户端与服务端共同：SFML network+system（Network/ 模块迁移范围外保留）
+if (NOT BUILD_FOR_SERVER)
     target_link_libraries(${PROJECT_NAME} PRIVATE
             SDL3::SDL3
             SDL3_image::SDL3_image
             SDL3_ttf::SDL3_ttf
             SDL3_mixer::SDL3_mixer
     )
-    if (BUILD_SFML_FROM_SOURCE)
-        target_link_libraries(${PROJECT_NAME} PRIVATE sfml-network sfml-system)
-    else ()
-        target_link_directories(${PROJECT_NAME} PRIVATE ${SFML_ROOT}/lib)
-        target_link_libraries(${PROJECT_NAME} PRIVATE
-                debug sfml-network-s-d optimized sfml-network-s
-                debug sfml-system-s-d optimized sfml-system-s
-                ws2_32 winmm)
-    endif ()
-elseif (BUILD_SFML_FROM_SOURCE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE
-        sfml-system
-        sfml-network
-    )
-    if (NOT BUILD_FOR_SERVER)
-        target_link_libraries(${PROJECT_NAME} PRIVATE
-            sfml-graphics
-            sfml-window
-            sfml-audio
-        )
-    endif ()
-else ()
-    target_link_directories(
-            ${PROJECT_NAME}
-            PRIVATE
-            ${SFML_ROOT}/lib
-    )
-
-    if (WIN32)
-        if (WIN_STATIC_LINK)
-            message("Static link")
-            # Windows 下静态链接
-            list(APPEND LINK_LIBRARIES
-                    debug sfml-audio-s-d
-                    debug sfml-graphics-s-d
-                    debug sfml-window-s-d
-                    debug sfml-network-s-d
-                    debug sfml-system-s-d
-
-                    optimized sfml-audio-s
-                    optimized sfml-graphics-s
-                    optimized sfml-window-s
-                    optimized sfml-network-s
-                    optimized sfml-system-s
-
-                    # OpenAL 音频库
-                    openal32
-                    # 音频编解码器库
-                    flac
-                    vorbisenc
-                    vorbisfile
-                    vorbis
-                    ogg
-                    # 其他依赖库
-                    freetype
-                    opengl32
-                    winmm
-                    ws2_32
-            )
-        else ()
-            message("Dynamic link")
-            list(APPEND LINK_LIBRARIES
-                    debug sfml-system-d
-                    debug sfml-network-d
-                    optimized sfml-system
-                    optimized sfml-network
-            )
-            if (NOT BUILD_FOR_SERVER)
-                list(APPEND LINK_LIBRARIES
-                        debug sfml-graphics-d
-                        debug sfml-window-d
-                        debug sfml-audio-d
-                        optimized sfml-graphics
-                        optimized sfml-window
-                        optimized sfml-audio
-                )
-            endif ()
-        endif ()
-    else ()
-        list(APPEND LINK_LIBRARIES
-                sfml-system
-                sfml-network
-        )
-        if (NOT BUILD_FOR_SERVER)
-            list(APPEND LINK_LIBRARIES
-                    sfml-graphics
-                    sfml-window
-                    sfml-audio
-            )
-        endif ()
-    endif ()
-
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${LINK_LIBRARIES})
 endif ()
 
-# 链接 Box2D（无论 SFML 用何种方式都需附加）
+if (BUILD_SFML_FROM_SOURCE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE sfml-network sfml-system)
+else ()
+    target_link_directories(${PROJECT_NAME} PRIVATE ${SFML_ROOT}/lib)
+    if (WIN32)
+        if (WIN_STATIC_LINK)
+            target_link_libraries(${PROJECT_NAME} PRIVATE
+                    debug sfml-network-s-d optimized sfml-network-s
+                    debug sfml-system-s-d optimized sfml-system-s
+                    ws2_32 winmm)
+        else ()
+            target_link_libraries(${PROJECT_NAME} PRIVATE
+                    debug sfml-network-d optimized sfml-network
+                    debug sfml-system-d optimized sfml-system)
+        endif ()
+    else ()
+        target_link_libraries(${PROJECT_NAME} PRIVATE sfml-network sfml-system)
+    endif ()
+endif ()
+
+# 链接 Box2D（物理引擎，两端共用）
 if (BUILD_WITH_BOX2D)
     target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 endif ()
