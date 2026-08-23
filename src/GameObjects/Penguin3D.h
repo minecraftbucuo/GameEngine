@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 
 #include "GameObject3D.h"
@@ -13,6 +14,6 @@ public:
 
     void render(sf::RenderWindow* window) override;
 
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
 };
 #endif

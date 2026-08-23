@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <functional>
 #include "GameObject.h"
@@ -11,7 +12,7 @@ class Toggle : public GameObject {
 public:
     Toggle(float x, float y, float w, float h, bool initialState = false);
 
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
     void render(sf::RenderWindow* window) override;
     void handleEvent(sf::Event& event) override;
 
@@ -23,8 +24,8 @@ public:
 private:
     bool isMouseOver() const;
 
-    sf::Vector2f position;
-    sf::Vector2f size;
+    eng::Vec2f position;
+    eng::Vec2f size;
 
     bool state = false;
 
@@ -34,9 +35,9 @@ private:
     float lerpSpeed = 10.f;
 
     // 颜色
-    sf::Color trackOffColor = {80, 85, 95};
-    sf::Color trackOnColor = {137, 180, 255};
-    sf::Color knobColor = {205, 214, 244};
+    eng::Color trackOffColor = {80, 85, 95};
+    eng::Color trackOnColor = {137, 180, 255};
+    eng::Color knobColor = {205, 214, 244};
 
     // 回调
     std::function<void(bool)> onToggle;

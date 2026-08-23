@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <SFML/Graphics/RenderWindow.hpp>
 
@@ -21,26 +22,26 @@ public:
 
     void setPosition(float x, float y);
 
-    sf::Vector2f getPosition() const;
+    eng::Vec2f getPosition() const;
 
     void setPositionX(float x);
 
     void setMouseControl(bool flag);
 
-    sf::Vector2f getCenter() const;
+    eng::Vec2f getCenter() const;
 
-    void addPosition(const sf::Vector2i& pos);
+    void addPosition(const eng::Vec2i& pos);
 
     void handleEvent(const sf::Event& event);
 
-    sf::Vector2f getViewSize() const;
+    eng::Vec2f getViewSize() const;
 
 private:
-    sf::FloatRect floatRect;
+    eng::FloatRect floatRect;
     sf::View view;
     sf::RenderWindow* window{};
     bool mouseControl = false;
-    sf::Vector2i mousePos;
+    eng::Vec2i mousePos;
     bool isPressed = false;
 
     void updateView();

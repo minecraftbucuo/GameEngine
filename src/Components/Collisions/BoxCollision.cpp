@@ -7,6 +7,7 @@
 
 #include "ConfigManager.h"
 #include "GameObject.h"
+#include "Core/Types.h"
 
 BoxCollision::BoxCollision(const float x, const float y, const float width, const float height) {
     this->position.x = x;
@@ -25,7 +26,7 @@ void BoxCollision::start() {
     this->size.y = owner->getSize().y;
 }
 
-void BoxCollision::update(const sf::Time& deltaTime) {
+void BoxCollision::update(const eng::Time& deltaTime) {
     // this->posX = owner->posX;
     // this->posY = owner->posY;
     // this->position = owner->getPosition();
@@ -35,8 +36,8 @@ void BoxCollision::render(sf::RenderWindow *window) {
     if (!CONFIG.game.debug) return;
     sf::RectangleShape rect(this->size);
     rect.setPosition(this->getCollisionPosition());
-    rect.setFillColor(sf::Color::Transparent);
-    rect.setOutlineColor(sf::Color::Red);
+    rect.setFillColor(eng::Color::Transparent);
+    rect.setOutlineColor(eng::Color::Red);
     rect.setOutlineThickness(2);
     window->draw(rect);
 }
@@ -83,9 +84,9 @@ float BoxCollision::getPosY() const {
 }
 
 void BoxCollision::setPosition(const float x, const float y) {
-    this->position = sf::Vector2f(x, y);
+    this->position = eng::Vec2f(x, y);
 }
 
 void BoxCollision::setSize(const float width_, const float height_) {
-    this->size = sf::Vector2f(width_, height_);
+    this->size = eng::Vec2f(width_, height_);
 }

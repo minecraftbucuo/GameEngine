@@ -6,13 +6,14 @@
 
 #include "Animation.h"
 #include "BaseState.h"
+#include "Core/Types.h"
 
 class MarioRunState : public BaseState {
 public:
     explicit MarioRunState();
     ~MarioRunState() override = default;
 
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 
     void handleEvent(const sf::Event& event) override;
 

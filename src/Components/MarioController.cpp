@@ -13,6 +13,7 @@
 #include "MarioJumpState.h"
 #include "NetworkManager.h"
 #include "Scene.h"
+#include "Core/Types.h"
 
 void MarioController::start() {
 #ifndef SERVER_BUILD
@@ -58,14 +59,14 @@ void MarioController::handleEvent(const sf::Event& event) {
     }
 }
 
-void MarioController::update(const sf::Time& deltaTime) {
+void MarioController::update(const eng::Time& deltaTime) {
     auto state = owner->getComponent<StateMachine>();
     if (state && state->getCurrentStateName() == "MarioJumpState" && w_is_pressed) {
         jump_timer.update(deltaTime);
     }
     if (w_is_pressed) {
         const auto& move_component = owner->getComponent<MoveComponent>();
-        move_component->addSpeed(sf::Vector2f(0.f, -1815.f * deltaTime.asSeconds()));
+        move_component->addSpeed(eng::Vec2f(0.f, -1815.f * deltaTime.asSeconds()));
     }
 
     shoot_timer.update(deltaTime);

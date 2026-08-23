@@ -8,8 +8,9 @@
 #include "Collision.h"
 #include <cmath>
 #include "ConfigManager.h"
+#include "Core/Types.h"
 
-void MoveComponent::update(const sf::Time& deltaTime) {
+void MoveComponent::update(const eng::Time& deltaTime) {
     owner->position += owner->speed * deltaTime.asSeconds();
     setPosition(owner->position.x, owner->position.y);
 }
@@ -21,12 +22,12 @@ void MoveComponent::render(sf::RenderWindow* window) {
     drawArrow(window, center.x, center.y, center.x + owner->speed.x / 10.f, center.y + owner->speed.y / 10.f);
 }
 #endif
-void MoveComponent::setPosition(const sf::Vector2f& pos, const bool move_collision) const {
+void MoveComponent::setPosition(const eng::Vec2f& pos, const bool move_collision) const {
     owner->setPosition(pos.x, pos.y);
     if (move_collision) setCollisionPosition(pos);
 }
 
-void MoveComponent::moveCollisionTo(const sf::Vector2f& pos) const {
+void MoveComponent::moveCollisionTo(const eng::Vec2f& pos) const {
     if (const auto& collision = owner->getComponent<Collision>()) {
         const auto delta_pos = pos - collision->getCollisionPosition();
         collision->setCollisionPosition(pos);
@@ -36,31 +37,31 @@ void MoveComponent::moveCollisionTo(const sf::Vector2f& pos) const {
 
 void MoveComponent::moveCollisionXTo(const float posX) const {
     const auto& collision = owner->getComponent<Collision>();
-    moveCollisionTo(sf::Vector2f(posX, collision->getCollisionPosition().y));
+    moveCollisionTo(eng::Vec2f(posX, collision->getCollisionPosition().y));
 }
 
 void MoveComponent::moveCollisionYTo(const float posY) const {
     const auto& collision = owner->getComponent<Collision>();
-    moveCollisionTo(sf::Vector2f(collision->getCollisionPosition().x, posY));
+    moveCollisionTo(eng::Vec2f(collision->getCollisionPosition().x, posY));
 }
 
 void MoveComponent::setPosition(const float posX, const float posY, const bool move_collision) const {
-    setPosition(sf::Vector2f(posX, posY), move_collision);
+    setPosition(eng::Vec2f(posX, posY), move_collision);
 }
 
 void MoveComponent::setPositionX(const float posX, const bool move_collision) const {
-    setPosition(sf::Vector2f(posX, owner->position.y), move_collision);
+    setPosition(eng::Vec2f(posX, owner->position.y), move_collision);
 }
 
 void MoveComponent::setPositionY(const float posY, const bool move_collision) const {
-    setPosition(sf::Vector2f(owner->position.x, posY), move_collision);
+    setPosition(eng::Vec2f(owner->position.x, posY), move_collision);
 }
 
-void MoveComponent::addPosition(const sf::Vector2f& pos, const bool move_collision) const {
+void MoveComponent::addPosition(const eng::Vec2f& pos, const bool move_collision) const {
     setPosition(owner->position + pos, move_collision);
 }
 
-void MoveComponent::setSpeed(const sf::Vector2f& speed) const {
+void MoveComponent::setSpeed(const eng::Vec2f& speed) const {
     owner->speed = speed;
 }
 
@@ -73,19 +74,19 @@ void MoveComponent::setSpeedY(const float speedY) const {
 }
 
 void MoveComponent::setSpeed(const float speedX, const float speedY) const {
-    owner->speed = sf::Vector2f(speedX, speedY);
+    owner->speed = eng::Vec2f(speedX, speedY);
 }
 
-void MoveComponent::addSpeed(const sf::Vector2f& speed) const {
+void MoveComponent::addSpeed(const eng::Vec2f& speed) const {
     owner->speed += speed;
 }
 #ifndef SERVER_BUILD
 void MoveComponent::drawArrow(sf::RenderWindow* window, const float x1, const float y1, const float x2, const float y2,
-                              const float arrowSize, const sf::Color color) {
+                              const float arrowSize, const eng::Color color) {
     // 绘制箭杆
     const sf::Vertex line[] = {
-        sf::Vertex(sf::Vector2f(x1, y1), color),
-        sf::Vertex(sf::Vector2f(x2, y2), color)
+        sf::Vertex(eng::Vec2f(x1, y1), color),
+        sf::Vertex(eng::Vec2f(x2, y2), color)
     };
     window->draw(line, 2, sf::Lines);
 
@@ -101,14 +102,14 @@ void MoveComponent::drawArrow(sf::RenderWindow* window, const float x1, const fl
 
     // 绘制箭头头部（三角形）
     const sf::Vertex arrowHead[] = {
-        sf::Vertex(sf::Vector2f(x2, y2), color),
-        sf::Vertex(sf::Vector2f(x3, y3), color),
-        sf::Vertex(sf::Vector2f(x4, y4), color)
+        sf::Vertex(eng::Vec2f(x2, y2), color),
+        sf::Vertex(eng::Vec2f(x3, y3), color),
+        sf::Vertex(eng::Vec2f(x4, y4), color)
     };
     window->draw(arrowHead, 3, sf::Triangles);
 }
 #endif
-void MoveComponent::setCollisionPosition(const sf::Vector2f& pos) const {
+void MoveComponent::setCollisionPosition(const eng::Vec2f& pos) const {
     if (const auto& collision = owner->getComponent<Collision>()) {
         collision->setPosition(pos);
     }

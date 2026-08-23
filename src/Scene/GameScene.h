@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <SFML/Graphics.hpp>
 #include <memory>
@@ -20,7 +21,7 @@ public:
 
     void initScene();
 
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
 
     void addObject(const std::shared_ptr<GameObject>& obj) override;
 

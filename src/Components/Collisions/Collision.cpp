@@ -3,27 +3,28 @@
 //
 
 #include "Collision.h"
+#include "Core/Types.h"
 
-void Collision::setPosition(const sf::Vector2f& _position) {
+void Collision::setPosition(const eng::Vec2f& _position) {
     this->position = _position;
 }
 
-void Collision::setCollisionPosition(const sf::Vector2f& _position) {
+void Collision::setCollisionPosition(const eng::Vec2f& _position) {
     this->position = _position - offset;
 }
 
-void Collision::setOffset(const sf::Vector2f& _offset) {
+void Collision::setOffset(const eng::Vec2f& _offset) {
     this->offset = _offset;
 }
 
-sf::Vector2f Collision::getOffset() const {
+eng::Vec2f Collision::getOffset() const {
     return offset;
 }
 
-sf::Vector2f Collision::getCollisionPosition() const {
+eng::Vec2f Collision::getCollisionPosition() const {
     return position + offset;
 }
 
-sf::Vector2f Collision::getPosition() const {
+eng::Vec2f Collision::getPosition() const {
     return position;
 }

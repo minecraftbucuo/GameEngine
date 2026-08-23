@@ -2,6 +2,7 @@
 // Created by MINEC on 2026/6/2.
 //
 
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "NewModel3D.h"
 #include "ConfigManager.h"
@@ -23,7 +24,7 @@ void NewModel3D::render(sf::RenderWindow* window) {
     drawFaces(window);
 }
 
-void NewModel3D::update(const sf::Time deltaTime) {
+void NewModel3D::update(const eng::Time deltaTime) {
     angleXZ += deltaTime.asSeconds();
 }
 #endif

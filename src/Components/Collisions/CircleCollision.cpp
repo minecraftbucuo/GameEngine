@@ -8,13 +8,14 @@
 #include <cmath>
 
 #include "ConfigManager.h"
+#include "Core/Types.h"
 
 CircleCollision::CircleCollision(const float x, const float y, const float radius) {
-    this->position = sf::Vector2f(x, y);
+    this->position = eng::Vec2f(x, y);
     this->radius = radius;
 }
 
-void CircleCollision::update(const sf::Time& deltaTime) {
+void CircleCollision::update(const eng::Time& deltaTime) {
     // this->posX = owner->posX + owner->width / 2;
     // this->posY = owner->posY + owner->height / 2;
     // this->position = owner->getPosition() + owner->getSize() * 0.5f;
@@ -23,16 +24,16 @@ void CircleCollision::update(const sf::Time& deltaTime) {
 void CircleCollision::render(sf::RenderWindow *window) {
     if (!CONFIG.game.debug) return;
     sf::CircleShape shape(radius);
-    shape.setPosition(this->getPos() - sf::Vector2f(radius, radius));
+    shape.setPosition(this->getPos() - eng::Vec2f(radius, radius));
     // std::cout << shape.getPosition().x << " " << shape.getPosition().y << std::endl;
-    shape.setFillColor(sf::Color::Transparent);
-    shape.setOutlineColor(sf::Color::Red);
+    shape.setFillColor(eng::Color::Transparent);
+    shape.setOutlineColor(eng::Color::Red);
     shape.setOutlineThickness(2);
     window->draw(shape);
 }
 #endif
 
-void CircleCollision::setPosition(const sf::Vector2f &position) {
+void CircleCollision::setPosition(const eng::Vec2f &position) {
     this->position = owner->getPosition() + owner->getSize() * 0.5f;
 }
 
@@ -55,7 +56,7 @@ float CircleCollision::getRadius() const {
 }
 
 // 返回碰撞圆的圆心坐标
-sf::Vector2f CircleCollision::getPos() const {
+eng::Vec2f CircleCollision::getPos() const {
     return this->position + this->offset;
 }
 
@@ -67,7 +68,7 @@ float CircleCollision::getPosY() const {
     return this->position.y + this->offset.y;
 }
 
-sf::Vector2f CircleCollision::getCollisionPosition() const {
-    return this->position + this->offset - sf::Vector2f(radius, radius);
+eng::Vec2f CircleCollision::getCollisionPosition() const {
+    return this->position + this->offset - eng::Vec2f(radius, radius);
 }
 

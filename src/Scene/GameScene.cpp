@@ -2,6 +2,7 @@
 // Created by MINEC on 2026/6/2.
 //
 
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "GameScene.h"
 #include <memory>
@@ -58,7 +59,7 @@ void GameScene::initScene() {
     this->addObject(ground);
 }
 
-void GameScene::update(sf::Time deltaTime) {
+void GameScene::update(eng::Time deltaTime) {
     Scene::update(deltaTime);
     if (this->collisionSystem) {
         this->collisionSystem->checkCollisions();

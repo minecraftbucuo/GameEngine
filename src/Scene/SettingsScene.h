@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Scene.h"
 
@@ -16,7 +17,7 @@ public:
 
     void init() override;
     void initScene();
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
     void render(sf::RenderWindow* _window) override;
 
 private:

@@ -2,6 +2,7 @@
 // Created by MINEC on 2026/6/2.
 //
 
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Cube3DWithController.h"
 #include "Scene.h"
@@ -29,9 +30,9 @@ void Cube3DWithController::handleEvent(sf::Event& event) {
         angleXZ = 0.0f;
         angleYZ = 0.0f;
     } else if (event.type == sf::Event::MouseMoved) {
-        const sf::Vector2i pos = sf::Mouse::getPosition(*getScene()->getWindow());
+        const eng::Vec2i pos = sf::Mouse::getPosition(*getScene()->getWindow());
         if (mouse_is_pressed) {
-            const sf::Vector2i delta = pos - mousePos;
+            const eng::Vec2i delta = pos - mousePos;
             angleYZ -= delta.y * 0.01f;
             angleXZ += delta.x * 0.01f;
             mousePos = pos;

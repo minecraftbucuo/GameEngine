@@ -6,6 +6,7 @@
 #include "PhysicsContactListener.h"
 #include "ConfigManager.h"
 #include "PhysicsTypes.h"
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "PhysicsDebugDraw.h"
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -47,7 +48,7 @@ PhysicsWorld::~PhysicsWorld() {
     world = nullptr;
 }
 
-void PhysicsWorld::step(const sf::Time& frameTime) {
+void PhysicsWorld::step(const eng::Time& frameTime) {
     if (!world) return;
 
     // 累加器实现固定步，防止螺旋死亡（每帧最多 5 步）

@@ -5,17 +5,18 @@
 #pragma once
 
 #include "Component.h"
+#include "Core/Types.h"
 
 class MoveComponent : public Component {
 public:
     MoveComponent() = default;
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 #ifndef SERVER_BUILD
     void render(sf::RenderWindow* window) override;
 #endif
-    void setPosition(const sf::Vector2f& pos, bool move_collision = true) const;
+    void setPosition(const eng::Vec2f& pos, bool move_collision = true) const;
 
-    void moveCollisionTo(const sf::Vector2f& pos) const;
+    void moveCollisionTo(const eng::Vec2f& pos) const;
 
     void moveCollisionXTo(float posX) const;
 
@@ -27,9 +28,9 @@ public:
 
     void setPositionY(float posY, bool move_collision = true) const;
 
-    void addPosition(const sf::Vector2f& pos, bool move_collision = true) const;
+    void addPosition(const eng::Vec2f& pos, bool move_collision = true) const;
 
-    void setSpeed(const sf::Vector2f& speed) const;
+    void setSpeed(const eng::Vec2f& speed) const;
 
     void setSpeedX(float speedX) const;
 
@@ -37,13 +38,13 @@ public:
 
     void setSpeed(float speedX, float speedY) const;
 
-    void addSpeed(const sf::Vector2f& speed) const;
+    void addSpeed(const eng::Vec2f& speed) const;
 #ifndef SERVER_BUILD
     static void drawArrow(sf::RenderWindow* window, float x1, float y1, float x2, float y2,
-                          float arrowSize = 10.0f, sf::Color color = sf::Color::Red);
+                          float arrowSize = 10.0f, eng::Color color = eng::Color::Red);
 #endif
 private:
-    void setCollisionPosition(const sf::Vector2f& pos) const;
+    void setCollisionPosition(const eng::Vec2f& pos) const;
 };
 
 

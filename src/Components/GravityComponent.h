@@ -6,11 +6,12 @@
 
 #include "Component.h"
 #include "ConfigManager.h"
+#include "Core/Types.h"
 
 class GravityComponent : public Component {
 public:
     GravityComponent() = default;
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
     std::string getName();
 private:
     float gravity = CONFIG.game.gravity;

@@ -2,6 +2,7 @@
 // Created by MINEC on 2026/6/2.
 //
 
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 
 #include "Penguin3D.h"
@@ -23,7 +24,7 @@ void Penguin3D::render(sf::RenderWindow* window) {
     drawFaces(window);
 }
 
-void Penguin3D::update(const sf::Time deltaTime) {
+void Penguin3D::update(const eng::Time deltaTime) {
     angleXZ += deltaTime.asSeconds();
 }
 #endif

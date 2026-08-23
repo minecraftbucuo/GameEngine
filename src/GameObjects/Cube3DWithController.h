@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 
 #include "Cube3D.h"
@@ -13,13 +14,13 @@ public:
 
     void start() override;
 
-    void update(const sf::Time deltaTime) override {
+    void update(const eng::Time deltaTime) override {
     }
 
     void handleEvent(sf::Event& event) override;
 
 private:
     bool mouse_is_pressed{};
-    sf::Vector2i mousePos;
+    eng::Vec2i mousePos;
 };
 #endif

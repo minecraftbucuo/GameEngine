@@ -104,6 +104,7 @@ namespace eng {
     using Vec2f = sf::Vector2f;
     using Vec2i = sf::Vector2i;
     using Vec2u = sf::Vector2u;
+    using Vec3f = sf::Vector3f;   // 3D 模块（ModelManager/GameObject3D）使用
     using Time  = sf::Time;
     using Color = sf::Color;
     using IntRect  = sf::IntRect;
@@ -247,11 +248,12 @@ struct EngineEvent {
 
 #### Step 1 — Core/Types.h 数值类型别名
 - [ ] 新建 `src/Core/Types.h`（内容见技术决策 3）
-- [ ] 全局机械替换：`sf::Vector2f → eng::Vec2f` 等 7 个别名
+- [ ] 全局机械替换：`sf::Vector2f → eng::Vec2f` 等 8 个别名
       （**排除**：`src/Network/`；`Physics/` 内 b2Vec2 互转处随替换）
 - **验证**：编译通过；所有场景运行表现不变
 - **新增文件**：`src/Core/Types.h`
-- **改动文件**：约 40 个（纯类型名替换）
+- **改动文件**：90 个（纯类型名替换 + 添加 include；已验证：8 种旧类型零残留，
+      所有 eng:: 使用者均含 `#include "Core/Types.h"`，include 均在无条件编译区）
 - **原子性保证**：别名即原类型，语义零变化，编译器逐处校验
 
 #### Step 2 — EngineEvent + Key 枚举 + SFML 转换器（纯新增）

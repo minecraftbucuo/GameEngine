@@ -9,6 +9,7 @@
 #include "Events.h"
 #include "PhysicsTypes.h"
 #include "Logger.h"
+#include "Core/Types.h"
 
 namespace physics {
 
@@ -27,14 +28,14 @@ void PhysicsContactListener::BeginContact(b2Contact* contact) {
     }
 
     // 组装 CollisionEvent，通过 EventBus 发布到现有订阅者
-    const sf::Vector2f a_pos = a->getPosition();
-    const sf::Vector2f b_pos = b->getPosition();
+    const eng::Vec2f a_pos = a->getPosition();
+    const eng::Vec2f b_pos = b->getPosition();
 
     // 从 b2Body 取速度（如果有）
     b2Body* bodyA = contact->GetFixtureA()->GetBody();
     b2Body* bodyB = contact->GetFixtureB()->GetBody();
-    const sf::Vector2f a_speed = toPixels(bodyA->GetLinearVelocity());
-    const sf::Vector2f b_speed = toPixels(bodyB->GetLinearVelocity());
+    const eng::Vec2f a_speed = toPixels(bodyA->GetLinearVelocity());
+    const eng::Vec2f b_speed = toPixels(bodyB->GetLinearVelocity());
 
     // 从场景找回 shared_ptr
     Scene* scene = a->getScene();

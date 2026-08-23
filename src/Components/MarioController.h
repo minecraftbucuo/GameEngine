@@ -6,6 +6,7 @@
 
 #include "Component.h"
 #include "Timer.h"
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <SFML/Audio.hpp>
 #endif
@@ -16,7 +17,7 @@ public:
 
     void handleEvent(const sf::Event& event) override;
 
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 
     void jump(bool play_sound = true);
 

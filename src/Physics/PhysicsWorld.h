@@ -7,6 +7,7 @@
 #include <box2d/box2d.h>
 #include <SFML/System/Time.hpp>
 #include <memory>
+#include "Core/Types.h"
 
 namespace sf { class RenderWindow; }
 
@@ -24,7 +25,7 @@ public:
     PhysicsWorld& operator=(const PhysicsWorld&) = delete;
 
     // 固定步累加器：每帧累加 dt，每 fixedStep 秒调用一次 b2World::Step
-    void step(const sf::Time& frameTime);
+    void step(const eng::Time& frameTime);
 
     // 创建/销毁 body
     b2Body* createBody(const b2BodyDef* def);

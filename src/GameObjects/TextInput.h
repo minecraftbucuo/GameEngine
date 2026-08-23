@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <functional>
 #include "GameObject.h"
@@ -11,7 +12,7 @@ class TextInput : public GameObject {
 public:
     TextInput(float x, float y, float w, float h, const sf::String& placeholder = "");
 
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
     void render(sf::RenderWindow* window) override;
     void handleEvent(sf::Event& event) override;
 
@@ -26,8 +27,8 @@ public:
 private:
     bool isMouseOver() const;
 
-    sf::Vector2f position;
-    sf::Vector2f size;
+    eng::Vec2f position;
+    eng::Vec2f size;
     float cornerRadius = 8.f;
 
     sf::String text;
@@ -44,12 +45,12 @@ private:
     static constexpr float BLINK_INTERVAL = 0.5f;
 
     // 颜色
-    sf::Color bgColor = {40, 44, 52};
-    sf::Color focusedBgColor = {50, 55, 65};
-    sf::Color outlineColor = {80, 85, 95};
-    sf::Color focusedOutlineColor = {137, 180, 255};
-    sf::Color textColor = {205, 214, 244};
-    sf::Color placeholderColor = {100, 108, 128};
+    eng::Color bgColor = {40, 44, 52};
+    eng::Color focusedBgColor = {50, 55, 65};
+    eng::Color outlineColor = {80, 85, 95};
+    eng::Color focusedOutlineColor = {137, 180, 255};
+    eng::Color textColor = {205, 214, 244};
+    eng::Color placeholderColor = {100, 108, 128};
 
     // 回调
     std::function<void(const sf::String&)> onConfirm;

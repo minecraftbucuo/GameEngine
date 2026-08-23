@@ -10,12 +10,13 @@
 #include "GravityComponent.h"
 #include "MoveComponent.h"
 #include "GameObject.h"
+#include "Core/Types.h"
 
 MarioDeadState::MarioDeadState() : BaseState("MarioDeadState") {
 #ifndef SERVER_BUILD
     const sf::Texture& mario_texture = AssetManager::getInstance().getTexture("mario_bros");
     sprite.setTexture(mario_texture);
-    sprite.setTextureRect(sf::IntRect(160, 32, 16, 16));
+    sprite.setTextureRect(eng::IntRect(160, 32, 16, 16));
     sprite.setScale(4.f, 4.f);
 #endif
 }
@@ -24,7 +25,7 @@ void MarioDeadState::start() {
     if (const auto collision = owner->getComponent<Collision>()) collision->setActive(false);
     if (const auto gravity = owner->getComponent<GravityComponent>()) gravity->setActive(true);
     if (const auto move = owner->getComponent<MoveComponent>()) {
-        move->setSpeed(sf::Vector2f(0.f, -500.f));
+        move->setSpeed(eng::Vec2f(0.f, -500.f));
     }
     deathTimer.setCallback(
         [this]() -> void {
@@ -36,7 +37,7 @@ void MarioDeadState::start() {
     LOG_DEBUG("MarioDeadState start");
 }
 
-void MarioDeadState::update(const sf::Time& deltaTime) {
+void MarioDeadState::update(const eng::Time& deltaTime) {
     deathTimer.update(deltaTime);
 }
 

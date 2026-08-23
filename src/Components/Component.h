@@ -5,6 +5,7 @@
 
 #pragma once
 #include <SFML/Graphics.hpp>
+#include "Core/Types.h"
 
 class GameObject;
 
@@ -20,7 +21,7 @@ public:
     virtual void start() {
     }
 
-    virtual void update(const sf::Time& deltaTime) {
+    virtual void update(const eng::Time& deltaTime) {
     }
 
     virtual void render(sf::RenderWindow* window) {

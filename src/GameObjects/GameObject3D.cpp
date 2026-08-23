@@ -1,11 +1,12 @@
 //
 // Created by MINEC on 2026/5/8.
 //
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "GameObject3D.h"
 #include <cmath>
 
-void GameObject3D::update(const sf::Time deltaTime) {
+void GameObject3D::update(const eng::Time deltaTime) {
     angleXY += deltaTime.asSeconds();
     angleXZ += deltaTime.asSeconds();
     if (position.z > 10.f) sign = -1.0f;
@@ -25,11 +26,11 @@ void GameObject3D::drawFaces(sf::RenderWindow* window) const {
     }
 }
 
-sf::Vector2f GameObject3D::transToWindow(const sf::Vector2f& pos, sf::Vector2u windowSize) {
+eng::Vec2f GameObject3D::transToWindow(const eng::Vec2f& pos, eng::Vec2u windowSize) {
     return {(pos.x + 1) / 2 * static_cast<float>(windowSize.x), (1 - pos.y) / 2 * static_cast<float>(windowSize.y)};
 }
 
-void GameObject3D::drawPoint(sf::RenderWindow* window, const sf::Vector2f& pos) {
+void GameObject3D::drawPoint(sf::RenderWindow* window, const eng::Vec2f& pos) {
     sf::CircleShape circle_shape;
     circle_shape.setRadius(4.0f);
     circle_shape.setOrigin(circle_shape.getRadius(), circle_shape.getRadius());
@@ -37,14 +38,14 @@ void GameObject3D::drawPoint(sf::RenderWindow* window, const sf::Vector2f& pos) 
     window->draw(circle_shape);
 }
 
-void GameObject3D::drawEdge(sf::RenderWindow* window, const sf::Vector2f& p1, const sf::Vector2f& p2) {
+void GameObject3D::drawEdge(sf::RenderWindow* window, const eng::Vec2f& p1, const eng::Vec2f& p2) {
     sf::VertexArray line(sf::Lines, 2);
     line[0].position = p1;
     line[1].position = p2;
     window->draw(line);
 }
 
-sf::Vector3f GameObject3D::rotateXY(sf::Vector3f pos, const float angle) {
+eng::Vec3f GameObject3D::rotateXY(eng::Vec3f pos, const float angle) {
     const float x = pos.x;
     const float s = std::sin(angle);
     const float c = std::cos(angle);
@@ -53,7 +54,7 @@ sf::Vector3f GameObject3D::rotateXY(sf::Vector3f pos, const float angle) {
     return pos;
 }
 
-sf::Vector3f GameObject3D::rotateXZ(sf::Vector3f pos, const float angle) {
+eng::Vec3f GameObject3D::rotateXZ(eng::Vec3f pos, const float angle) {
     const float x = pos.x;
     const float s = std::sin(angle);
     const float c = std::cos(angle);
@@ -62,7 +63,7 @@ sf::Vector3f GameObject3D::rotateXZ(sf::Vector3f pos, const float angle) {
     return pos;
 }
 
-sf::Vector3f GameObject3D::rotateYZ(sf::Vector3f pos, const float angle) {
+eng::Vec3f GameObject3D::rotateYZ(eng::Vec3f pos, const float angle) {
     const float y = pos.y;
     const float s = std::sin(angle);
     const float c = std::cos(angle);

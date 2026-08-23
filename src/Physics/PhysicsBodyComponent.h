@@ -8,6 +8,7 @@
 #include "PhysicsTypes.h"
 #include <box2d/box2d.h>
 #include <SFML/System/Vector2.hpp>
+#include "Core/Types.h"
 
 class PhysicsBodyComponent : public Component {
 public:
@@ -18,7 +19,7 @@ public:
     PhysicsBodyComponent& operator=(const PhysicsBodyComponent&) = delete;
 
     void start() override;
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 
     // body 配置（start() 前设置）
     void setBodyType(physics::BodyType type);
@@ -38,13 +39,13 @@ public:
     void setCollisionGroup(int16 groupIndex);
 
     // 施加力/冲量（像素单位，内部转米）
-    void applyLinearImpulse(const sf::Vector2f& impulse);
-    void applyForceToCenter(const sf::Vector2f& force);
-    void setLinearVelocity(const sf::Vector2f& velocity);
-    sf::Vector2f getLinearVelocity() const;
+    void applyLinearImpulse(const eng::Vec2f& impulse);
+    void applyForceToCenter(const eng::Vec2f& force);
+    void setLinearVelocity(const eng::Vec2f& velocity);
+    eng::Vec2f getLinearVelocity() const;
 
     // 直接设置位置/角度（用于网络同步或 kinematic）
-    void setTransform(const sf::Vector2f& position, float angle = 0.0f);
+    void setTransform(const eng::Vec2f& position, float angle = 0.0f);
     // 设置初始角度（start 前调用，start 时应用）
     void setInitialAngle(float angle);
 

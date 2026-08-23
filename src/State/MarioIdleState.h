@@ -4,6 +4,7 @@
 
 #pragma once
 #include "BaseState.h"
+#include "Core/Types.h"
 
 class MarioIdleState : public BaseState {
 public:
@@ -12,7 +13,7 @@ public:
 
     void start() override;
 
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 
     void handleEvent(const sf::Event& event) override;
 #ifndef SERVER_BUILD

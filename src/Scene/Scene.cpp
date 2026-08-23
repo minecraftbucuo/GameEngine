@@ -5,6 +5,7 @@
 #include <Scene.h>
 #include "PhysicsWorld.h"
 #include "ConfigManager.h"
+#include "Core/Types.h"
 
 // 析构定义放这里，确保 PhysicsWorld 完整类型可见
 Scene::~Scene() {
@@ -23,7 +24,7 @@ void Scene::init() {
     }
 }
 
-void Scene::update(sf::Time deltaTime) {
+void Scene::update(eng::Time deltaTime) {
     // 物理世界推进（在对象 update 前，保证 PhysicsBodyComponent 同步最新位置）
     if (physics_world) {
         physics_world->step(deltaTime);
@@ -113,11 +114,11 @@ physics::PhysicsWorld* Scene::getPhysicsWorld() const {
 }
 
 #ifndef SERVER_BUILD
-sf::Vector2i Scene::getMousePosition() const {
+eng::Vec2i Scene::getMousePosition() const {
     if (!window || !camera) return {};
-    const sf::Vector2f camera_center = camera->getCenter();
-    const sf::Vector2u window_size = window->getSize();
-    sf::Vector2i mouse_position = sf::Mouse::getPosition(*window);
+    const eng::Vec2f camera_center = camera->getCenter();
+    const eng::Vec2u window_size = window->getSize();
+    eng::Vec2i mouse_position = sf::Mouse::getPosition(*window);
     mouse_position.x += static_cast<int>(camera_center.x - window_size.x * 0.5f);
     mouse_position.y += static_cast<int>(camera_center.y - window_size.y * 0.5f);
     return mouse_position;

@@ -1,6 +1,7 @@
 //
 // Created by MINEC on 2026/2/19.
 //
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "FrameManager.h"
 #include <nlohmann/json.hpp>
@@ -15,7 +16,7 @@ void FrameManager::loadFrameFromJson(const char* path) {
         for (const auto& frame_data : frames_data["frame"]) {
             frame.push_back({
                 frame_texture,
-                sf::IntRect(
+                eng::IntRect(
                     frame_data["textureRect"]["rectLeft"],
                     frame_data["textureRect"]["rectTop"],
                     frame_data["textureRect"]["rectWidth"],

@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <SFML/Graphics/RenderWindow.hpp>
+#include "Core/Types.h"
 #include "NetworkManager.h"
 #include "Camera.h"
 
@@ -43,7 +44,7 @@ public:
     }
 
     // 场景更新方法
-    virtual void update(sf::Time deltaTime);
+    virtual void update(eng::Time deltaTime);
 
     // 场景渲染方法
 #ifndef SERVER_BUILD
@@ -84,11 +85,11 @@ public:
 #endif
 
 #ifndef SERVER_BUILD
-    [[nodiscard]] sf::Vector2u getWindowSize() const {
+    [[nodiscard]] eng::Vec2u getWindowSize() const {
         return window->getSize();
     }
 #else
-    static sf::Vector2u getWindowSize() {
+    static eng::Vec2u getWindowSize() {
         return {CONFIG.window.width, CONFIG.window.height};
     }
 #endif
@@ -116,7 +117,7 @@ public:
         return window;
     }
 
-    [[nodiscard]] sf::Vector2i getMousePosition() const;
+    [[nodiscard]] eng::Vec2i getMousePosition() const;
 #endif
 
     [[nodiscard]] virtual CollisionSystem* getCollisionSystem() const {

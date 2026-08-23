@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Component.h"
 
@@ -12,14 +13,14 @@ public:
 
     void start() override;
 
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 
-    void setTargetPosition(const sf::Vector2f& pos);
+    void setTargetPosition(const eng::Vec2f& pos);
 
     void setTargetPositionX(float x);
 
 private:
-    sf::Vector2f target_position;
-    sf::Vector2f position;
+    eng::Vec2f target_position;
+    eng::Vec2f position;
 };
 #endif

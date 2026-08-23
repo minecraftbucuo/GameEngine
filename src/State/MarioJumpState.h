@@ -14,6 +14,7 @@
 #include "GravityComponent.h"
 #include "Timer.h"
 #include "MoveComponent.h"
+#include "Core/Types.h"
 
 
 class MarioJumpState : public BaseState {
@@ -22,17 +23,17 @@ public:
 #ifndef SERVER_BUILD
         const sf::Texture& mario_texture = AssetManager::getInstance().getTexture("mario_bros");
         right_sprite.setTexture(mario_texture);
-        right_sprite.setTextureRect(sf::IntRect(144, 32, 16, 16));
+        right_sprite.setTextureRect(eng::IntRect(144, 32, 16, 16));
         right_sprite.setScale(4.f, 4.f);
         left_sprite.setTexture(mario_texture);
-        left_sprite.setTextureRect(sf::IntRect(144, 32, 16, 16));
+        left_sprite.setTextureRect(eng::IntRect(144, 32, 16, 16));
         left_sprite.setScale(-4.f, 4.f);
         left_sprite.setOrigin(static_cast<float>(right_sprite.getTextureRect().width), 0.f);
 #endif
     }
     ~MarioJumpState() override = default;
 
-    void update(const sf::Time& deltaTime) override {
+    void update(const eng::Time& deltaTime) override {
         if (owner->getSpeed().x < 0) {
             setIsLeft(true);
         } else if (owner->getSpeed().x > 0) {
@@ -40,9 +41,9 @@ public:
         }
         const auto& box_collision = owner->getComponent<Collision, BoxCollision>();
         if (!getIsLeft()) {
-            box_collision->setOffset(sf::Vector2f(16.f, 0.f));
+            box_collision->setOffset(eng::Vec2f(16.f, 0.f));
         } else {
-            box_collision->setOffset(sf::Vector2f(0.f, 0.f));
+            box_collision->setOffset(eng::Vec2f(0.f, 0.f));
         }
     }
 #ifndef SERVER_BUILD

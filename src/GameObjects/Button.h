@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <functional>
 
@@ -12,7 +13,7 @@ class Button : public GameObject {
 public:
     Button(float x, float y, float w, float h, const sf::String& button_text = "Button");
 
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
 
     void render(sf::RenderWindow* window) override;
 
@@ -27,15 +28,15 @@ public:
     void runOnClick() const;
 
 private:
-    void drawRoundedRect(sf::RenderWindow* window, sf::Vector2f pos, sf::Vector2f size,
-                         float radius, const sf::Color& fillColor, const sf::Color& outlineColor, float outlineThickness);
+    void drawRoundedRect(sf::RenderWindow* window, eng::Vec2f pos, eng::Vec2f size,
+                         float radius, const eng::Color& fillColor, const eng::Color& outlineColor, float outlineThickness);
 
-    void drawFilledRoundedRect(sf::RenderWindow* window, sf::Vector2f pos, sf::Vector2f size,
-                               float radius, const sf::Color& color);
+    void drawFilledRoundedRect(sf::RenderWindow* window, eng::Vec2f pos, eng::Vec2f size,
+                               float radius, const eng::Color& color);
 
     // 位置和尺寸
-    sf::Vector2f position;
-    sf::Vector2f size;
+    eng::Vec2f position;
+    eng::Vec2f size;
     float cornerRadius = 12.f;
 
     // 状态
@@ -50,8 +51,8 @@ private:
 
     // 三态颜色配置
     struct StateColors {
-        sf::Color fill;
-        sf::Color outline;
+        eng::Color fill;
+        eng::Color outline;
     };
     StateColors normalColors  = {{137, 180, 255}, {116, 199, 255}};
     StateColors hoverColors   = {{166, 255, 161}, {148, 255, 213}};

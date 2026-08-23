@@ -8,6 +8,7 @@
 #include "GameObject.h"
 #include "EventBus.h"
 #include "Events.h"
+#include "Core/Types.h"
 
 void CollisionSystem::addObject(const std::shared_ptr<GameObject>& obj) {
     objects.push_back(obj);
@@ -37,10 +38,10 @@ void CollisionSystem::checkCollisions() {
             // std::cout << a->height + b->height << ' ' << maxY - minY << std::endl;
 
             if (auto b_c = b->getComponent<Collision>(); b_c->getActive() && a_c->checkCollision(*b_c)) {
-                const sf::Vector2f a_speed = a->getSpeed();
-                const sf::Vector2f b_speed = b->getSpeed();
-                const sf::Vector2f ac_position = a_c->getCollisionPosition();
-                const sf::Vector2f bc_position = b_c->getCollisionPosition();
+                const eng::Vec2f a_speed = a->getSpeed();
+                const eng::Vec2f b_speed = b->getSpeed();
+                const eng::Vec2f ac_position = a_c->getCollisionPosition();
+                const eng::Vec2f bc_position = b_c->getCollisionPosition();
                 EventBus::getInstance().publish("onCollision" + a->getTag(),
                     CollisionEvent{ a, b, a_speed, b_speed, ac_position, bc_position });
                 EventBus::getInstance().publish("onCollision" + b->getTag(),

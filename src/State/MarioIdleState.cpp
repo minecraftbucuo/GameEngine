@@ -13,15 +13,16 @@
 #include "GameObject.h"
 #include "MarioJumpState.h"
 #include "StateMachine.h"
+#include "Core/Types.h"
 
 MarioIdleState::MarioIdleState() : BaseState("MarioIdleState") {
 #ifndef SERVER_BUILD
     const sf::Texture& mario_texture = AssetManager::getInstance().getTexture("mario_bros");
     right_sprite.setTexture(mario_texture);
-    right_sprite.setTextureRect(sf::IntRect(178, 32, 12, 16));
+    right_sprite.setTextureRect(eng::IntRect(178, 32, 12, 16));
     right_sprite.setScale(4.f, 4.f);
     left_sprite.setTexture(mario_texture);
-    left_sprite.setTextureRect(sf::IntRect(178, 32, 12, 16));
+    left_sprite.setTextureRect(eng::IntRect(178, 32, 12, 16));
     left_sprite.setScale(-4.f, 4.f);
     left_sprite.setOrigin(static_cast<float>(right_sprite.getTextureRect().width), 0.f);
 #endif
@@ -39,10 +40,10 @@ void MarioIdleState::start() {
 #endif
     box_collision->setSize(w, h);
     owner->setSize(w, h);
-    box_collision->setOffset(sf::Vector2f(0.f, 0.f));
+    box_collision->setOffset(eng::Vec2f(0.f, 0.f));
 }
 
-void MarioIdleState::update(const sf::Time& deltaTime) {
+void MarioIdleState::update(const eng::Time& deltaTime) {
     if (owner->getSpeed().x != 0.f) {
         owner->getComponent<StateMachine>()->setState("MarioRunState");
     }

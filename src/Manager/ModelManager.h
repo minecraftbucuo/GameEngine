@@ -6,9 +6,10 @@
 #include <fstream>
 #include <unordered_map>
 #include <SFML/Graphics.hpp>
+#include "Core/Types.h"
 
 struct Model {
-    std::vector<sf::Vector3f> points;
+    std::vector<eng::Vec3f> points;
     std::vector<std::vector<int>> faces;
 };
 

@@ -1,6 +1,7 @@
 //
 // Created by MINEC on 2026/6/2.
 //
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Animation.h"
 
@@ -16,7 +17,7 @@ void Animation::setFrames(std::vector<Frame>* _frames) {
     this->frames = _frames;
 }
 
-void Animation::update(const sf::Time& deltaTime) {
+void Animation::update(const eng::Time& deltaTime) {
     currentFrameDuration += deltaTime.asMilliseconds();
     if (currentFrameDuration >= (*frames)[currentFrame].duration) {
         currentFrameDuration = 0;
@@ -34,7 +35,7 @@ void Animation::update(const sf::Time& deltaTime) {
     }
 }
 
-void Animation::render(sf::RenderWindow* window, const sf::Vector2f& position) {
+void Animation::render(sf::RenderWindow* window, const eng::Vec2f& position) {
     sf::Sprite& sprite_ = this->getSprite();
     sprite_.setPosition(position);
     window->draw(sprite_);

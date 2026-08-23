@@ -6,6 +6,7 @@
 #include <SFML/Graphics.hpp>
 #include "BaseState.h"
 #include "Timer.h"
+#include "Core/Types.h"
 
 class MarioDeadState : public BaseState {
 public:
@@ -13,7 +14,7 @@ public:
 
     void start() override;
 
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 
 #ifndef SERVER_BUILD
     void render(sf::RenderWindow* window) override;

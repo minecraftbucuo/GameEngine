@@ -6,8 +6,9 @@
 #include "MoveComponent.h"
 #include "GameObject.h"
 #include "Scene.h"
+#include "Core/Types.h"
 
-void GravityComponent::update(const sf::Time& deltaTime) {
+void GravityComponent::update(const eng::Time& deltaTime) {
     float worldHeight = owner->getScene()->getWindowSize().y;
 
     if (std::abs(this->owner->getPosition().y + this->owner->getSize().y - worldHeight) < 0.1f

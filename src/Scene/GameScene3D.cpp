@@ -2,12 +2,13 @@
 // Created by MINEC on 2026/6/2.
 //
 
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "GameScene3D.h"
 #include "SceneManager.h"
 
 void GameScene3D::init() {
-    window->setSize(sf::Vector2u(1200, 1200));
+    window->setSize(eng::Vec2u(1200, 1200));
     Scene::init();
     if (is_init) return;
     is_init = true;
@@ -26,6 +27,6 @@ void GameScene3D::handleEvent(sf::Event& event) {
 }
 
 void GameScene3D::exit() {
-    window->setSize(sf::Vector2u(CONFIG.window.width, CONFIG.window.height));
+    window->setSize(eng::Vec2u(CONFIG.window.width, CONFIG.window.height));
 }
 #endif

@@ -22,6 +22,7 @@
 #include "MarioJumpState.h"
 #include "EventBus.h"
 #include "FireBall.h"
+#include "Core/Types.h"
 
 namespace {
     // 本地玩家已经在客户端预测移动，服务端快照的小误差不要硬拉回去，否则会抖动。
@@ -32,7 +33,7 @@ namespace {
     constexpr float LOCAL_CORRECTION_RATIO = 0.18f;
 
     // 这里只比较距离大小，不需要开方，避免每个网络同步包都做 sqrt。
-    float lengthSquared(const sf::Vector2f& value) {
+    float lengthSquared(const eng::Vec2f& value) {
         return value.x * value.x + value.y * value.y;
     }
 
@@ -42,7 +43,7 @@ namespace {
 }
 
 Mario::Mario(const float x, const float y, const bool isPlayer) {
-    this->position = sf::Vector2f(x, y);
+    this->position = eng::Vec2f(x, y);
     this->isPlayer = isPlayer;
     const auto marioController = this->addComponent<MarioController>();
     if (!isPlayer) marioController->setIsPlayer(false);
@@ -86,7 +87,7 @@ void Mario::handleEvent(sf::Event& e) {
     if (isPlayer) GameObject::handleEvent(e);
 }
 
-void Mario::update(sf::Time deltaTime) {
+void Mario::update(eng::Time deltaTime) {
     if (needGravity()) {
         this->getComponent<GravityComponent>()->setActive(true);
         if (this->getComponent<StateMachine>()->getCurrentStateName() != "MarioJumpState")
@@ -107,7 +108,7 @@ void Mario::update(sf::Time deltaTime) {
 bool Mario::needGravity() {
     if (this->getComponent<HealthBar>()->isDead()) return false;
     auto collision = this->getComponent<Collision>();
-    sf::Vector2f dy = sf::Vector2f(0.f, 1.f);
+    eng::Vec2f dy = eng::Vec2f(0.f, 1.f);
     collision->setCollisionPosition(collision->getCollisionPosition() + dy);
 
     const auto game_objects = *getScene()->getCollisionSystem()->getObjects();
@@ -210,7 +211,7 @@ void Mario::destroy() {
     }
 }
 
-sf::Vector2f Mario::getCenter() {
+eng::Vec2f Mario::getCenter() {
     return this->position + getComponent<Collision>()->getOffset() + this->size * 0.5f;
 }
 
@@ -254,8 +255,8 @@ void Mario::deserialize(sf::Packet& packet) {
         float x, y, s_x, s_y;
         bool is_jump;
         packet >> x >> y >> s_x >> s_y >> is_jump;
-        const sf::Vector2f serverPosition{x, y};
-        const sf::Vector2f serverSpeed{s_x, s_y};
+        const eng::Vec2f serverPosition{x, y};
+        const eng::Vec2f serverSpeed{s_x, s_y};
         const auto* nm = getScene()->getNetworkManager();
         if (isPlayer && nm && nm->isClient()) {
             // 本地玩家：保留客户端预测手感，只用服务端状态做温和纠偏。
@@ -288,11 +289,11 @@ void Mario::deserialize(sf::Packet& packet) {
 
 // 只用于客户端自己的玩家。
 // 本地玩家已经根据输入预测移动，这里只负责用服务端快照纠偏，避免旧快照反复拉扯角色。
-void Mario::reconcileLocalPlayer(const sf::Vector2f& serverPosition, const sf::Vector2f& serverSpeed, const bool isJump) {
+void Mario::reconcileLocalPlayer(const eng::Vec2f& serverPosition, const eng::Vec2f& serverSpeed, const bool isJump) {
     const auto& move_component = this->getComponent<MoveComponent>();
     if (!move_component) return;
 
-    const sf::Vector2f delta = serverPosition - this->getPosition();
+    const eng::Vec2f delta = serverPosition - this->getPosition();
     const float distance_squared = lengthSquared(delta);
     // 大偏差通常来自碰撞分歧、掉线重连或长时间丢包，此时平滑会显得拖泥带水，直接校正。
     if (distance_squared >= LOCAL_POSITION_SNAP_DISTANCE * LOCAL_POSITION_SNAP_DISTANCE) {
@@ -310,7 +311,7 @@ void Mario::reconcileLocalPlayer(const sf::Vector2f& serverPosition, const sf::V
 
 // 无平滑地应用服务端权威位置和速度。
 // 本地的远端玩家直接同步服务端状态。
-void Mario::setAuthoritativeState(const sf::Vector2f& serverPosition, const sf::Vector2f& serverSpeed, const bool isJump) {
+void Mario::setAuthoritativeState(const eng::Vec2f& serverPosition, const eng::Vec2f& serverSpeed, const bool isJump) {
     const auto& move_component = this->getComponent<MoveComponent>();
     if (!move_component) return;
 

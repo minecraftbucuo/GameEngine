@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "GameObject.h"
 #include <SFML/Graphics.hpp>
@@ -21,7 +22,7 @@ public:
 
     void start() override;
 
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
 
     bool needGravity();
 

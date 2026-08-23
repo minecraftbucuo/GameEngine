@@ -9,6 +9,7 @@
 #include "GravityComponent.h"
 #include "MoveComponent.h"
 #include "BoxCollision.h"
+#include "Core/Types.h"
 
 Box::Box(const float x, const float y, const std::string& tag) : BoxGameObject(x, y, 0, 0) {
     this->tag = tag + ":" + std::to_string(id);
@@ -61,7 +62,7 @@ void Box::start() {
     );
 }
 
-void Box::update(sf::Time deltaTime) {
+void Box::update(eng::Time deltaTime) {
     BoxGameObject::update(deltaTime);
 #ifndef SERVER_BUILD
     animation.update(deltaTime);
@@ -76,7 +77,7 @@ void Box::update(sf::Time deltaTime) {
 }
 
 void Box::setPosition(const float posX, const float posY) {
-    this->position = sf::Vector2f(posX, posY);
+    this->position = eng::Vec2f(posX, posY);
     const auto boxCollision = this->getComponent<Collision, BoxCollision>();
     boxCollision->setPosition(posX, posY);
 }

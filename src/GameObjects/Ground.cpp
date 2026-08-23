@@ -5,6 +5,7 @@
 #include "Ground.h"
 #include "Collision.h"
 #include "BoxCollision.h"
+#include "Core/Types.h"
 
 Ground::Ground(const float x, const float y, const float width, const float height, const std::string& tag) : BoxGameObject(x, y, width, height) {
     this->tag = tag + ":" + std::to_string(id);
@@ -13,7 +14,7 @@ Ground::Ground(const float x, const float y, const float width, const float heig
 }
 
 void Ground::setPosition(const float posX, const float posY) {
-    this->position = sf::Vector2f(posX, posY);
+    this->position = eng::Vec2f(posX, posY);
     const auto boxCollision = this->getComponent<Collision, BoxCollision>();
     boxCollision->setPosition(posX, posY);
 }

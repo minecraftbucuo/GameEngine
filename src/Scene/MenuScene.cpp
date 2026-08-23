@@ -1,6 +1,7 @@
 //
 // Created by MINEC on 2026/6/2.
 //
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "MenuScene.h"
 #include "AssetManager.h"
@@ -11,7 +12,7 @@
 
 MenuScene::MenuScene(sf::RenderWindow* _window) : Scene(_window, "MenuScene") {
     title.setString(L"GameEngine");
-    title.setFillColor(sf::Color::Yellow);
+    title.setFillColor(eng::Color::Yellow);
     title.setFont(AssetManager::getInstance().getFont());
     title.setScale(3.f, 3.f);
     title.setPosition(_window->getSize().x * 0.5f - title.getGlobalBounds().width * 0.5f,
@@ -81,7 +82,7 @@ void MenuScene::initScene() {
         float r = distR(rng);
         p.shape.setRadius(r);
         p.shape.setPosition(distX(rng), distY(rng));
-        p.shape.setFillColor(sf::Color(130, 200, 255, static_cast<sf::Uint8>(distAlpha(rng))));
+        p.shape.setFillColor(eng::Color(130, 200, 255, static_cast<sf::Uint8>(distAlpha(rng))));
         p.velocity = {distV(rng), distV(rng)};
         p.alpha = distAlpha(rng);
         p.alphaSpeed = distAlphaSpeed(rng);
@@ -89,7 +90,7 @@ void MenuScene::initScene() {
     }
 }
 
-void MenuScene::update(sf::Time deltaTime) {
+void MenuScene::update(eng::Time deltaTime) {
     Scene::update(deltaTime);
 
     const float winW = static_cast<float>(window->getSize().x);
@@ -102,12 +103,12 @@ void MenuScene::update(sf::Time deltaTime) {
         // 呼吸效果：alpha 缓慢变化
         p.alpha += p.alphaSpeed * dt;
         if (p.alpha > 120.f || p.alpha < 20.f) p.alphaSpeed = -p.alphaSpeed;
-        sf::Color c = p.shape.getFillColor();
+        eng::Color c = p.shape.getFillColor();
         c.a = static_cast<sf::Uint8>(std::clamp(p.alpha, 0.f, 255.f));
         p.shape.setFillColor(c);
 
         // 超出边界则从另一侧进入
-        sf::Vector2f pos = p.shape.getPosition();
+        eng::Vec2f pos = p.shape.getPosition();
         if (pos.x < -10.f) pos.x = winW;
         else if (pos.x > winW + 10.f) pos.x = -10.f;
         if (pos.y < -10.f) pos.y = winH;

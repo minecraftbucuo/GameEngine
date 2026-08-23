@@ -10,6 +10,7 @@
 #include <string>
 #include <typeindex>
 #include "Logger.h"
+#include "Core/Types.h"
 
 class Scene;
 class PhysicsBodyComponent;
@@ -28,7 +29,7 @@ public:
         handleComponents(e);
     }
 
-    virtual void update(sf::Time deltaTime) {
+    virtual void update(eng::Time deltaTime) {
         updateComponents(deltaTime);
     }
 
@@ -115,19 +116,19 @@ public:
         return false;
     }
 
-    const sf::Vector2f& getPosition() const {
+    const eng::Vec2f& getPosition() const {
         return position;
     }
 
-    virtual sf::Vector2f getCenter() {
+    virtual eng::Vec2f getCenter() {
         return position + size / 2.f;
     }
 
-    const sf::Vector2f& getSize() const {
+    const eng::Vec2f& getSize() const {
         return size;
     }
 
-    const sf::Vector2f& getSpeed() const {
+    const eng::Vec2f& getSpeed() const {
         return speed;
     }
 
@@ -140,7 +141,7 @@ public:
     }
 
     void setSize(float width, float height) {
-        size = sf::Vector2f(width, height);
+        size = eng::Vec2f(width, height);
     }
 
     unsigned int getId() const {
@@ -163,7 +164,7 @@ public:
         scene = s;
     }
 
-    void updateComponents(sf::Time deltaTime);
+    void updateComponents(eng::Time deltaTime);
 
     void renderComponents(sf::RenderWindow* window);
 
@@ -175,12 +176,12 @@ public:
 
 protected:
     virtual void setPosition(const float posX, const float posY) {
-        position = sf::Vector2f(posX, posY);
+        position = eng::Vec2f(posX, posY);
     }
 
-    sf::Vector2f position;
-    sf::Vector2f size;
-    sf::Vector2f speed;
+    eng::Vec2f position;
+    eng::Vec2f size;
+    eng::Vec2f speed;
     float rotation = 0.0f; // 度数，用于物理体旋转同步
     bool active;
     bool moveAble{true};

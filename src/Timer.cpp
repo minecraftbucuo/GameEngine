@@ -3,6 +3,7 @@
 //
 
 #include "Timer.h"
+#include "Core/Types.h"
 
 void Timer::start(const int _aim_time, const bool _is_loop) {
     this->aim_time = _aim_time;
@@ -11,7 +12,7 @@ void Timer::start(const int _aim_time, const bool _is_loop) {
     this->reset();
 }
 
-void Timer::update(const sf::Time& deltaTime) {
+void Timer::update(const eng::Time& deltaTime) {
     if (started) {
         past_time += deltaTime.asMilliseconds();
         if (past_time >= aim_time) {

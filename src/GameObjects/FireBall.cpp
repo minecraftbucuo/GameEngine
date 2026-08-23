@@ -11,10 +11,11 @@
 #include "BoxCollision.h"
 #include "Logger.h"
 #include "MoveComponent.h"
+#include "Core/Types.h"
 
 FireBall::FireBall(const unsigned int owner_id, const float x, const float y, const float speed_x) {
     this->owner_id = owner_id;
-    this->position = sf::Vector2f(x, y);
+    this->position = eng::Vec2f(x, y);
 
 #ifndef SERVER_BUILD
     animation.setFrames(FrameManager::getInstance().getFrame("fireball_frame"));
@@ -27,7 +28,7 @@ FireBall::FireBall(const unsigned int owner_id, const float x, const float y, co
     this->addComponent<Collision, BoxCollision>();
     this->addComponent<GravityComponent>();
 
-    this->addComponent<MoveComponent>()->setSpeed(sf::Vector2f(speed_x, CONFIG.game.fireballSpeedY));
+    this->addComponent<MoveComponent>()->setSpeed(eng::Vec2f(speed_x, CONFIG.game.fireballSpeedY));
 
     // 设置为 10s 自动爆炸
     ttl_timer.start(CONFIG.game.fireBallTTL);
@@ -61,7 +62,7 @@ void FireBall::render(sf::RenderWindow* window) {
 #endif
 
 #ifndef SERVER_BUILD
-void FireBall::update(sf::Time deltaTime) {
+void FireBall::update(eng::Time deltaTime) {
     GameObject::update(deltaTime);
     if (is_exploded) {
         explosionAnimation.update(deltaTime);
@@ -75,7 +76,7 @@ void FireBall::update(sf::Time deltaTime) {
     ttl_timer.update(deltaTime);
 }
 #else
-void FireBall::update(sf::Time deltaTime) {
+void FireBall::update(eng::Time deltaTime) {
     GameObject::update(deltaTime);
     if (is_exploded) {
         destroy();
@@ -89,7 +90,7 @@ void FireBall::setExploded() {
     this->getComponent<GravityComponent>()->setActive(false);
     this->getComponent<MoveComponent>()->setActive(false);
     const float offset = CONFIG.game.defaultBlockSize / 4;
-    this->getComponent<MoveComponent>()->addPosition(sf::Vector2f(-offset, -offset), false);
+    this->getComponent<MoveComponent>()->addPosition(eng::Vec2f(-offset, -offset), false);
 }
 
 void FireBall::handleCollision(const CollisionEvent& event) {

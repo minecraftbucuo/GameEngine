@@ -4,8 +4,9 @@
 
 #include "StateMachine.h"
 #include "Logger.h"
+#include "Core/Types.h"
 
-void StateMachine::update(const sf::Time& deltaTime) {
+void StateMachine::update(const eng::Time& deltaTime) {
     if (currentState) {
         currentState->update(deltaTime);
     }

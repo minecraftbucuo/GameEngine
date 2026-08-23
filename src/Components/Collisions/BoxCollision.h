@@ -6,13 +6,14 @@
 #pragma once
 #include "Collision.h"
 #include "CircleCollision.h"
+#include "Core/Types.h"
 
 class BoxCollision : public Collision {
 public:
     BoxCollision(float x, float y, float width, float height);
     BoxCollision();
     void start() override;
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 #ifndef SERVER_BUILD
     void render(sf::RenderWindow* window) override;
 #endif
@@ -37,7 +38,7 @@ public:
     void setSize(float width_, float height_);
 
 private:
-    sf::Vector2f size;
+    eng::Vec2f size;
 };
 
 

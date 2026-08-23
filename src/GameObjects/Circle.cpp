@@ -1,6 +1,7 @@
 //
 // Created by MINEC on 2026/5/8.
 //
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Circle.h"
 #include "CameraComponent.h"
@@ -15,8 +16,8 @@
 
 Circle::Circle(const float x, const float y, const float radius, const std::string& tag) {
     shape.setRadius(radius);
-    this->position = sf::Vector2f(x, y);
-    this->size = sf::Vector2f(radius * 2, radius * 2);
+    this->position = eng::Vec2f(x, y);
+    this->size = eng::Vec2f(radius * 2, radius * 2);
     shape.setPosition(x, y);
 
     this->addComponent<Collision, CircleCollision>(this->position.x + radius, this->position.y + radius, this->size.x / 2);
@@ -51,7 +52,7 @@ void Circle::start() {
     );
 }
 
-void Circle::update(sf::Time deltaTime) {
+void Circle::update(eng::Time deltaTime) {
     if (needGravity()) {
         this->getComponent<GravityComponent>()->setActive(true);
     }
@@ -60,7 +61,7 @@ void Circle::update(sf::Time deltaTime) {
 
 bool Circle::needGravity() {
     auto collision = this->getComponent<Collision>();
-    sf::Vector2f dy = sf::Vector2f(0.f, 1.f);
+    eng::Vec2f dy = eng::Vec2f(0.f, 1.f);
     collision->setCollisionPosition(collision->getCollisionPosition() + dy);
 
     const auto& game_objects = *getScene()->getCollisionSystem()->getObjects();

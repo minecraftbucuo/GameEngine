@@ -6,6 +6,7 @@
 #include "Scene.h"
 #include "CollisionSystem.h"
 #include "NetworkManager.h"
+#include "Core/Types.h"
 
 
 class SuperMarioScene : public Scene {
@@ -37,7 +38,7 @@ public:
     void render(sf::RenderWindow* _window) override;
 #endif
 
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
 
     void addObject(const std::shared_ptr<GameObject>& obj) override;
 

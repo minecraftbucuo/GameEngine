@@ -5,6 +5,7 @@
 #pragma once
 #include <functional>
 #include <SFML/Graphics.hpp>
+#include "Core/Types.h"
 
 class Timer {
 public:
@@ -14,7 +15,7 @@ public:
     // _aim_time: 毫秒
     void start(const int _aim_time, const bool _is_loop = false);
 
-    void update(const sf::Time& deltaTime);
+    void update(const eng::Time& deltaTime);
 
     void setCallback(const std::function<void()>& _callback);
 

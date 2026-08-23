@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Scene.h"
 
@@ -15,7 +16,7 @@ public:
 
     void initScene();
 
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
 
     void render(sf::RenderWindow* _window) override;
 
@@ -24,7 +25,7 @@ private:
 
     struct Particle {
         sf::CircleShape shape;
-        sf::Vector2f velocity;
+        eng::Vec2f velocity;
         float alpha;
         float alphaSpeed;
     };

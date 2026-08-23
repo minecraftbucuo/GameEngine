@@ -1,6 +1,7 @@
 //
 // Created by MINEC on 2026/5/8.
 //
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 
 #include "Button.h"
@@ -29,7 +30,7 @@ Button::Button(const float x, const float y, const float w, const float h, const
     className = "Button";
 }
 
-void Button::update(sf::Time deltaTime) {
+void Button::update(eng::Time deltaTime) {
     GameObject::update(deltaTime);
     targetScale = is_hover ? hoverScale : 1.f;
     const float t = 1.f - std::exp(-scaleLerpSpeed * deltaTime.asSeconds());
@@ -45,9 +46,9 @@ void Button::render(sf::RenderWindow* window) {
     }
 
     // 以按钮中心为原点缩放
-    const sf::Vector2f center = position + size * 0.5f;
-    const sf::Vector2f scaledSize = size * currentScale;
-    const sf::Vector2f scaledPos = center - scaledSize * 0.5f;
+    const eng::Vec2f center = position + size * 0.5f;
+    const eng::Vec2f scaledSize = size * currentScale;
+    const eng::Vec2f scaledPos = center - scaledSize * 0.5f;
 
     drawRoundedRect(window, scaledPos, scaledSize, cornerRadius * currentScale, colors.fill, colors.outline, outlineThickness);
 
@@ -79,7 +80,7 @@ void Button::handleEvent(sf::Event& event) {
 }
 
 bool Button::isMouseOver() const {
-    const sf::FloatRect buttonBounds(position.x, position.y, size.x, size.y);
+    const eng::FloatRect buttonBounds(position.x, position.y, size.x, size.y);
     const auto mouse_pos = this->getScene()->getMousePosition();
     return buttonBounds.contains(static_cast<float>(mouse_pos.x), static_cast<float>(mouse_pos.y));
 }
@@ -100,41 +101,41 @@ void Button::runOnClick() const {
     if (onClick) onClick();
 }
 
-void Button::drawRoundedRect(sf::RenderWindow* window, sf::Vector2f pos, sf::Vector2f size,
-                              float radius, const sf::Color& fillColor, const sf::Color& outlineColor, float outlineThickness) {
+void Button::drawRoundedRect(sf::RenderWindow* window, eng::Vec2f pos, eng::Vec2f size,
+                              float radius, const eng::Color& fillColor, const eng::Color& outlineColor, float outlineThickness) {
     radius = std::min(radius, std::min(size.x, size.y) * 0.5f);
 
     // 先画边框（更大的圆角矩形），再画填充覆盖，形成边框效果
     if (outlineThickness > 0.f) {
-        const sf::Vector2f outPos = pos - sf::Vector2f(outlineThickness, outlineThickness);
-        const sf::Vector2f outSize = size + sf::Vector2f(outlineThickness * 2, outlineThickness * 2);
+        const eng::Vec2f outPos = pos - eng::Vec2f(outlineThickness, outlineThickness);
+        const eng::Vec2f outSize = size + eng::Vec2f(outlineThickness * 2, outlineThickness * 2);
         const float outRadius = radius + outlineThickness;
         drawFilledRoundedRect(window, outPos, outSize, outRadius, outlineColor);
     }
     drawFilledRoundedRect(window, pos, size, radius, fillColor);
 }
 
-void Button::drawFilledRoundedRect(sf::RenderWindow* window, sf::Vector2f pos, sf::Vector2f size,
-                                     float radius, const sf::Color& color) {
+void Button::drawFilledRoundedRect(sf::RenderWindow* window, eng::Vec2f pos, eng::Vec2f size,
+                                     float radius, const eng::Color& color) {
     // 用矩形拼直边 + TriangleFan 画四角
     const float r = radius;
     const float w = size.x;
     const float h = size.y;
 
     // 中间水平矩形（覆盖左右圆角之间的区域）
-    sf::RectangleShape centerRect(sf::Vector2f(w - 2 * r, h));
+    sf::RectangleShape centerRect(eng::Vec2f(w - 2 * r, h));
     centerRect.setPosition(pos.x + r, pos.y);
     centerRect.setFillColor(color);
     window->draw(centerRect);
 
     // 左侧矩形（覆盖上下圆角之间的区域）
-    sf::RectangleShape leftRect(sf::Vector2f(r, h - 2 * r));
+    sf::RectangleShape leftRect(eng::Vec2f(r, h - 2 * r));
     leftRect.setPosition(pos.x, pos.y + r);
     leftRect.setFillColor(color);
     window->draw(leftRect);
 
     // 右侧矩形
-    sf::RectangleShape rightRect(sf::Vector2f(r, h - 2 * r));
+    sf::RectangleShape rightRect(eng::Vec2f(r, h - 2 * r));
     rightRect.setPosition(pos.x + w - r, pos.y + r);
     rightRect.setFillColor(color);
     window->draw(rightRect);
@@ -144,7 +145,7 @@ void Button::drawFilledRoundedRect(sf::RenderWindow* window, sf::Vector2f pos, s
     constexpr float PI = 3.14159265f;
 
     struct Corner {
-        sf::Vector2f center;
+        eng::Vec2f center;
         float startAngle; // 弧度
         float endAngle;
     };
@@ -165,7 +166,7 @@ void Button::drawFilledRoundedRect(sf::RenderWindow* window, sf::Vector2f pos, s
         for (int i = 0; i <= cornerPoints; ++i) {
             const float angle = corner.startAngle + (corner.endAngle - corner.startAngle) * i / cornerPoints;
             va.append(sf::Vertex(
-                sf::Vector2f(corner.center.x + std::cos(angle) * r,
+                eng::Vec2f(corner.center.x + std::cos(angle) * r,
                              corner.center.y - std::sin(angle) * r),
                 color));
         }

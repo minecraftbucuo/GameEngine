@@ -2,6 +2,7 @@
 // Created by MINEC on 2026/6/22.
 //
 
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Toggle.h"
 #include "Scene.h"
@@ -18,7 +19,7 @@ Toggle::Toggle(float x, float y, float w, float h, bool initialState) {
     className = "Toggle";
 }
 
-void Toggle::update(sf::Time deltaTime) {
+void Toggle::update(eng::Time deltaTime) {
     GameObject::update(deltaTime);
     float t = 1.f - std::exp(-lerpSpeed * deltaTime.asSeconds());
     currentKnobX += (targetKnobX - currentKnobX) * t;
@@ -27,7 +28,7 @@ void Toggle::update(sf::Time deltaTime) {
 void Toggle::render(sf::RenderWindow* window) {
     const float h = size.y;
     const float r = h * 0.5f;
-    sf::Color trackColor = state ? trackOnColor : trackOffColor;
+    eng::Color trackColor = state ? trackOnColor : trackOffColor;
 
     // 左半圆
     sf::CircleShape leftCap(r);
@@ -36,7 +37,7 @@ void Toggle::render(sf::RenderWindow* window) {
     window->draw(leftCap);
 
     // 中间矩形（覆盖左右圆之间的区域）
-    sf::RectangleShape middle(sf::Vector2f(size.x - h, h));
+    sf::RectangleShape middle(eng::Vec2f(size.x - h, h));
     middle.setPosition(position.x + r, position.y);
     middle.setFillColor(trackColor);
     window->draw(middle);
@@ -82,8 +83,8 @@ void Toggle::setOnToggle(std::function<void(bool)>&& callback) {
 }
 
 bool Toggle::isMouseOver() const {
-    sf::FloatRect bounds(position, size);
-    sf::Vector2i mousePos = getScene()->getMousePosition();
+    eng::FloatRect bounds(position, size);
+    eng::Vec2i mousePos = getScene()->getMousePosition();
     return bounds.contains(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
 }
 

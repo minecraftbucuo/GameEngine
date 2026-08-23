@@ -9,6 +9,7 @@
 #include "GameObject.h"
 #include "Collision.h"
 #include "BoxCollision.h"
+#include "Core/Types.h"
 
 MarioRunState::MarioRunState() : BaseState("MarioRunState") {
 #ifndef SERVER_BUILD
@@ -17,7 +18,7 @@ MarioRunState::MarioRunState() : BaseState("MarioRunState") {
 #endif
 }
 
-void MarioRunState::update(const sf::Time& deltaTime) {
+void MarioRunState::update(const eng::Time& deltaTime) {
     // 防止错误更新
     if (owner->getComponent<StateMachine>()->getCurrentStateName() != this->getName()) return;
     if (owner->getSpeed().x == 0.f) {
@@ -48,9 +49,9 @@ void MarioRunState::update(const sf::Time& deltaTime) {
 
     const auto box_collision = owner->getComponent<Collision, BoxCollision>();
     if (!getIsLeft()) {
-        box_collision->setOffset(sf::Vector2f(12.f, 0.f));
+        box_collision->setOffset(eng::Vec2f(12.f, 0.f));
     } else {
-        box_collision->setOffset(sf::Vector2f(0.f, 0.f));
+        box_collision->setOffset(eng::Vec2f(0.f, 0.f));
     }
 }
 

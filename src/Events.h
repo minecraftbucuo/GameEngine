@@ -6,14 +6,15 @@
 #pragma once
 #include <memory>
 #include "GameObject.h"
+#include "Core/Types.h"
 
 struct CollisionEvent {
     std::shared_ptr<GameObject> a;
     std::shared_ptr<GameObject> b;
-    sf::Vector2f a_speed;
-    sf::Vector2f b_speed;
-    sf::Vector2f a_position;
-    sf::Vector2f b_position;
+    eng::Vec2f a_speed;
+    eng::Vec2f b_speed;
+    eng::Vec2f a_position;
+    eng::Vec2f b_position;
 };
 
 

@@ -7,6 +7,7 @@
 #include "Events.h"
 #include "NetworkGameObject.h"
 #include "Timer.h"
+#include "Core/Types.h"
 
 
 class FireBall : public NetworkGameObject {
@@ -19,7 +20,7 @@ public:
 #ifndef SERVER_BUILD
     void render(sf::RenderWindow* window) override;
 #endif
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
 
     void setExploded();
 

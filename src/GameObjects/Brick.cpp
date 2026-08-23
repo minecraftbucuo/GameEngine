@@ -8,13 +8,14 @@
 #include "Collision.h"
 #include "BoxCollision.h"
 #include "ConfigManager.h"
+#include "Core/Types.h"
 
 Brick::Brick(const float x, const float y, const std::string& tag) : BoxGameObject(x, y, 0, 0) {
     this->tag = tag + ":" + std::to_string(id);
     this->moveAble = false;
 #ifndef SERVER_BUILD
     sprite.setTexture(AssetManager::getInstance().getTexture("tile_set"));
-    sprite.setTextureRect(sf::IntRect(16, 0, 16, 16));
+    sprite.setTextureRect(eng::IntRect(16, 0, 16, 16));
     sprite.setScale(4.f, 4.f);
     sprite.setPosition(this->getPosition());
 
@@ -32,7 +33,7 @@ Brick::Brick(const float x, const float y, const std::string& tag) : BoxGameObje
 }
 
 void Brick::setPosition(const float posX, const float posY) {
-    this->position = sf::Vector2f(posX, posY);
+    this->position = eng::Vec2f(posX, posY);
     const auto boxCollision = this->getComponent<Collision, BoxCollision>();
     boxCollision->setPosition(posX, posY);
 }

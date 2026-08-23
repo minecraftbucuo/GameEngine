@@ -1,6 +1,7 @@
 //
 // Created by MINEC on 2026/5/8.
 //
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Player.h"
 
@@ -15,8 +16,8 @@
 
 Player::Player(const float x, const float y, const float radius, const std::string& tag) {
     shape.setRadius(radius);
-    this->position = sf::Vector2f(x, y);
-    this->size = sf::Vector2f(radius * 2, radius * 2);
+    this->position = eng::Vec2f(x, y);
+    this->size = eng::Vec2f(radius * 2, radius * 2);
     shape.setPosition(x, y);
 
     this->addComponent<Collision, CircleCollision>(this->position.x + radius, this->position.y + radius, this->size.x / 2);

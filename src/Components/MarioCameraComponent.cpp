@@ -2,6 +2,7 @@
 // Created by MINEC on 2026/6/2.
 //
 
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "MarioCameraComponent.h"
 #include "Camera.h"
@@ -14,7 +15,7 @@ void MarioCameraComponent::start() {
     }
 }
 
-void MarioCameraComponent::update(const sf::Time& deltaTime) {
+void MarioCameraComponent::update(const eng::Time& deltaTime) {
     if (owner->getPosition().x > 500) this->setTargetPositionX(owner->getPosition().x - 500);
     else this->setTargetPositionX(0);
     if (this->target_position != this->position) {
@@ -25,7 +26,7 @@ void MarioCameraComponent::update(const sf::Time& deltaTime) {
     }
 }
 
-void MarioCameraComponent::setTargetPosition(const sf::Vector2f& pos) {
+void MarioCameraComponent::setTargetPosition(const eng::Vec2f& pos) {
     this->target_position = pos;
 }
 

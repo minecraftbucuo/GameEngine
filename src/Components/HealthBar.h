@@ -5,12 +5,13 @@
 #pragma once
 #include "Component.h"
 #include "Timer.h"
+#include "Core/Types.h"
 
 class HealthBar : public Component {
 public:
     HealthBar();
 
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 
 #ifndef SERVER_BUILD
     void render(sf::RenderWindow* window) override;

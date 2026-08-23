@@ -2,6 +2,7 @@
 // Created by MINEC on 2026/6/22.
 //
 
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "TextInput.h"
 #include "AssetManager.h"
@@ -26,7 +27,7 @@ TextInput::TextInput(float x, float y, float w, float h, const sf::String& place
     placeholderText.setFillColor(placeholderColor);
 
     // 初始化光标
-    cursor.setSize(sf::Vector2f(2.f, h * 0.6f));
+    cursor.setSize(eng::Vec2f(2.f, h * 0.6f));
     cursor.setFillColor(textColor);
     cursor.setPosition(position.x + 10.f, position.y + (h - h * 0.6f) * 0.5f);
 
@@ -34,7 +35,7 @@ TextInput::TextInput(float x, float y, float w, float h, const sf::String& place
     className = "TextInput";
 }
 
-void TextInput::update(sf::Time deltaTime) {
+void TextInput::update(eng::Time deltaTime) {
     GameObject::update(deltaTime);
 
     // 光标闪烁
@@ -51,8 +52,8 @@ void TextInput::update(sf::Time deltaTime) {
 
 void TextInput::render(sf::RenderWindow* window) {
     // 绘制背景
-    sf::Color bg = focused ? focusedBgColor : bgColor;
-    sf::Color outline = focused ? focusedOutlineColor : outlineColor;
+    eng::Color bg = focused ? focusedBgColor : bgColor;
+    eng::Color outline = focused ? focusedOutlineColor : outlineColor;
 
     // 使用矩形绘制
     sf::RectangleShape bgRect(size);
@@ -74,7 +75,7 @@ void TextInput::render(sf::RenderWindow* window) {
         // 计算光标位置
         float textWidth = 0.f;
         if (!text.isEmpty()) {
-            sf::FloatRect bounds = displayText.getLocalBounds();
+            eng::FloatRect bounds = displayText.getLocalBounds();
             textWidth = bounds.width;
         }
         cursor.setPosition(position.x + 10.f + textWidth, cursor.getPosition().y);
@@ -152,8 +153,8 @@ void TextInput::setAllowedChars(const std::string& chars) {
 }
 
 bool TextInput::isMouseOver() const {
-    sf::FloatRect bounds(position, size);
-    sf::Vector2i mousePos = getScene()->getMousePosition();
+    eng::FloatRect bounds(position, size);
+    eng::Vec2i mousePos = getScene()->getMousePosition();
     return bounds.contains(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
 }
 

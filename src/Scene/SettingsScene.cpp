@@ -2,6 +2,7 @@
 // Created by MINEC on 2026/6/22.
 //
 
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "SettingsScene.h"
 #include "AssetManager.h"
@@ -15,7 +16,7 @@ SettingsScene::SettingsScene(sf::RenderWindow* _window) : Scene(_window, "Settin
     title.setString(L"设置");
     title.setFont(AssetManager::getInstance().getFont());
     title.setCharacterSize(48);
-    title.setFillColor(sf::Color::White);
+    title.setFillColor(eng::Color::White);
     title.setPosition(_window->getSize().x * 0.5f - title.getGlobalBounds().width * 0.5f, 50.f);
 }
 
@@ -30,7 +31,7 @@ static sf::Text makeLabel(const sf::String& str, float x, float y) {
     sf::Text t;
     t.setFont(AssetManager::getInstance().getFont());
     t.setCharacterSize(20);
-    t.setFillColor(sf::Color::White);
+    t.setFillColor(eng::Color::White);
     t.setString(str);
     t.setPosition(x, y);
     return t;
@@ -40,7 +41,7 @@ static sf::Text makeGroupTitle(const sf::String& str, float x, float y) {
     sf::Text t;
     t.setFont(AssetManager::getInstance().getFont());
     t.setCharacterSize(28);
-    t.setFillColor(sf::Color(180, 220, 255));
+    t.setFillColor(eng::Color(180, 220, 255));
     t.setString(str);
     t.setPosition(x, y);
     return t;
@@ -183,7 +184,7 @@ void SettingsScene::initScene() {
     addObject(backBtn);
 }
 
-void SettingsScene::update(sf::Time deltaTime) {
+void SettingsScene::update(eng::Time deltaTime) {
     Scene::update(deltaTime);
 }
 

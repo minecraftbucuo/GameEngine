@@ -14,6 +14,7 @@
 #include "MoveComponent.h"
 #include "FireBall.h"
 #include "Collision.h"
+#include "Core/Types.h"
 
 void SuperMarioScene::init() {
     Scene::init();
@@ -84,7 +85,7 @@ std::shared_ptr<GameObject> SuperMarioScene::spawnEntityWithNetwork(sf::Packet& 
         packet >> owner_id >> x >> y >> s_x >> s_y;
         const auto fire_ball = std::make_shared<FireBall>(owner_id, x, y);
         fire_ball->setId(id);
-        fire_ball->getComponent<MoveComponent>()->setSpeed(sf::Vector2f(s_x, s_y));
+        fire_ball->getComponent<MoveComponent>()->setSpeed(eng::Vec2f(s_x, s_y));
         this->addObjectWithNetwork(fire_ball);
         return fire_ball;
     }
@@ -145,7 +146,7 @@ void SuperMarioScene::render(sf::RenderWindow* _window) {
 }
 #endif
 
-void SuperMarioScene::update(sf::Time deltaTime) {
+void SuperMarioScene::update(eng::Time deltaTime) {
     Scene::update(deltaTime);
     if (this->collisionSystem) {
         this->collisionSystem->checkCollisions();
@@ -177,7 +178,7 @@ void SuperMarioScene::handleEvent(sf::Event& event) {
     }
 
     if (event.type == sf::Event::MouseButtonPressed) {
-        const sf::Vector2i pos = getMousePosition();
+        const eng::Vec2i pos = getMousePosition();
         LOG_TRACE_FMT("Mouse clicked at ({}, {})", pos.x, pos.y);
     } else if (event.type == sf::Event::KeyPressed) {
         if (event.key.code == sf::Keyboard::Escape) {
@@ -211,27 +212,27 @@ void SuperMarioScene::showDeathScreen(sf::RenderWindow* _window) {
     sf::Text deathText;
     sf::Text deathHint;
 
-    deathOverlay.setFillColor(sf::Color(0, 0, 0, 180));
+    deathOverlay.setFillColor(eng::Color(0, 0, 0, 180));
     deathText.setFont(AssetManager::getInstance().getFont());
     deathText.setString("YOU DIED");
     deathText.setCharacterSize(64);
-    deathText.setFillColor(sf::Color::Red);
+    deathText.setFillColor(eng::Color::Red);
     deathText.setStyle(sf::Text::Bold);
     deathHint.setFont(AssetManager::getInstance().getFont());
     deathHint.setString("Press R to Respawn    Press Esc to Quit");
     deathHint.setCharacterSize(24);
-    deathHint.setFillColor(sf::Color::White);
+    deathHint.setFillColor(eng::Color::White);
 
 
     sf::View oldView = _window->getView();
-    sf::View screenView(sf::FloatRect(0, 0,
+    sf::View screenView(eng::FloatRect(0, 0,
         static_cast<float>(_window->getSize().x),
         static_cast<float>(_window->getSize().y)));
     _window->setView(screenView);
 
     const float w = static_cast<float>(_window->getSize().x);
     const float h = static_cast<float>(_window->getSize().y);
-    deathOverlay.setSize(sf::Vector2f(w, h));
+    deathOverlay.setSize(eng::Vec2f(w, h));
     _window->draw(deathOverlay);
 
     deathText.setPosition(

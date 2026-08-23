@@ -3,8 +3,9 @@
 //
 
 #include "SceneManager.h"
+#include "Core/Types.h"
 
-void SceneManager::update(sf::Time deltaTime) const {
+void SceneManager::update(eng::Time deltaTime) const {
     currentScene->update(deltaTime);
 }
 

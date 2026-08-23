@@ -8,6 +8,7 @@
 #include <cmath>
 #include "GameObject.h"
 #include "MoveComponent.h"
+#include "Core/Types.h"
 
 CircleCollisionHandle::CircleCollisionHandle() {
     collisionHandlers[typeid(BoxCollision).hash_code()] = [this](const CollisionEvent& event) {
@@ -30,13 +31,13 @@ void CircleCollisionHandle::handleCollisionWithCircle(const CollisionEvent& even
     const std::shared_ptr<MoveComponent> moveComponent = this_->getComponent<MoveComponent>();
     if (!moveComponent) return;
 
-    const sf::Vector2f center_a = event.a_position + this_->getSize() * 0.5f;
-    const sf::Vector2f center_b = event.b_position + other->getSize() * 0.5f;
+    const eng::Vec2f center_a = event.a_position + this_->getSize() * 0.5f;
+    const eng::Vec2f center_b = event.b_position + other->getSize() * 0.5f;
 
-    sf::Vector2f dir = center_a - center_b;
+    eng::Vec2f dir = center_a - center_b;
     const float dir_len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
 
-    const sf::Vector2f relativeSpeed = event.a_speed - event.b_speed;
+    const eng::Vec2f relativeSpeed = event.a_speed - event.b_speed;
     const float relativeSpeed_len = std::sqrt(relativeSpeed.x * relativeSpeed.x + relativeSpeed.y * relativeSpeed.y);
 
     dir /= dir_len;

@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include "Scene.h"
+#include "Core/Types.h"
 
 class SceneManager {
 public:
@@ -18,7 +19,7 @@ public:
     }
 #endif
 
-    void update(sf::Time deltaTime) const;
+    void update(eng::Time deltaTime) const;
 #ifndef SERVER_BUILD
     void render(sf::RenderWindow* window) const {
         currentScene->render(window);

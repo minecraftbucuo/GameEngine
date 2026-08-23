@@ -6,6 +6,7 @@
 
 #include <box2d/box2d.h>
 #include <SFML/System/Vector2.hpp>
+#include "Core/Types.h"
 
 namespace physics {
 
@@ -24,13 +25,13 @@ inline float toPixels(float meters) {
 }
 
 // SFML 像素向量 → Box2D 米向量
-inline b2Vec2 toMeters(const sf::Vector2f& pixels) {
+inline b2Vec2 toMeters(const eng::Vec2f& pixels) {
     return b2Vec2(pixels.x * INV_PPM, pixels.y * INV_PPM);
 }
 
 // Box2D 米向量 → SFML 像素向量
-inline sf::Vector2f toPixels(const b2Vec2& meters) {
-    return sf::Vector2f(meters.x * PPM, meters.y * PPM);
+inline eng::Vec2f toPixels(const b2Vec2& meters) {
+    return eng::Vec2f(meters.x * PPM, meters.y * PPM);
 }
 
 // 引擎内部 body 类型枚举，与 b2BodyType 一一对应

@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "BaseState.h"
 #include <memory>
+#include "Core/Types.h"
 
 class StateMachine : public Component {
 public:
@@ -13,7 +14,7 @@ public:
     explicit StateMachine(GameObject* owner) : Component(owner) {}
     ~StateMachine() override = default;
 
-    void update(const sf::Time& deltaTime) override;
+    void update(const eng::Time& deltaTime) override;
 
     void render(sf::RenderWindow* window) override;
 

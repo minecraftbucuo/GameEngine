@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "Core/Types.h"
+
 #ifndef SERVER_BUILD
 
 #include <box2d/box2d.h>
@@ -35,7 +37,7 @@ public:
     void DrawPoint(const b2Vec2& p, float size, const b2Color& color) override;
 
 private:
-    static sf::Color toSfColor(const b2Color& c);
+    static eng::Color toSfColor(const b2Color& c);
 
     sf::RenderWindow* window{};
 };

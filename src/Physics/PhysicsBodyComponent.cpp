@@ -7,6 +7,7 @@
 #include "GameObject.h"
 #include "Scene.h"
 #include "Logger.h"
+#include "Core/Types.h"
 
 PhysicsBodyComponent::PhysicsBodyComponent() = default;
 
@@ -37,7 +38,7 @@ void PhysicsBodyComponent::start() {
 
     // body 定义
     // Box2D 的 position 是质心，GameObject 的 position 是左上角，需转换
-    sf::Vector2f halfSize = owner->getSize() * 0.5f;
+    eng::Vec2f halfSize = owner->getSize() * 0.5f;
     b2BodyDef def;
     def.type = bodyType;
     def.position = physics::toMeters(owner->getPosition() + halfSize);
@@ -85,11 +86,11 @@ void PhysicsBodyComponent::start() {
     }
 }
 
-void PhysicsBodyComponent::update(const sf::Time& deltaTime) {
+void PhysicsBodyComponent::update(const eng::Time& deltaTime) {
     if (!body || !owner) return;
     // 把 b2Body 位置（质心，米）回写到 owner->position（左上角，像素）
     b2Vec2 pos = body->GetPosition();
-    sf::Vector2f halfSize = owner->getSize() * 0.5f;
+    eng::Vec2f halfSize = owner->getSize() * 0.5f;
     owner->position = physics::toPixels(pos) - halfSize;
     // 同步旋转角度（弧度→度数）
     owner->rotation = body->GetAngle() * 180.0f / 3.14159265f;
@@ -165,30 +166,30 @@ void PhysicsBodyComponent::setCollisionGroup(int16 gIdx) {
     }
 }
 
-void PhysicsBodyComponent::applyLinearImpulse(const sf::Vector2f& impulse) {
+void PhysicsBodyComponent::applyLinearImpulse(const eng::Vec2f& impulse) {
     if (body) {
         body->ApplyLinearImpulseToCenter(physics::toMeters(impulse), true);
     }
 }
 
-void PhysicsBodyComponent::applyForceToCenter(const sf::Vector2f& force) {
+void PhysicsBodyComponent::applyForceToCenter(const eng::Vec2f& force) {
     if (body) {
         body->ApplyForceToCenter(physics::toMeters(force), true);
     }
 }
 
-void PhysicsBodyComponent::setLinearVelocity(const sf::Vector2f& velocity) {
+void PhysicsBodyComponent::setLinearVelocity(const eng::Vec2f& velocity) {
     if (body) {
         body->SetLinearVelocity(physics::toMeters(velocity));
     }
 }
 
-sf::Vector2f PhysicsBodyComponent::getLinearVelocity() const {
+eng::Vec2f PhysicsBodyComponent::getLinearVelocity() const {
     if (!body) return {};
     return physics::toPixels(body->GetLinearVelocity());
 }
 
-void PhysicsBodyComponent::setTransform(const sf::Vector2f& position, float angle) {
+void PhysicsBodyComponent::setTransform(const eng::Vec2f& position, float angle) {
     if (body) {
         body->SetTransform(physics::toMeters(position), angle);
     }

@@ -1,6 +1,7 @@
 //
 // Created by MINEC on 2026/6/2.
 //
+#include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Camera.h"
 #include <SFML/Graphics.hpp>
@@ -11,7 +12,7 @@ Camera::Camera(sf::RenderWindow* window) {
 
 void Camera::init(sf::RenderWindow* _window) {
     this->window = _window;
-    this->floatRect = sf::FloatRect(0, 0,
+    this->floatRect = eng::FloatRect(0, 0,
                     static_cast<float>(window->getSize().x),
                     static_cast<float>(window->getSize().y));
     this->view = sf::View(floatRect);
@@ -40,7 +41,7 @@ void Camera::setPosition(const float x, const float y) {
     updateView();
 }
 
-sf::Vector2f Camera::getPosition() const {
+eng::Vec2f Camera::getPosition() const {
     return {this->floatRect.left, this->floatRect.top};
 }
 
@@ -53,11 +54,11 @@ void Camera::setMouseControl(const bool flag) {
     this->mouseControl = flag;
 }
 
-sf::Vector2f Camera::getCenter() const {
+eng::Vec2f Camera::getCenter() const {
     return view.getCenter();
 }
 
-void Camera::addPosition(const sf::Vector2i& pos) {
+void Camera::addPosition(const eng::Vec2i& pos) {
     this->floatRect.left += static_cast<float>(pos.x);
     this->floatRect.top += static_cast<float>(pos.y);
     updateView();
@@ -104,7 +105,7 @@ void Camera::handleEvent(const sf::Event& event) {
     }
 }
 
-sf::Vector2f Camera::getViewSize() const {
+eng::Vec2f Camera::getViewSize() const {
     return floatRect.getSize();
 }
 

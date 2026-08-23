@@ -5,6 +5,7 @@
 #pragma once
 #include "Animation.h"
 #include "BoxGameObject.h"
+#include "Core/Types.h"
 
 class Box : public BoxGameObject {
 public:
@@ -14,7 +15,7 @@ public:
 
     void start() override;
 
-    void update(sf::Time deltaTime) override;
+    void update(eng::Time deltaTime) override;
 
     void setPosition(float posX, float posY) override;
 #ifndef SERVER_BUILD

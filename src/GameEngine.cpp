@@ -16,6 +16,7 @@
 #endif
 #include "SuperMarioScene.h"
 #include "FrameManager.h"
+#include "Core/Types.h"
 
 static std::filesystem::path getExeDir() {
 #ifdef _WIN32
@@ -81,7 +82,7 @@ void GameEngine::start() const {
     window->setFramerateLimit(CONFIG.window.fps);
     sf::Clock clock;
     while (window->isOpen()) {
-        const sf::Time deltaTime = clock.restart();
+        const eng::Time deltaTime = clock.restart();
         sf::Event event{};
         while (window->pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
@@ -101,14 +102,14 @@ void GameEngine::start() const {
 [[noreturn]] void GameEngine::start() const {
     sf::Clock clock;
     const float targetFPS = CONFIG.window.fps;
-    const sf::Time frameTime = sf::seconds(1.0f / targetFPS);
+    const eng::Time frameTime = sf::seconds(1.0f / targetFPS);
 
     while (true) {
-        const sf::Time deltaTime = clock.restart();
+        const eng::Time deltaTime = clock.restart();
         scene_manager->update(deltaTime);
 
         // 计算帧时间并睡眠剩余时间
-        if (const sf::Time sleepTime = frameTime - clock.getElapsedTime(); sleepTime > sf::Time::Zero) {
+        if (const eng::Time sleepTime = frameTime - clock.getElapsedTime(); sleepTime > eng::Time::Zero) {
             sf::sleep(sleepTime);
         }
     }
