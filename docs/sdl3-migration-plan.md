@@ -514,16 +514,28 @@ SFML 退缩为以下实现面文件的内部细节（Step 9~11 逐个替换/删�
 - **验证**：编译通过（`EngineSDL3` 目标）；主目标行为完全不变（SFML 路径未动）
 - **原子性保证**：SDL3 代码全在 `#if defined(ENGINE_SDL3)` 之后且不进主目标，默认路径零影响
 
-#### Step 10 — 切换：SDL3 生效（单一目的提交）
-- [ ] CMake：源文件从 `RendererSFML.cpp` 换成 `RendererSDL3.cpp`，定义 `ENGINE_SDL3`，
-      链接 SDL3 全家 + 移除 sfml-graphics/window/audio/system 链接
-- [ ] 音频播放调用点改 SDL_mixer（调用点少，直改）
-- [ ] `Core/Types.h` 别名换成自研 struct（`Vec2f` 等，运算符 API 保持一致）
+#### Step 10 — 切换：SDL3 生效（单一目的提交）✅ 2026-08-23 完成
+- [x] `Core/Types.h` 别名换成自研实现（Vec2/Vec3 模板 + 类型间隐式转换构造、Rect、
+      Color 常量、Time 微秒存储——运算符集与 SFML 语义逐条对齐，游戏层零改动）
+- [x] CMake：`SDL3_ACTIVE`（=BUILD_WITH_SDL3 且客户端构建）时主目标排除
+      `RendererSFML.cpp`/`EventConvertSFML.cpp`/`AssetManager.cpp`，编译 SDL3 两实现文件，
+      定义 `ENGINE_SDL3`，链接 SDL3 全家 + sfml-network/system（Network/ 仍用）；
+      **关 BUILD_WITH_SDL3 即完整回滚 SFML 路径**（脚手架已适配自研类型，保持可编译）
+- [x] 音频播放侧：MarioController 双分支（`#ifdef ENGINE_SDL3`）——
+      常驻 `MIX_Track` 绑预解码音频（=setBuffer），播放 = `MIX_StopTrack(0)+MIX_PlayTrack(0)`
+      （=stop+play 重播语义），析构 `MIX_DestroyTrack`；SFML 分支原样保留至 Step 11
+- [x] `Renderer.h` 删除 `sf::RenderWindow*` 私有成员（窗口彻底成实现细节）；
+      脚手架改文件内静态指针 + eng↔sf 显式转换（toSf/toSfV）
+- [x] `NetworkManager` 三个 update 签名 `sf::Time`→`eng::Time`（Types.h 自研后的类型裂缝，
+      调用方传的正是 eng::Time；两后端下等价）
+- [x] `GameEngine.cpp` 计时构造 `sf::seconds`→`eng::Time::seconds`（两模式均合法）
+- [x] `AssetManagerSDL3` 混音器初始化补 `SDL_Init(SDL_INIT_AUDIO)`（资源加载在窗口创建前）
+- [x] EngineSDL3 编译验证目标移除（主目标直接编译两实现文件）
 - **验证**：**逐场景跑全部功能**——Menu / GameScene / GameScene3D / Settings / SuperMario /
   PhysicsTest（A/D 移动、Space 跳、R 重置、鼠标放球、相机拖动、文字输入、BGM/音效、
-  物理调试绘制）
+  物理调试绘制）—— SDL3 版首次全量回归
 - **原子性保证**：所有调用方早已走 Renderer/Handle 抽象，本提交只动
-  实现文件选择 + 少量音频调用 + Types.h；若出问题，回滚本提交即回到 SFML
+  实现文件选择 + Types.h + 音频双分支；出问题关 BUILD_WITH_SDL3 即回 SFML
 
 #### Step 11 — 删除脚手架与 SFML 残留
 - [ ] 删除 `RendererSFML.cpp`、`EventConvertSFML.h/.cpp`、`AssetManager` 的 SFML 内部实现、

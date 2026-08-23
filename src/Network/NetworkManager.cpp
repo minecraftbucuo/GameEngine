@@ -69,7 +69,7 @@ bool NetworkManager::connectToServer(const std::string& address) {
     return true;
 }
 
-void NetworkManager::update(const sf::Time& deltaTime) {
+void NetworkManager::update(const eng::Time& deltaTime) {
     if (network_type == NetworkType::None) return;
     if (network_type == NetworkType::Server) {
         serverUpdate(deltaTime);
@@ -204,7 +204,7 @@ void NetworkManager::respawnPlayer(const std::shared_ptr<TcpClient>& client) {
     addGameObject(newPlayer);
 }
 
-void NetworkManager::serverUpdate(const sf::Time& deltaTime) {
+void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
     // 接收新用户连接
     receiveNewConnection();
     // 验证 TCP 客户端是否为 Mario 客户端
@@ -289,7 +289,7 @@ void NetworkManager::serverUpdate(const sf::Time& deltaTime) {
     }
 }
 
-void NetworkManager::clientUpdate(const sf::Time& deltaTime) {
+void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
     sf::Packet packet;
     sf::Socket::Status status = clientSocket.receive(packet);
     if (status == sf::Socket::Error || status == sf::Socket::Disconnected) {

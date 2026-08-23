@@ -78,12 +78,11 @@ void GameEngine::init() {
 #ifndef SERVER_BUILD
 void GameEngine::start() {
     renderer.setFramerateLimit(CONFIG.window.fps);
-    // SDL3 迁移 6e：计时改 std::chrono（sf::Clock 属 sfml-system，终态要删；
-    // eng::Time 目前仍是 sf::Time 别名，Step 10 自研后此处只换包装）
+    // SDL3 迁移 Step 10：计时 std::chrono + 自研 eng::Time（sfml-system 依赖解除）
     auto last = std::chrono::steady_clock::now();
     while (renderer.isWindowOpen()) {
         const auto now = std::chrono::steady_clock::now();
-        const eng::Time deltaTime = sf::seconds(
+        const eng::Time deltaTime = eng::Time::seconds(
             std::chrono::duration<float>(now - last).count());
         last = now;
         eng::EngineEvent event{};
@@ -109,7 +108,7 @@ void GameEngine::start() {
 
     while (true) {
         const auto frameStart = std::chrono::steady_clock::now();
-        const eng::Time deltaTime = sf::seconds(
+        const eng::Time deltaTime = eng::Time::seconds(
             std::chrono::duration<float>(frameStart - last).count());
         last = frameStart;
         scene_manager->update(deltaTime);

@@ -36,15 +36,15 @@ public:
 
     bool connectToServer(const std::string& address);
 
-    void update(const sf::Time& deltaTime);
+    void update(const eng::Time& deltaTime);
 
     void handleEvent(const eng::EngineEvent& event);
 
-    void serverUpdate(const sf::Time& deltaTime);
+    void serverUpdate(const eng::Time& deltaTime);
 
     void receiveNewConnection();
 
-    void clientUpdate(const sf::Time& deltaTime);
+    void clientUpdate(const eng::Time& deltaTime);
 
     void addGameObjectAndSync(const std::shared_ptr<GameObject>& obj);
 

@@ -27,6 +27,12 @@
 MIX_Mixer* AssetManager::ensureMixer() {
     if (mixer) return mixer;
     if (!mix_inited) {
+        // 音频子系统显式初始化（幂等）：loadSoundBuffer 发生在窗口创建前，
+        // 此时 VIDEO 之外的子系统尚未拉起
+        if (!SDL_Init(SDL_INIT_AUDIO)) {
+            LOG_ERROR_FMT("SDL_Init(AUDIO) failed: {}", SDL_GetError());
+            return nullptr;
+        }
         if (!MIX_Init()) {   // SDL_mixer 3.2 无 flags 参数，按编译进来的解码器注册
             LOG_ERROR_FMT("MIX_Init failed: {}", SDL_GetError());
             return nullptr;
@@ -100,6 +106,8 @@ SDL_Texture* AssetManager::getTexture(const eng::TextureHandle h) {
         if (!renderer) return nullptr;   // 渲染器未建立（正常流程 createWindow 先于绘制）
         entry.texture = SDL_CreateTextureFromSurface(renderer, entry.surface);
         if (entry.texture) {
+            // 对齐 SFML 默认：游戏贴图最近邻过滤（SDL3 默认线性会把放大后的像素风糊掉）
+            SDL_SetTextureScaleMode(entry.texture, SDL_SCALEMODE_NEAREST);
             SDL_DestroySurface(entry.surface);
             entry.surface = nullptr;
         } else {

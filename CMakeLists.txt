@@ -154,10 +154,22 @@ set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 file(GLOB_RECURSE SRC CONFIGURE_DEPENDS ${SRC_DIR}/*.cpp)
 
-# SDL3 迁移 Step 9：SDL3 专属实现文件不进主目标（主目标仍是 SFML 脚手架路径）；
-# 它们挂在下方 EngineSDL3 编译验证目标上，Step 10 生效时切换进主目标
-list(FILTER SRC EXCLUDE REGEX "RendererSDL3\\.cpp$")
-list(FILTER SRC EXCLUDE REGEX "AssetManagerSDL3\\.cpp$")
+# ── SDL3 迁移 Step 10：主目标切换 ────────────────────────────────────
+# SDL3_ACTIVE=ON：渲染/窗口/输入/音频走 SDL3 实现（RendererSDL3 + AssetManagerSDL3），
+#                Network/ 仍链 sfml-network+sfml-system（迁移范围外）；
+# SDL3_ACTIVE=OFF（BUILD_WITH_SDL3=OFF）：完整回滚到 SFML 脚手架路径。
+if (BUILD_WITH_SDL3 AND NOT BUILD_FOR_SERVER)
+    set(SDL3_ACTIVE ON)
+endif ()
+
+if (SDL3_ACTIVE)
+    list(FILTER SRC EXCLUDE REGEX "RendererSFML\\.cpp$")
+    list(FILTER SRC EXCLUDE REGEX "EventConvertSFML\\.cpp$")
+    list(FILTER SRC EXCLUDE REGEX "AssetManager\\.cpp$")
+else ()
+    list(FILTER SRC EXCLUDE REGEX "RendererSDL3\\.cpp$")
+    list(FILTER SRC EXCLUDE REGEX "AssetManagerSDL3\\.cpp$")
+endif ()
 
 add_executable(${PROJECT_NAME} ${SRC})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
@@ -182,7 +194,25 @@ target_include_directories(
         ${SFML_ROOT}/include
 )
 
-if (BUILD_SFML_FROM_SOURCE)
+if (SDL3_ACTIVE)
+    # SDL3 迁移 Step 10：渲染/窗口/输入/音频全部 SDL3；Network/ 仍需 sfml-network/system
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ENGINE_SDL3)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+            SDL3::SDL3
+            SDL3_image::SDL3_image
+            SDL3_ttf::SDL3_ttf
+            SDL3_mixer::SDL3_mixer
+    )
+    if (BUILD_SFML_FROM_SOURCE)
+        target_link_libraries(${PROJECT_NAME} PRIVATE sfml-network sfml-system)
+    else ()
+        target_link_directories(${PROJECT_NAME} PRIVATE ${SFML_ROOT}/lib)
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+                debug sfml-network-s-d optimized sfml-network-s
+                debug sfml-system-s-d optimized sfml-system-s
+                ws2_32 winmm)
+    endif ()
+elseif (BUILD_SFML_FROM_SOURCE)
     target_link_libraries(${PROJECT_NAME} PRIVATE
         sfml-system
         sfml-network
@@ -273,39 +303,9 @@ if (BUILD_WITH_BOX2D)
     target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 endif ()
 
-# ── SDL3 实现编译验证目标（SDL3 迁移 Step 9）─────────────────────────
-# 只编译不链接：验证 RendererSDL3.cpp / AssetManagerSDL3.cpp 随主代码演进保持可编译；
-# GameEngine 仍走 SFML 脚手架路径，行为零变化。Step 10 生效时把这两个文件换进主目标。
-# Types.h 仍是 SFML 别名（Step 10 自研），故此处仅需 SFML 头文件路径，无需链接。
-if (BUILD_WITH_SDL3 AND NOT BUILD_FOR_SERVER)
-    add_library(EngineSDL3 STATIC
-            ${SRC_DIR}/Render/RendererSDL3.cpp
-            ${SRC_DIR}/Manager/AssetManagerSDL3.cpp)
-    target_compile_features(EngineSDL3 PRIVATE cxx_std_20)
-    target_compile_definitions(EngineSDL3 PRIVATE ENGINE_SDL3)
-    target_include_directories(EngineSDL3 PRIVATE
-            ${SRC_DIR}
-            ${SRC_DIR}/Components
-            ${SRC_DIR}/Components/Collisions
-            ${SRC_DIR}/Components/CollisionHandles
-            ${SRC_DIR}/GameObjects
-            ${SRC_DIR}/Scene
-            ${SRC_DIR}/State
-            ${SRC_DIR}/Manager
-            ${SRC_DIR}/Network
-            ${SRC_DIR}/Physics
-            ${SRC_DIR}/Render
-            ${LIB_DIR}
-            ${SFML_ROOT}/include
-    )
-    target_link_libraries(EngineSDL3 PRIVATE
-            SDL3::SDL3
-            SDL3_image::SDL3_image
-            SDL3_ttf::SDL3_ttf
-            SDL3_mixer::SDL3_mixer
-    )
-endif ()
 # ───────────────────────────────────────────────────────────────────
+# （SDL3 迁移 Step 9 的 EngineSDL3 编译验证目标已在 Step 10 移除：
+#   主目标已直接编译 RendererSDL3.cpp / AssetManagerSDL3.cpp）
 
 if (NOT BUILD_FOR_SERVER)
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD

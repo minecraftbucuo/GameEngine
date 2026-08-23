@@ -14,10 +14,6 @@
 // 职责：窗口 + 事件泵 + 渲染命令 三合一。
 // 头文件零第三方 include；实现文件整体替换（脚手架期 RendererSFML.cpp，
 // SDL3 终态 RendererSDL3.cpp），游戏层代码不随实现变化。
-namespace sf {
-    class RenderWindow;   // 仅私有指针成员前向声明（不完整类型），非公共 API
-}
-
 namespace eng {
 
 class Renderer {
@@ -81,9 +77,6 @@ public:
     [[nodiscard]] CameraState getCamera() const;   // 保存当前相机（配合 setCamera 恢复）
     void resetCamera();                            // 屏幕坐标系（窗口大小，左上原点）
     [[nodiscard]] Vec2f screenToWorld(Vec2i screenPos) const;
-
-private:
-    sf::RenderWindow* window{};   // 脚手架期内部持有；SDL3 期换 SDL_Window*/SDL_Renderer*
 };
 
 } // namespace eng

@@ -609,7 +609,8 @@ void Renderer::present() {
         return;
     }
     if (const Uint64 elapsed = now - g.lastPresent; elapsed < target) {
-        SDL_DelayNS(target - elapsed);
+        // tick → 纳秒换算（QPC 1 tick ≠ 1ns，漏乘会短睡百倍导致限帧失效）
+        SDL_DelayNS((target - elapsed) * 1000000000ULL / freq);
     }
     g.lastPresent = SDL_GetPerformanceCounter();
 }
