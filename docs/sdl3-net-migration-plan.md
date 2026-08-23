@@ -171,4 +171,15 @@ N5  SFML 全仓移除：CMake 三套分支清零 + lib/ 目录删除 + 验收
 
 ## 七、进度记录
 
-（实现时逐步追加）
+### N1 完成（2026-08-23）
+
+- 新增 [Packet.h](file:///e:/Projects/GameEngine/src/Network/Packet.h) / [Packet.cpp](file:///e:/Projects/GameEngine/src/Network/Packet.cpp)（`eng::Packet`，纯新增零引用）
+- **实测修正了计划里的线格式假设**：sf::Packet 整型走 htonl（**大端**），
+  float 却是原始内存直拷（小端原样），string 长度前缀为大端 uint32。
+  已用项目自带 SFML 静态库做逐字节对比测试：
+  `bool×2 + int32 + uint32 + float + string(20字符) + uint8枚举` 共 39 字节
+  **BYTE-IDENTICAL**，往返读取、流读尽终止（`while(packet>>x)`）、越界置无效全部通过。
+  （测试程序用后已删；如需复测，重新拼一个 main 引 Packet.h 与 NetworkProtocol.h 即可）
+- 设计细节：枚举按底层类型分派（1B 直拷 / 4B 大端）；`operator bool` 失效语义
+  复刻 sf 惯用法；`append/getDataSize/clear` 供 N3 TcpClient 组帧使用。
+- 待用户验证：双版本编译通过（Packet.cpp 会被 GLOB 自动收编，纯新增不触碰现有代码）。
