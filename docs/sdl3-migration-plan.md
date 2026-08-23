@@ -300,7 +300,8 @@ struct EngineEvent {
 ### 阶段二：渲染脚手架（Renderer 类 + SFML 临时实现）
 
 #### Step 4 — 资源句柄类型（纯新增）
-- [ ] 新建 `src/Render/Handles.h`（`TextureHandle` / `FontHandle`，`uint32_t` id + `isValid()`）
+- [x] 新建 `src/Render/Handles.h`（`TextureHandle` / `FontHandle`，`uint32_t` id + `isValid()`
+      + 相等比较 + `std::hash` 特化；音频 SoundBuffer 不做句柄，Step 10 直改 SDL_mixer）
 - **验证**：编译通过（无人引用）
 - **原子性保证**：纯新增
 
