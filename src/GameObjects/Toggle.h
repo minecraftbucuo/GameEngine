@@ -14,7 +14,7 @@ public:
 
     void update(eng::Time deltaTime) override;
     void render(sf::RenderWindow* window) override;
-    void handleEvent(sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 
     void setState(bool state);
     [[nodiscard]] bool getState() const;

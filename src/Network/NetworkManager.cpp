@@ -84,8 +84,8 @@ void NetworkManager::update(const sf::Time& deltaTime) {
     }
 }
 
-void NetworkManager::handleEvent(const sf::Event& event) {
-    if (network_type != NetworkType::None && event.type == sf::Event::Closed) {
+void NetworkManager::handleEvent(const eng::EngineEvent& event) {
+    if (network_type != NetworkType::None && event.type == eng::EventType::WindowClose) {
         if (network_type == NetworkType::Server) {
             for (const auto& client : clients) {
                 client->disconnect();
@@ -97,8 +97,8 @@ void NetworkManager::handleEvent(const sf::Event& event) {
         }
     }
     if (network_type == NetworkType::Client) {
-        if (event.type == sf::Event::KeyPressed) {
-            if (event.key.code == sf::Keyboard::R) {
+        if (event.type == eng::EventType::KeyPress) {
+            if (event.key == eng::Key::R) {
                 if (players[&clientSocket].expired()) {
                     sf::Packet packet;
                     packet << NetworkMsg::ClientRespawn;

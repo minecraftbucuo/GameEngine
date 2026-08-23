@@ -55,11 +55,11 @@ void MarioRunState::update(const eng::Time& deltaTime) {
     }
 }
 
-void MarioRunState::handleEvent(const sf::Event& event) {
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::A) {
+void MarioRunState::handleEvent(const eng::EngineEvent& event) {
+    if (event.type == eng::EventType::KeyPress) {
+        if (event.key == eng::Key::A) {
             setIsLeft(true);
-        } else if (event.key.code == sf::Keyboard::D) {
+        } else if (event.key == eng::Key::D) {
             setIsLeft(false);
         }
     }

@@ -18,7 +18,7 @@ public:
 
     void init() override;
 
-    void handleEvent(sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 
     void exit() override;
 };

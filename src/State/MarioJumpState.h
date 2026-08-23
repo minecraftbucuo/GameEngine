@@ -47,11 +47,11 @@ public:
         }
     }
 #ifndef SERVER_BUILD
-    void handleEvent(const sf::Event& event) override {
-        if (event.type == sf::Event::KeyPressed) {
-            if (event.key.code == sf::Keyboard::A) {
+    void handleEvent(const eng::EngineEvent& event) override {
+        if (event.type == eng::EventType::KeyPress) {
+            if (event.key == eng::Key::A) {
                 setIsLeft(true);
-            } else if (event.key.code == sf::Keyboard::D) {
+            } else if (event.key == eng::Key::D) {
                 setIsLeft(false);
             }
         }

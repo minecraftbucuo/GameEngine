@@ -6,6 +6,7 @@
 #include <vector>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include "Core/Types.h"
+#include "Core/Event.h"
 #include "NetworkManager.h"
 #include "Camera.h"
 
@@ -51,7 +52,7 @@ public:
     virtual void render(sf::RenderWindow* _window);
 
     // 场景事件处理方法
-    virtual void handleEvent(sf::Event& event);
+    virtual void handleEvent(const eng::EngineEvent& event);
 #endif
 
     // 游戏对象管理

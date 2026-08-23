@@ -17,7 +17,7 @@ public:
 
     void start() override;
 
-    void handleEvent(sf::Event& e) override;
+    void handleEvent(const eng::EngineEvent& e) override;
 
     void update(eng::Time deltaTime) override;
 

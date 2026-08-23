@@ -6,6 +6,7 @@
 #include "PhysicsWorld.h"
 #include "ConfigManager.h"
 #include "Core/Types.h"
+#include "Core/Input.h"
 
 // 析构定义放这里，确保 PhysicsWorld 完整类型可见
 Scene::~Scene() {
@@ -63,14 +64,14 @@ void Scene::render(sf::RenderWindow* _window) {
     }
 }
 
-void Scene::handleEvent(sf::Event& event) {
+void Scene::handleEvent(const eng::EngineEvent& event) {
     if (camera) camera->handleEvent(event);
     // 必须用这种 for 循环，因为 game_objects 可能会改变，扩容导致迭代器失效
     for (int i = 0; i < game_objects.size(); ++i) {
         const auto& obj = game_objects[i];
         obj->handleEvent(event);
     }
-    if (camera && event.type == sf::Event::Resized) {
+    if (camera && event.type == eng::EventType::WindowResize) {
         camera->resize();
     }
 }
@@ -118,7 +119,7 @@ eng::Vec2i Scene::getMousePosition() const {
     if (!window || !camera) return {};
     const eng::Vec2f camera_center = camera->getCenter();
     const eng::Vec2u window_size = window->getSize();
-    eng::Vec2i mouse_position = sf::Mouse::getPosition(*window);
+    eng::Vec2i mouse_position = eng::Input::getMousePosition();
     mouse_position.x += static_cast<int>(camera_center.x - window_size.x * 0.5f);
     mouse_position.y += static_cast<int>(camera_center.y - window_size.y * 0.5f);
     return mouse_position;

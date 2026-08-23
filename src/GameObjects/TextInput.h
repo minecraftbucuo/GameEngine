@@ -14,7 +14,7 @@ public:
 
     void update(eng::Time deltaTime) override;
     void render(sf::RenderWindow* window) override;
-    void handleEvent(sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 
     void setString(const sf::String& str);
     [[nodiscard]] sf::String getString() const;

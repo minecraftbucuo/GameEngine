@@ -18,7 +18,7 @@ void StateMachine::render(sf::RenderWindow* window) {
     }
 }
 
-void StateMachine::handleEvent(const sf::Event& event) {
+void StateMachine::handleEvent(const eng::EngineEvent& event) {
     if (currentState) {
         currentState->handleEvent(event);
     }

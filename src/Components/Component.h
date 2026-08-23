@@ -6,6 +6,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "Core/Types.h"
+#include "Core/Event.h"
 
 class GameObject;
 
@@ -27,7 +28,7 @@ public:
     virtual void render(sf::RenderWindow* window) {
     }
 
-    virtual void handleEvent(const sf::Event& event) {
+    virtual void handleEvent(const eng::EngineEvent& event) {
     }
 
     void setOwner(GameObject* obj);

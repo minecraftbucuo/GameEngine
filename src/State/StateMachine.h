@@ -18,7 +18,7 @@ public:
 
     void render(sf::RenderWindow* window) override;
 
-    void handleEvent(const sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 
     template<typename T, typename... Args>
     void addState(Args&&... args) {

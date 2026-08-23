@@ -167,7 +167,7 @@ void SuperMarioScene::addObjectWithNetwork(const std::shared_ptr<GameObject>& ob
 }
 
 #ifndef SERVER_BUILD
-void SuperMarioScene::handleEvent(sf::Event& event) {
+void SuperMarioScene::handleEvent(const eng::EngineEvent& event) {
     simple_network.handleEvent(event);
 
     if (camera) camera->handleEvent(event);
@@ -177,13 +177,13 @@ void SuperMarioScene::handleEvent(sf::Event& event) {
         obj->handleEvent(event);
     }
 
-    if (event.type == sf::Event::MouseButtonPressed) {
+    if (event.type == eng::EventType::MouseButtonPress) {
         const eng::Vec2i pos = getMousePosition();
         LOG_TRACE_FMT("Mouse clicked at ({}, {})", pos.x, pos.y);
-    } else if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::Escape) {
+    } else if (event.type == eng::EventType::KeyPress) {
+        if (event.key == eng::Key::Escape) {
             getSceneManager()->loadScene("MenuScene");
-        } else if (event.key.code == sf::Keyboard::R && show_death_screen) {
+        } else if (event.key == eng::Key::R && show_death_screen) {
             show_death_screen = false;
             if (simple_network.getNetworkType() == NetworkManager::NetworkType::Server) {
                 std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);

@@ -49,14 +49,14 @@ void MarioIdleState::update(const eng::Time& deltaTime) {
     }
 }
 
-void MarioIdleState::handleEvent(const sf::Event& event) {
+void MarioIdleState::handleEvent(const eng::EngineEvent& event) {
     // 防止错误更新
     if (owner->getComponent<StateMachine>()->getCurrentStateName() != this->getName()) return;
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::A) {
+    if (event.type == eng::EventType::KeyPress) {
+        if (event.key == eng::Key::A) {
             setIsLeft(true);
         }
-        else if (event.key.code == sf::Keyboard::D) {
+        else if (event.key == eng::Key::D) {
             setIsLeft(false);
         }
     }

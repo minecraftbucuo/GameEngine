@@ -278,12 +278,21 @@ struct EngineEvent {
   3. `GameEngine` 主循环启动时需调 `eng::detail::setInputWindow(window)` 注册轮询窗口。
 
 #### Step 3 — handleEvent 链路切换
-- [ ] `Component / GameObject / Scene / SceneManager / Camera` 的 `handleEvent` 签名：
-      `sf::Event& → const EngineEvent&`
-- [ ] `GameEngine` 主循环：`pollEvent` 后经转换器分发
-- [ ] 所有 `handleEvent` 实现改用 EngineEvent 字段（MarioController、Controller、Camera、
-      Button/TextInput/Toggle、各场景，约 15 个文件）
+- [x] `Component / GameObject / Scene / SceneManager / Camera` 的 `handleEvent` 签名：
+      `sf::Event& → const eng::EngineEvent&`（含 `GameObject::handleComponents`）
+- [x] `GameEngine` 主循环：`pollEvent` 后经 `eng::toEngineEvent` 转换分发（nullopt 跳过）；
+      窗口创建后调 `eng::detail::setInputWindow(window)` 注册轮询窗口
+- [x] 所有 `handleEvent` 实现改用 EngineEvent 字段（MarioController、Controller、Camera、
+      Button/TextInput/Toggle、Mario 状态机 ×3、StateMachine、Mario、Cube3DWithController、
+      NetworkManager、GameScene/GameScene3D/SuperMarioScene/PhysicsTestScene，共 40 个文件
+      = 21 头 + 19 cpp）
+- [x] 轮询输入同切：PhysicsTestScene `isKeyPressed` → `eng::Input::isKeyPressed`；
+      6 处 `sf::Mouse::getPosition` → `eng::Input::getMousePosition`
+      （Camera、Scene::getMousePosition、Cube3DWithController ×2、PhysicsTestScene、主循环注册）
 - **验证**：全场景交互测试（A/D 移动、Space 跳、鼠标放球、相机拖动、窗口缩放、文本输入）
+- **已验证（静态）**：`sf::Event/Keyboard/Mouse` 全仓仅剩 3 个合法位置——
+      `GameEngine.cpp`（主循环唯一转换点）与 `Core/EventConvertSFML.h/.cpp`（脚手架本体）；
+      `BaseState` 继承 `Component`，全部 `override` 闭合
 - **原子性保证**：类型系统兜底——漏改处必然编译错误，不会静默行为异常
 
 ---

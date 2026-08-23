@@ -15,7 +15,7 @@ public:
 
     void update(const eng::Time& deltaTime) override;
 
-    void handleEvent(const sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 #ifndef SERVER_BUILD
     void render(sf::RenderWindow* window) override;
 #endif

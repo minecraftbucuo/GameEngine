@@ -44,7 +44,7 @@ public:
 
     void addObjectWithNetwork(const std::shared_ptr<GameObject>& obj) override;
 #ifndef SERVER_BUILD
-    void handleEvent(sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 #endif
     CollisionSystem* getCollisionSystem() const override {
         return collisionSystem.get();

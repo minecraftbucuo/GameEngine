@@ -11,6 +11,7 @@
 #include <typeindex>
 #include "Logger.h"
 #include "Core/Types.h"
+#include "Core/Event.h"
 
 class Scene;
 class PhysicsBodyComponent;
@@ -25,7 +26,7 @@ public:
     GameObject(float posX, float posY, float width, float height);
     virtual ~GameObject() = default;
 
-    virtual void handleEvent(sf::Event& e) {
+    virtual void handleEvent(const eng::EngineEvent& e) {
         handleComponents(e);
     }
 
@@ -168,7 +169,7 @@ public:
 
     void renderComponents(sf::RenderWindow* window);
 
-    void handleComponents(sf::Event& e);
+    void handleComponents(const eng::EngineEvent& e);
 
     static void resetIdCounter() {
         idCounter = 0;

@@ -13,6 +13,7 @@
 #include "MenuScene.h"
 #include "SettingsScene.h"
 #include "PhysicsTestScene.h"
+#include "Core/EventConvertSFML.h"
 #endif
 #include "SuperMarioScene.h"
 #include "FrameManager.h"
@@ -61,6 +62,8 @@ void GameEngine::init() {
 
     if (!window) window = new sf::RenderWindow(
         sf::VideoMode(CONFIG.window.width, CONFIG.window.height), CONFIG.window.title);
+    // 注册轮询窗口：eng::Input::getMousePosition 依赖（SDL3 迁移 Step 3）
+    eng::detail::setInputWindow(window);
 #endif
     scene_manager = std::make_shared<SceneManager>();
 #ifndef SERVER_BUILD
@@ -85,11 +88,14 @@ void GameEngine::start() const {
         const eng::Time deltaTime = clock.restart();
         sf::Event event{};
         while (window->pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
+            // sf::Event → EngineEvent 转换（SFML 特有事件被过滤）
+            const auto engineEvent = eng::toEngineEvent(event);
+            if (!engineEvent) continue;
+            if (engineEvent->type == eng::EventType::WindowClose) {
                 window->close();
                 break;
             }
-            scene_manager->handleEvent(event);
+            scene_manager->handleEvent(*engineEvent);
         }
         if (!window->isOpen()) break;
         scene_manager->update(deltaTime);

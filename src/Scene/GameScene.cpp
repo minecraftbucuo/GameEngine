@@ -73,9 +73,9 @@ void GameScene::addObject(const std::shared_ptr<GameObject>& obj) {
     }
 }
 
-void GameScene::handleEvent(sf::Event& event) {
+void GameScene::handleEvent(const eng::EngineEvent& event) {
     Scene::handleEvent(event);
-    if (event.type == sf::Event::Resized) {
+    if (event.type == eng::EventType::WindowResize) {
         for (const auto& obj : game_objects) {
             if (obj->getTag().substr(0, 6) == "ground") {
                 // obj->setSize(size.x, size.y);
@@ -84,11 +84,11 @@ void GameScene::handleEvent(sf::Event& event) {
                 break;
             }
         }
-    } else if (event.type == sf::Event::MouseButtonPressed) {
+    } else if (event.type == eng::EventType::MouseButtonPress) {
         const auto mouse_position = getMousePosition();
         addObject(std::make_shared<Circle>(mouse_position.x - 20, mouse_position.y - 20, 20.f));
-    } else if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::Escape) {
+    } else if (event.type == eng::EventType::KeyPress) {
+        if (event.key == eng::Key::Escape) {
             getSceneManager()->loadScene("MenuScene");
         }
     }

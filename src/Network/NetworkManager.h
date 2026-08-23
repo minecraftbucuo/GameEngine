@@ -12,6 +12,7 @@
 #include "ConfigManager.h"
 #include "GameObject.h"
 #include "TcpClient.h"
+#include "Core/Event.h"
 
 class Scene;
 
@@ -38,7 +39,7 @@ public:
 
     void update(const sf::Time& deltaTime);
 
-    void handleEvent(const sf::Event& event);
+    void handleEvent(const eng::EngineEvent& event);
 
     void serverUpdate(const sf::Time& deltaTime);
 

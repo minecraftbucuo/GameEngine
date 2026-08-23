@@ -83,17 +83,17 @@ void TextInput::render(sf::RenderWindow* window) {
     }
 }
 
-void TextInput::handleEvent(sf::Event& event) {
-    if (event.type == sf::Event::MouseButtonPressed) {
-        if (event.mouseButton.button == sf::Mouse::Left) {
+void TextInput::handleEvent(const eng::EngineEvent& event) {
+    if (event.type == eng::EventType::MouseButtonPress) {
+        if (event.mouseButton == eng::MouseButton::Left) {
             if (isMouseOver()) {
                 focused = true;
             } else {
                 focused = false;
             }
         }
-    } else if (event.type == sf::Event::TextEntered && focused) {
-        sf::Uint32 codePoint = event.text.unicode;
+    } else if (event.type == eng::EventType::TextEntered && focused) {
+        const char32_t codePoint = event.codepoint;
 
         // 过滤控制字符（除了退格）
         if (codePoint < 32 && codePoint != 8) {
@@ -123,13 +123,13 @@ void TextInput::handleEvent(sf::Event& event) {
             cursorBlinkTimer = 0.f;
             cursorVisible = true;
         }
-    } else if (event.type == sf::Event::KeyPressed && focused) {
-        if (event.key.code == sf::Keyboard::Enter) {
+    } else if (event.type == eng::EventType::KeyPress && focused) {
+        if (event.key == eng::Key::Enter) {
             if (onConfirm) {
                 onConfirm(text);
             }
             focused = false;
-        } else if (event.key.code == sf::Keyboard::Escape) {
+        } else if (event.key == eng::Key::Escape) {
             focused = false;
         }
     }

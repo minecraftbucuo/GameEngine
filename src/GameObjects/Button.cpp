@@ -66,14 +66,14 @@ void Button::render(sf::RenderWindow* window) {
     window->draw(text);
 }
 
-void Button::handleEvent(sf::Event& event) {
-    if (event.type == sf::Event::MouseMoved) {
+void Button::handleEvent(const eng::EngineEvent& event) {
+    if (event.type == eng::EventType::MouseMove) {
         is_hover = isMouseOver();
-    } else if (event.type == sf::Event::MouseButtonPressed) {
+    } else if (event.type == eng::EventType::MouseButtonPress) {
         if (is_hover) {
             is_pressed = true;
         }
-    } else if (event.type == sf::Event::MouseButtonReleased) {
+    } else if (event.type == eng::EventType::MouseButtonRelease) {
         if (is_pressed && is_hover && onClick) onClick();
         is_pressed = false;
     }

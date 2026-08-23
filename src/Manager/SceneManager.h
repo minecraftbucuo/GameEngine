@@ -8,13 +8,14 @@
 #include <unordered_map>
 #include "Scene.h"
 #include "Core/Types.h"
+#include "Core/Event.h"
 
 class SceneManager {
 public:
     SceneManager() = default;
     ~SceneManager() = default;
 #ifndef SERVER_BUILD
-    void handleEvent(sf::Event& event) const {
+    void handleEvent(const eng::EngineEvent& event) const {
         currentScene->handleEvent(event);
     }
 #endif

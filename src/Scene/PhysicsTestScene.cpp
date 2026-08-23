@@ -3,6 +3,7 @@
 //
 
 #include "Core/Types.h"
+#include "Core/Input.h"
 #ifndef SERVER_BUILD
 #include "PhysicsTestScene.h"
 #include "GameObject.h"
@@ -40,8 +41,8 @@ public:
         window->draw(shape);
     }
 
-    void handleEvent(sf::Event& event) override {
-        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
+    void handleEvent(const eng::EngineEvent& event) override {
+        if (event.type == eng::EventType::KeyPress && event.key == eng::Key::Space) {
             if (onGround) {
                 auto phys = getComponent<PhysicsBodyComponent>();
                 if (phys && phys->getBody()) {
@@ -63,8 +64,8 @@ public:
 
         // 左右移动（只改 x，保留 y 速度）
         b2Vec2 v = phys->getBody()->GetLinearVelocity();
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) v.x = -20;
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) v.x = 20;
+        if (eng::Input::isKeyPressed(eng::Key::A)) v.x = -20;
+        else if (eng::Input::isKeyPressed(eng::Key::D)) v.x = 20;
         else v.x = 0;
         phys->getBody()->SetLinearVelocity(v);
     }
@@ -236,20 +237,20 @@ void PhysicsTestScene::init() {
     addObjectWithMap(std::make_shared<PhysicsBox>(100, 200, 40, 40, eng::Color(200, 100, 255)));
 }
 
-void PhysicsTestScene::handleEvent(sf::Event& event) {
+void PhysicsTestScene::handleEvent(const eng::EngineEvent& event) {
     Scene::handleEvent(event);
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::Escape) {
+    if (event.type == eng::EventType::KeyPress) {
+        if (event.key == eng::Key::Escape) {
             getSceneManager()->loadScene("MenuScene");
         }
-        if (event.key.code == sf::Keyboard::R) {
+        if (event.key == eng::Key::R) {
             exit();
             getSceneManager()->loadScene("PhysicsTestScene");
         }
     }
     // 鼠标点击放球
-    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-        eng::Vec2i mousePos = sf::Mouse::getPosition(*window);
+    if (event.type == eng::EventType::MouseButtonPress && event.mouseButton == eng::MouseButton::Left) {
+        eng::Vec2i mousePos = eng::Input::getMousePosition();
         eng::Vec2f worldPos = window->mapPixelToCoords(mousePos);
         auto ball = std::make_shared<PhysicsBall>(worldPos.x - 20.f, worldPos.y - 20.f, 20.0f);
         addObjectWithMap(ball); // 先设置 scene

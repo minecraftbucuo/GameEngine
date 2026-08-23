@@ -17,7 +17,7 @@ public:
     void update(const eng::Time deltaTime) override {
     }
 
-    void handleEvent(sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 
 private:
     bool mouse_is_pressed{};

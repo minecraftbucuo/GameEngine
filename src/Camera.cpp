@@ -4,6 +4,7 @@
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Camera.h"
+#include "Core/Input.h"
 #include <SFML/Graphics.hpp>
 
 Camera::Camera(sf::RenderWindow* window) {
@@ -64,24 +65,24 @@ void Camera::addPosition(const eng::Vec2i& pos) {
     updateView();
 }
 
-void Camera::handleEvent(const sf::Event& event) {
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::Up) {
+void Camera::handleEvent(const eng::EngineEvent& event) {
+    if (event.type == eng::EventType::KeyPress) {
+        if (event.key == eng::Key::Up) {
             this->floatRect.top -= 20;
             updateView();
-        } else if (event.key.code == sf::Keyboard::Down) {
+        } else if (event.key == eng::Key::Down) {
             this->floatRect.top += 20;
             updateView();
-        } else if (event.key.code == sf::Keyboard::Left) {
+        } else if (event.key == eng::Key::Left) {
             this->floatRect.left -= 20;
             updateView();
-        } else if (event.key.code == sf::Keyboard::Right) {
+        } else if (event.key == eng::Key::Right) {
             this->floatRect.left += 20;
             updateView();
         }
-    } else if (event.type == sf::Event::MouseWheelScrolled) {
+    } else if (event.type == eng::EventType::MouseWheel) {
         float scale;
-        if (event.mouseWheelScroll.delta > 0) {
+        if (event.wheelDelta > 0) {
             scale = 0.9f;
         } else {
             scale = 1.f / 0.9f;
@@ -91,15 +92,15 @@ void Camera::handleEvent(const sf::Event& event) {
         updateView();
     }
 
-    if (mouseControl && event.type == sf::Event::MouseButtonPressed) {
+    if (mouseControl && event.type == eng::EventType::MouseButtonPress) {
         isPressed = true;
-        mousePos = sf::Mouse::getPosition(*window);
+        mousePos = eng::Input::getMousePosition();
     }
-    if (mouseControl && event.type == sf::Event::MouseButtonReleased) {
+    if (mouseControl && event.type == eng::EventType::MouseButtonRelease) {
         isPressed = false;
     }
-    if (mouseControl && isPressed && event.type == sf::Event::MouseMoved) {
-        const auto pos = sf::Mouse::getPosition(*window);
+    if (mouseControl && isPressed && event.type == eng::EventType::MouseMove) {
+        const auto pos = eng::Input::getMousePosition();
         addPosition(mousePos - pos);
         mousePos = pos;
     }

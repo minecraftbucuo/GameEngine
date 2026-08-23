@@ -8,19 +8,19 @@
 #include "GameObject.h"
 #include "MoveComponent.h"
 
-void Controller::handleEvent(const sf::Event& event) {
+void Controller::handleEvent(const eng::EngineEvent& event) {
     std::shared_ptr<MoveComponent> moveComponent = owner->getComponent<MoveComponent>();
     if (!moveComponent) {
         moveComponent = owner->addComponent<MoveComponent>();
     }
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::A) {
+    if (event.type == eng::EventType::KeyPress) {
+        if (event.key == eng::Key::A) {
             moveComponent->setSpeedX(-500.f);
         }
-        if (event.key.code == sf::Keyboard::D) {
+        if (event.key == eng::Key::D) {
             moveComponent->setSpeedX(500.f);
         }
-        if (event.key.code == sf::Keyboard::W) {
+        if (event.key == eng::Key::W) {
             moveComponent->setSpeedY(-1200.f);
         }
     }

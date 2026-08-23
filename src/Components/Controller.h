@@ -9,6 +9,6 @@
 
 class Controller : public Component {
 public:
-    void handleEvent(const sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 };
 

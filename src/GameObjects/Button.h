@@ -17,7 +17,7 @@ public:
 
     void render(sf::RenderWindow* window) override;
 
-    void handleEvent(sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 
     bool isMouseOver() const;
 

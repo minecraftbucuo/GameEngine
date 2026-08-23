@@ -15,7 +15,7 @@ class MarioController : public Component {
 public:
     void start() override;
 
-    void handleEvent(const sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 
     void update(const eng::Time& deltaTime) override;
 

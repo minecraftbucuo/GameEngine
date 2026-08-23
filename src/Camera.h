@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Core/Types.h"
+#include "Core/Event.h"
 #ifndef SERVER_BUILD
 #include <SFML/Graphics/RenderWindow.hpp>
 
@@ -32,7 +33,7 @@ public:
 
     void addPosition(const eng::Vec2i& pos);
 
-    void handleEvent(const sf::Event& event);
+    void handleEvent(const eng::EngineEvent& event);
 
     eng::Vec2f getViewSize() const;
 

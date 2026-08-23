@@ -56,8 +56,8 @@ void Toggle::render(sf::RenderWindow* window) {
     window->draw(knob);
 }
 
-void Toggle::handleEvent(sf::Event& event) {
-    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+void Toggle::handleEvent(const eng::EngineEvent& event) {
+    if (event.type == eng::EventType::MouseButtonPress && event.mouseButton == eng::MouseButton::Left) {
         if (isMouseOver()) {
             state = !state;
             targetKnobX = state ? (position.x + size.x - size.y * 0.5f) : (position.x + size.y * 0.5f);

@@ -25,7 +25,7 @@ public:
 
     void addObject(const std::shared_ptr<GameObject>& obj) override;
 
-    void handleEvent(sf::Event& event) override;
+    void handleEvent(const eng::EngineEvent& event) override;
 
     [[nodiscard]] CollisionSystem* getCollisionSystem() const override;
 

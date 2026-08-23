@@ -5,6 +5,7 @@
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "Cube3DWithController.h"
+#include "Core/Input.h"
 #include "Scene.h"
 
 Cube3DWithController::Cube3DWithController() {
@@ -18,19 +19,19 @@ void Cube3DWithController::start() {
     }
 }
 
-void Cube3DWithController::handleEvent(sf::Event& event) {
-    if (event.type == sf::Event::MouseButtonPressed) {
+void Cube3DWithController::handleEvent(const eng::EngineEvent& event) {
+    if (event.type == eng::EventType::MouseButtonPress) {
         mouse_is_pressed = true;
-        mousePos = sf::Mouse::getPosition(*getScene()->getWindow());
-    } else if (event.type == sf::Event::MouseButtonReleased) {
+        mousePos = eng::Input::getMousePosition();
+    } else if (event.type == eng::EventType::MouseButtonRelease) {
         mouse_is_pressed = false;
         for (auto& point : model->points) {
             point = rotate(point);
         }
         angleXZ = 0.0f;
         angleYZ = 0.0f;
-    } else if (event.type == sf::Event::MouseMoved) {
-        const eng::Vec2i pos = sf::Mouse::getPosition(*getScene()->getWindow());
+    } else if (event.type == eng::EventType::MouseMove) {
+        const eng::Vec2i pos = eng::Input::getMousePosition();
         if (mouse_is_pressed) {
             const eng::Vec2i delta = pos - mousePos;
             angleYZ -= delta.y * 0.01f;

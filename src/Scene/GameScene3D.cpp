@@ -19,9 +19,9 @@ void GameScene3D::init() {
     // this->addObject(std::make_shared<Human3D>());
 }
 
-void GameScene3D::handleEvent(sf::Event& event) {
+void GameScene3D::handleEvent(const eng::EngineEvent& event) {
     Scene::handleEvent(event);
-    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+    if (event.type == eng::EventType::KeyPress && event.key == eng::Key::Escape) {
         this->getSceneManager()->loadScene("MenuScene");
     }
 }

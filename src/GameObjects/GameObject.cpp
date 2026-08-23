@@ -54,7 +54,7 @@ void GameObject::renderComponents(sf::RenderWindow* window) {
     }
 }
 
-void GameObject::handleComponents(sf::Event& e) {
+void GameObject::handleComponents(const eng::EngineEvent& e) {
     for (const auto& key : components_vector) {
         auto it = components.find(key);
         if (it == components.end()) {

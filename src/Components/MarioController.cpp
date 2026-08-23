@@ -24,29 +24,29 @@ void MarioController::start() {
     shoot_timer.setCallback([&]() -> void { could_shoot = true; });
 }
 
-void MarioController::handleEvent(const sf::Event& event) {
+void MarioController::handleEvent(const eng::EngineEvent& event) {
     if (!is_player) return;
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::A) {
+    if (event.type == eng::EventType::KeyPress) {
+        if (event.key == eng::Key::A) {
             runLeft();
         }
-        if (event.key.code == sf::Keyboard::D) {
+        if (event.key == eng::Key::D) {
             runRight();
         }
-        if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Space) {
+        if (event.key == eng::Key::W || event.key == eng::Key::Space) {
             jump();
         }
-        if (event.key.code == sf::Keyboard::J) {
+        if (event.key == eng::Key::J) {
             shoot();
         }
-    } else if (event.type == sf::Event::KeyReleased) {
-        if (event.key.code == sf::Keyboard::A) {
+    } else if (event.type == eng::EventType::KeyRelease) {
+        if (event.key == eng::Key::A) {
             stopRun();
         }
-        if (event.key.code == sf::Keyboard::D) {
+        if (event.key == eng::Key::D) {
             stopRun();
         }
-        if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Space) {
+        if (event.key == eng::Key::W || event.key == eng::Key::Space) {
             w_is_pressed = false;
             auto* nm = owner->getScene()->getNetworkManager();
             if (nm && nm->isClient()) {

@@ -83,7 +83,7 @@ void Mario::start() {
     );
 }
 
-void Mario::handleEvent(sf::Event& e) {
+void Mario::handleEvent(const eng::EngineEvent& e) {
     if (isPlayer) GameObject::handleEvent(e);
 }
 
