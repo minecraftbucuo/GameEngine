@@ -16,7 +16,7 @@ Scene::~Scene() {
 
 void Scene::init() {
 #ifndef SERVER_BUILD
-    this->setCamera(window);
+    this->setCamera(renderer);
 #endif
     GameObject::resetIdCounter();
     // 仅当场景启用物理时创建物理世界
@@ -52,6 +52,11 @@ void Scene::update(eng::Time deltaTime) {
 }
 
 #ifndef SERVER_BUILD
+// SDL3 迁移 Step 6a：新签名默认转发旧路径（已迁移场景覆盖此函数，Step 6e 移除转发）
+void Scene::render(eng::Renderer& _renderer) {
+    render(_renderer.getSfmlWindow());
+}
+
 void Scene::render(sf::RenderWindow* _window) {
     for (const auto& obj : game_objects) {
         if (obj->isActive()) {
@@ -116,9 +121,9 @@ physics::PhysicsWorld* Scene::getPhysicsWorld() const {
 
 #ifndef SERVER_BUILD
 eng::Vec2i Scene::getMousePosition() const {
-    if (!window || !camera) return {};
+    if (!renderer || !camera) return {};
     const eng::Vec2f camera_center = camera->getCenter();
-    const eng::Vec2u window_size = window->getSize();
+    const eng::Vec2u window_size = renderer->getSize();
     eng::Vec2i mouse_position = eng::Input::getMousePosition();
     mouse_position.x += static_cast<int>(camera_center.x - window_size.x * 0.5f);
     mouse_position.y += static_cast<int>(camera_center.y - window_size.y * 0.5f);

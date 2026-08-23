@@ -64,7 +64,10 @@ public:
 
     // 【临时过渡 API — Step 6e 删除】
     // 供尚未迁移到 Renderer 绘制命令的旧渲染路径（Scene::getWindow 等）取底层窗口
-    [[nodiscard]] sf::RenderWindow* getSfmlWindow() const;
+    // 类内 inline 定义：服务端构建（无 RendererSFML.cpp）被 vtable 引用时也不产生外部符号依赖
+    [[nodiscard]] sf::RenderWindow* getSfmlWindow() const {
+        return window;
+    }
 
 private:
     sf::RenderWindow* window{};   // 脚手架期内部持有；SDL3 期换 SDL_Window*/SDL_Renderer*

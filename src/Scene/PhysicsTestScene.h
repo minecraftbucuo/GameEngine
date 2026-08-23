@@ -12,7 +12,7 @@ class PhysicsPlayer;
 
 class PhysicsTestScene : public Scene {
 public:
-    explicit PhysicsTestScene(sf::RenderWindow* _window) : Scene(_window, "PhysicsTestScene") {
+    explicit PhysicsTestScene(eng::Renderer* _renderer) : Scene(_renderer, "PhysicsTestScene") {
         usePhysics = true;
     }
     ~PhysicsTestScene() override = default;

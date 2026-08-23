@@ -6,14 +6,14 @@
 #include "Core/Types.h"
 #include "Core/Event.h"
 #ifndef SERVER_BUILD
-#include <SFML/Graphics/RenderWindow.hpp>
+#include "Render/Renderer.h"
 
 class Camera {
 public:
     Camera() = default;
-    explicit Camera(sf::RenderWindow* window);
+    explicit Camera(eng::Renderer* renderer);
 
-    void init(sf::RenderWindow* _window);
+    void init(eng::Renderer* _renderer);
 
     void init();
 
@@ -38,9 +38,9 @@ public:
     eng::Vec2f getViewSize() const;
 
 private:
+    // left/top 语义为可视区左上角（与原 sf::View(FloatRect) 构造语义一致）
     eng::FloatRect floatRect;
-    sf::View view;
-    sf::RenderWindow* window{};
+    eng::Renderer* renderer{};
     bool mouseControl = false;
     eng::Vec2i mousePos;
     bool isPressed = false;

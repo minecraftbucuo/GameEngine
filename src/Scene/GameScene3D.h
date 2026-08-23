@@ -13,7 +13,7 @@
 
 class GameScene3D : public Scene {
 public:
-    explicit GameScene3D(sf::RenderWindow* _window) : Scene(_window, "GameScene3D") {}
+    explicit GameScene3D(eng::Renderer* _renderer) : Scene(_renderer, "GameScene3D") {}
     ~GameScene3D() override = default;
 
     void init() override;

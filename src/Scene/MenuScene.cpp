@@ -10,13 +10,13 @@
 #include "SceneManager.h"
 #include <random>
 
-MenuScene::MenuScene(sf::RenderWindow* _window) : Scene(_window, "MenuScene") {
+MenuScene::MenuScene(eng::Renderer* _renderer) : Scene(_renderer, "MenuScene") {
     title.setString(L"GameEngine");
     title.setFillColor(eng::Color::Yellow);
     title.setFont(AssetManager::getInstance().getFont());
     title.setScale(3.f, 3.f);
-    title.setPosition(_window->getSize().x * 0.5f - title.getGlobalBounds().width * 0.5f,
-                      _window->getSize().y * 0.18f);
+    title.setPosition(_renderer->getSize().x * 0.5f - title.getGlobalBounds().width * 0.5f,
+                      _renderer->getSize().y * 0.18f);
 }
 
 void MenuScene::init() {

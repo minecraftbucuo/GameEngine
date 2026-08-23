@@ -12,12 +12,12 @@
 #include "Button.h"
 #include "ConfigManager.h"
 
-SettingsScene::SettingsScene(sf::RenderWindow* _window) : Scene(_window, "SettingsScene") {
+SettingsScene::SettingsScene(eng::Renderer* _renderer) : Scene(_renderer, "SettingsScene") {
     title.setString(L"设置");
     title.setFont(AssetManager::getInstance().getFont());
     title.setCharacterSize(48);
     title.setFillColor(eng::Color::White);
-    title.setPosition(_window->getSize().x * 0.5f - title.getGlobalBounds().width * 0.5f, 50.f);
+    title.setPosition(_renderer->getSize().x * 0.5f - title.getGlobalBounds().width * 0.5f, 50.f);
 }
 
 void SettingsScene::init() {

@@ -333,9 +333,25 @@ struct EngineEvent {
       行为差异理论为零（事件经同一转换器，语义不变）
 
 #### Step 6 — render 链路渐进切换（5 个子提交，每个可独立运行）
-- [ ] **6a 基类与基础设施**：`Scene/GameObject/Component/SceneManager` 的 render 签名
-      `sf::RenderWindow* → Renderer&`；`Camera` 内部改用 `Renderer::setCamera`
-      （去掉 `sf::View` 成员）；`Scene::getMousePosition` 改用 `screenToWorld`
+- [x] **6a 基类与基础设施**（双签名转发方案）：
+      - `Component/GameObject/Scene` 新增 `render(eng::Renderer&)`，**默认实现转发旧签名**
+        （未迁移的子类经转发走原 `render(sf::RenderWindow*)` 路径，行为零变化）；
+        旧签名保留至 6e
+      - `SceneManager::render` 切换到 `Renderer&`（唯一调用点 GameEngine 主循环同步）
+      - `Scene` 构造改收 `eng::Renderer*`；新增 `getRenderer()`；`window` 成员保留为过渡
+        （= `renderer->getSfmlWindow()`，6e 删除）；`getWindowSize/getMousePosition` 切 renderer
+      - **Camera 彻底去 SFML**：`sf::View/sf::RenderWindow` 成员删除，内部改持 `eng::Renderer*`。
+        floatRect.left/top 语义为**可视区左上角**（原 `sf::View(FloatRect)` 构造语义：
+        矩形中心成为视图中心），`updateView()` 换算 `left+width/2, top+height/2` 后映射
+        `Renderer::setCamera(center, size)`（曾误判为中心语义导致全场景视图偏移半屏，已修复）；
+        `getCenter()` 同步返回 `left+width/2, top+height/2`（与原 `view.getCenter()` 一致）
+      - 6 个场景构造签名 `sf::RenderWindow* → eng::Renderer*`（机械替换，渲染主体不动）
+      - `GameEngine`：`addScene<X>(&renderer)`、`scene_manager->render(renderer)`
+      - **服务端链接安全**：`Renderer::getSfmlWindow` 改类内 inline 定义——
+        Component 基类新 render 内联体引用它，而 RendererSFML.cpp 被 SERVER_BUILD 排除，
+        inline 定义避免服务端 vtable 缺符号
+- **验证**：编译通过（客户端+服务端两版本）；各场景渲染与 Step 5 完全一致
+  （全部经默认转发走旧路径）；PhysicsTest 相机拖动/缩放/方向键正常（Camera 已换实现）
 - [ ] **6b 物理场景**：PhysicsTestScene 5 处 + PhysicsDebugDraw 13 处 → 绘制命令
 - [ ] **6c Mario 系**：SuperMarioScene 3 处、4 个 State 共 7 处、Animation、Brick、FireBall、Box
 - [ ] **6d UI 场景**：Button 6 处、Toggle 4 处、TextInput 4 处、MenuScene 2 处、SettingsScene 2 处

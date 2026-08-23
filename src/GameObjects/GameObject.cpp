@@ -42,6 +42,19 @@ void GameObject::updateComponents(eng::Time deltaTime) {
     }
 }
 
+// SDL3 迁移 Step 6a：新签名遍历组件调新 render（组件基类默认转发旧实现，行为不变）
+void GameObject::renderComponents(eng::Renderer& renderer) {
+    for (const auto& key : components_vector) {
+        auto it = components.find(key);
+        if (it == components.end()) {
+            LOG_ERROR_FMT("Component not found: {}", key.name());
+            continue;
+        }
+        if (it->second->getActive())
+            it->second->render(renderer);
+    }
+}
+
 void GameObject::renderComponents(sf::RenderWindow* window) {
     for (const auto& key : components_vector) {
         auto it = components.find(key);

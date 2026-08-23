@@ -17,8 +17,10 @@ namespace physics { class PhysicsWorld; }
 class Scene {
 public:
 #ifndef SERVER_BUILD
-    explicit Scene(sf::RenderWindow* _window) : window(_window), scene_name("Scene") {}
-    explicit Scene(sf::RenderWindow* _window, std::string _name) : window(_window), scene_name(std::move(_name)) {}
+    explicit Scene(eng::Renderer* _renderer)
+        : renderer(_renderer), window(_renderer ? _renderer->getSfmlWindow() : nullptr), scene_name("Scene") {}
+    explicit Scene(eng::Renderer* _renderer, std::string _name)
+        : renderer(_renderer), window(_renderer ? _renderer->getSfmlWindow() : nullptr), scene_name(std::move(_name)) {}
 #else
     explicit Scene() : scene_name("Scene") {}
     explicit Scene(std::string _name) : scene_name(std::move(_name)) {}
@@ -49,6 +51,10 @@ public:
 
     // 场景渲染方法
 #ifndef SERVER_BUILD
+    // SDL3 迁移 Step 6a：新渲染签名（默认转发旧签名，场景逐个覆盖迁移，Step 6e 移除旧签名）
+    virtual void render(eng::Renderer& _renderer);
+
+    // 【过渡期旧签名 — Step 6e 删除】
     virtual void render(sf::RenderWindow* _window);
 
     // 场景事件处理方法
@@ -76,18 +82,22 @@ public:
     void removeObjectById(unsigned int id);
 #ifndef SERVER_BUILD
     // 相机管理
-    void setCamera(sf::RenderWindow* _window) {
-        camera = std::make_unique<Camera>(_window);
+    void setCamera(eng::Renderer* _renderer) {
+        camera = std::make_unique<Camera>(_renderer);
     }
 
     [[nodiscard]] Camera* getCamera() const {
         return camera.get();
     }
+
+    [[nodiscard]] eng::Renderer* getRenderer() const {
+        return renderer;
+    }
 #endif
 
 #ifndef SERVER_BUILD
     [[nodiscard]] eng::Vec2u getWindowSize() const {
-        return window->getSize();
+        return renderer->getSize();
     }
 #else
     static eng::Vec2u getWindowSize() {
@@ -114,6 +124,7 @@ public:
     }
 
 #ifndef SERVER_BUILD
+    // 【过渡期旧 API — Step 6e 删除】场景内部 window->draw 调用逐步迁移到 Renderer 绘制命令
     [[nodiscard]] sf::RenderWindow* getWindow() const {
         return window;
     }
@@ -139,7 +150,8 @@ protected:
     std::unordered_map<unsigned int, std::shared_ptr<GameObject>> game_objects_map;
 
 #ifndef SERVER_BUILD
-    sf::RenderWindow* window{};
+    eng::Renderer* renderer{};
+    sf::RenderWindow* window{};   // 【过渡期成员 — Step 6e 删除】= renderer->getSfmlWindow()
     std::unique_ptr<Camera> camera;
 #endif
 

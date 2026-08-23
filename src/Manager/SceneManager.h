@@ -22,8 +22,9 @@ public:
 
     void update(eng::Time deltaTime) const;
 #ifndef SERVER_BUILD
-    void render(sf::RenderWindow* window) const {
-        currentScene->render(window);
+    // SDL3 迁移 Step 6a：render 分发切换到 Renderer（唯一调用点 GameEngine 主循环已同步）
+    void render(eng::Renderer& renderer) const {
+        currentScene->render(renderer);
     }
 #endif
 

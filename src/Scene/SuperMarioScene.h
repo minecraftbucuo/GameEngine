@@ -12,7 +12,7 @@
 class SuperMarioScene : public Scene {
 public:
 #ifndef SERVER_BUILD
-    explicit SuperMarioScene(sf::RenderWindow* _window) : Scene(_window, "SuperMarioScene") {
+    explicit SuperMarioScene(eng::Renderer* _renderer) : Scene(_renderer, "SuperMarioScene") {
     }
 #else
     explicit SuperMarioScene() : Scene("SuperMarioScene") { }

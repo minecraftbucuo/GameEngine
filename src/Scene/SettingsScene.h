@@ -12,7 +12,7 @@ class Toggle;
 
 class SettingsScene : public Scene {
 public:
-    explicit SettingsScene(sf::RenderWindow* _window);
+    explicit SettingsScene(eng::Renderer* _renderer);
     ~SettingsScene() override = default;
 
     void init() override;

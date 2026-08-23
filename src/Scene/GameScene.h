@@ -14,7 +14,7 @@ class GameObject;
 
 class GameScene : public Scene {
 public:
-    explicit GameScene(sf::RenderWindow* _window) : Scene(_window, "GameScene") {}
+    explicit GameScene(eng::Renderer* _renderer) : Scene(_renderer, "GameScene") {}
     ~GameScene() override = default;
 
     void init() override;

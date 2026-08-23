@@ -9,7 +9,7 @@
 
 class MenuScene : public Scene {
 public:
-    explicit MenuScene(sf::RenderWindow* _window);
+    explicit MenuScene(eng::Renderer* _renderer);
     ~MenuScene() override = default;
 
     void init() override;

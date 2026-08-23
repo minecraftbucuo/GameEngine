@@ -60,13 +60,13 @@ void GameEngine::init() {
 #endif
     scene_manager = std::make_shared<SceneManager>();
 #ifndef SERVER_BUILD
-    // 过渡期：场景仍接收 sf::RenderWindow*（Step 6a 起改为 Renderer&）
-    scene_manager->addScene<GameScene>(renderer.getSfmlWindow());
-    scene_manager->addScene<GameScene3D>(renderer.getSfmlWindow());
-    scene_manager->addScene<SuperMarioScene>(renderer.getSfmlWindow());
-    scene_manager->addScene<MenuScene>(renderer.getSfmlWindow());
-    scene_manager->addScene<SettingsScene>(renderer.getSfmlWindow());
-    scene_manager->addScene<PhysicsTestScene>(renderer.getSfmlWindow());
+    // SDL3 迁移 Step 6a：场景统一持有 Renderer（内部过渡期仍可取 sf::RenderWindow*）
+    scene_manager->addScene<GameScene>(&renderer);
+    scene_manager->addScene<GameScene3D>(&renderer);
+    scene_manager->addScene<SuperMarioScene>(&renderer);
+    scene_manager->addScene<MenuScene>(&renderer);
+    scene_manager->addScene<SettingsScene>(&renderer);
+    scene_manager->addScene<PhysicsTestScene>(&renderer);
     scene_manager->loadScene("MenuScene");
 #else
     scene_manager->addScene<SuperMarioScene>();
@@ -91,8 +91,8 @@ void GameEngine::start() {
         if (!renderer.isWindowOpen()) break;
         scene_manager->update(deltaTime);
         renderer.clear();
-        // 过渡期：场景渲染仍走旧 sf::RenderWindow 路径（Step 6a~6e 渐进切换）
-        scene_manager->render(renderer.getSfmlWindow());
+        // SDL3 迁移 Step 6a：渲染分发走 Renderer（未迁移场景经默认转发走旧路径）
+        scene_manager->render(renderer);
         renderer.present();
     }
 }

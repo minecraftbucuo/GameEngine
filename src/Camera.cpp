@@ -5,28 +5,28 @@
 #ifndef SERVER_BUILD
 #include "Camera.h"
 #include "Core/Input.h"
-#include <SFML/Graphics.hpp>
 
-Camera::Camera(sf::RenderWindow* window) {
-    init(window);
+Camera::Camera(eng::Renderer* renderer) {
+    init(renderer);
 }
 
-void Camera::init(sf::RenderWindow* _window) {
-    this->window = _window;
+void Camera::init(eng::Renderer* _renderer) {
+    this->renderer = _renderer;
+    const eng::Vec2u size = renderer->getSize();
     this->floatRect = eng::FloatRect(0, 0,
-                    static_cast<float>(window->getSize().x),
-                    static_cast<float>(window->getSize().y));
-    this->view = sf::View(floatRect);
-    window->setView(view);
+                    static_cast<float>(size.x),
+                    static_cast<float>(size.y));
+    updateView();
 }
 
 void Camera::init() {
-    if (window) this->resize();
+    if (renderer) this->resize();
 }
 
 void Camera::resize() {
-    this->floatRect.width = static_cast<float>(window->getSize().x);
-    this->floatRect.height = static_cast<float>(window->getSize().y);
+    const eng::Vec2u size = renderer->getSize();
+    this->floatRect.width = static_cast<float>(size.x);
+    this->floatRect.height = static_cast<float>(size.y);
     updateView();
 }
 
@@ -56,7 +56,8 @@ void Camera::setMouseControl(const bool flag) {
 }
 
 eng::Vec2f Camera::getCenter() const {
-    return view.getCenter();
+    return {floatRect.left + floatRect.width * 0.5f,
+            floatRect.top + floatRect.height * 0.5f};
 }
 
 void Camera::addPosition(const eng::Vec2i& pos) {
@@ -111,7 +112,10 @@ eng::Vec2f Camera::getViewSize() const {
 }
 
 void Camera::updateView() {
-    view = sf::View(floatRect);
-    window->setView(view);
+    // floatRect.left/top 为可视区左上角（原 sf::View(FloatRect) 构造语义），
+    // Renderer::setCamera 收中心坐标，在此换算
+    renderer->setCamera(eng::Vec2f(floatRect.left + floatRect.width * 0.5f,
+                                   floatRect.top + floatRect.height * 0.5f),
+                        eng::Vec2f(floatRect.width, floatRect.height));
 }
 #endif

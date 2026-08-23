@@ -34,6 +34,12 @@ public:
         updateComponents(deltaTime);
     }
 
+    // SDL3 迁移 Step 6a：新渲染签名（组件逐个迁移到 Renderer 绘制命令，Step 6e 移除旧签名）
+    virtual void render(eng::Renderer& renderer) {
+        renderComponents(renderer);
+    }
+
+    // 【过渡期旧签名 — Step 6e 删除】
     virtual void render(sf::RenderWindow* window) {
         renderComponents(window);
     }
@@ -167,6 +173,9 @@ public:
 
     void updateComponents(eng::Time deltaTime);
 
+    void renderComponents(eng::Renderer& renderer);
+
+    // 【过渡期旧签名 — Step 6e 删除】
     void renderComponents(sf::RenderWindow* window);
 
     void handleComponents(const eng::EngineEvent& e);

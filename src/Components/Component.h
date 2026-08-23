@@ -7,6 +7,7 @@
 #include <SFML/Graphics.hpp>
 #include "Core/Types.h"
 #include "Core/Event.h"
+#include "Render/Renderer.h"
 
 class GameObject;
 
@@ -25,6 +26,14 @@ public:
     virtual void update(const eng::Time& deltaTime) {
     }
 
+    // SDL3 迁移 Step 6a：新渲染签名（默认转发旧签名，组件逐个覆盖迁移，Step 6e 移除旧签名）
+    virtual void render(eng::Renderer& renderer) {
+        if (sf::RenderWindow* w = renderer.getSfmlWindow()) {
+            render(w);
+        }
+    }
+
+    // 【过渡期旧签名 — Step 6e 删除】
     virtual void render(sf::RenderWindow* window) {
     }
 

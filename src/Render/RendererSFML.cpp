@@ -179,11 +179,7 @@ Vec2f Renderer::screenToWorld(const Vec2i screenPos) const {
     return window->mapPixelToCoords(screenPos);
 }
 
-// ── 临时过渡 API ──
-
-sf::RenderWindow* Renderer::getSfmlWindow() const {
-    return window;
-}
+// getSfmlWindow 为 Renderer.h 类内 inline 定义（服务端构建无本文件也能链接）
 
 } // namespace eng
 
