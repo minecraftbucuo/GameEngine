@@ -9,20 +9,19 @@
 #ifndef SERVER_BUILD
 
 #include <box2d/box2d.h>
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/Graphics/Color.hpp>
+#include "Render/Renderer.h"
 
 namespace physics {
 
-// Box2D 调试绘制：把 b2Draw 的调用翻译成 SFML 绘制
-// 坐标转换：Box2D 米 → SFML 像素（PhysicsTypes::toPixels）
+// Box2D 调试绘制：把 b2Draw 的调用翻译成 Renderer 绘制命令
+// 坐标转换：Box2D 米 → 像素（PhysicsTypes::toPixels）
 class PhysicsDebugDraw : public b2Draw {
 public:
     PhysicsDebugDraw() = default;
     ~PhysicsDebugDraw() override = default;
 
-    // 渲染前设置目标窗口
-    void setWindow(sf::RenderWindow* w) { window = w; }
+    // 渲染前设置目标渲染器
+    void setRenderer(eng::Renderer* r) { renderer = r; }
 
     // 速度可视化：从每个动态 body 质心画一根指向速度方向的线（长度∝速度大小）
     void drawVelocities(b2World* world);
@@ -37,9 +36,9 @@ public:
     void DrawPoint(const b2Vec2& p, float size, const b2Color& color) override;
 
 private:
-    static eng::Color toSfColor(const b2Color& c);
+    static eng::Color toColor(const b2Color& c);
 
-    sf::RenderWindow* window{};
+    eng::Renderer* renderer{};
 };
 
 } // namespace physics

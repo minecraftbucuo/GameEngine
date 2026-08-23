@@ -63,10 +63,7 @@ void Scene::render(sf::RenderWindow* _window) {
             obj->render(_window);
         }
     }
-    // Box2D 调试绘制：开关跟随 CONFIG.game.debug，关闭时零开销
-    if (physics_world && CONFIG.game.debug) {
-        physics_world->renderDebug(_window);
-    }
+    // Box2D 调试绘制已随 SDL3 迁移 6b 移入 PhysicsTestScene::render(eng::Renderer&)
 }
 
 void Scene::handleEvent(const eng::EngineEvent& event) {

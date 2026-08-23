@@ -43,16 +43,20 @@ public:
     void present();
 
     // ── 绘制命令 ──
+    // 统一旋转语义：矩形为未旋转时的可视区域，origin 为矩形内支点（自左上角起算），
+    // rotationDeg 绕支点旋转（SDL_RenderCopyRotF 的 center 与此一致）
     // src：源纹理上的矩形（像素）；dst：目标区域（世界/屏幕坐标，受相机影响）
     void drawTexture(TextureHandle h, const FloatRect& src, const FloatRect& dst,
                      float rotationDeg = 0.f, Vec2f origin = {},
                      Color tint = Color::White);
     void drawRect(const FloatRect& r, Color fillColor, bool filled = true,
-                  float outlineThickness = 0.f, Color outlineColor = Color::White);
+                  float outlineThickness = 0.f, Color outlineColor = Color::White,
+                  float rotationDeg = 0.f, Vec2f origin = {});
     void drawLine(Vec2f a, Vec2f b, Color c);
     void drawLines(const std::vector<Vec2f>& points, Color c);     // 折线
     void drawPolygon(const std::vector<Vec2f>& points, Color c);   // 实心凸多边形
-    void drawCircle(Vec2f center, float radius, Color c, bool filled = true);
+    void drawCircle(Vec2f center, float radius, Color c, bool filled = true,
+                    float outlineThickness = 0.f, Color outlineColor = Color::White);
     // text 按 UTF-8 解释（中文可直接传入）
     void drawText(FontHandle h, const std::string& text, Vec2f pos,
                   unsigned size, Color c);

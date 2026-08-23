@@ -9,7 +9,6 @@
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "PhysicsDebugDraw.h"
-#include <SFML/Graphics/RenderWindow.hpp>
 #endif
 
 namespace physics {
@@ -96,9 +95,9 @@ const b2World* PhysicsWorld::getWorld() const {
 }
 
 #ifndef SERVER_BUILD
-void PhysicsWorld::renderDebug(sf::RenderWindow* window) {
-    if (!world || !debugDraw || !window) return;
-    debugDraw->setWindow(window);
+void PhysicsWorld::renderDebug(eng::Renderer* renderer) {
+    if (!world || !debugDraw || !renderer) return;
+    debugDraw->setRenderer(renderer);
     world->DebugDraw();
     debugDraw->drawVelocities(world); // 速度方向箭头
 }

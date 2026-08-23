@@ -352,7 +352,29 @@ struct EngineEvent {
         inline 定义避免服务端 vtable 缺符号
 - **验证**：编译通过（客户端+服务端两版本）；各场景渲染与 Step 5 完全一致
   （全部经默认转发走旧路径）；PhysicsTest 相机拖动/缩放/方向键正常（Camera 已换实现）
-- [ ] **6b 物理场景**：PhysicsTestScene 5 处 + PhysicsDebugDraw 13 处 → 绘制命令
+- [x] **6b 物理场景**（首个全绘制命令场景）：
+      - **Renderer 接口扩展**（实施时按需补充）：`drawRect` 增加 `rotationDeg + origin`
+        （旋转物理体需要）；`drawCircle` 增加 `outlineThickness + outlineColor`
+        （填充+白描边两色需求）。统一旋转语义：矩形为未旋转可视区域，origin 为矩形内支点
+        （自左上角），绕支点旋转——与 SDL_RenderCopyRotF 的 center 一致；
+        `drawTexture` 实现同步修正为此语义（当时无调用者，安全）
+      - **GameObject::render(新签名) 基类默认实现改为转发旧虚 render**（6a 原为 renderComponents）：
+        未迁移子类的旧 override 经新路径继续生效，已迁移子类直接覆盖新签名
+      - PhysicsTestScene 内嵌 5 类（Player/Box/Ball/Ground/Platform）render 全部切绘制命令；
+        场景新增 `render(eng::Renderer&) override`（对象循环 + renderDebug 搬入）；
+        放球的 `mapPixelToCoords` 顺手切 `renderer->screenToWorld`
+      - **PhysicsDebugDraw 彻底去 SFML**：`setWindow → setRenderer`，b2Draw 7 个回调 +
+        drawVelocities 全部翻译成 drawLines/drawPolygon/drawCircle/drawLine（闭合折线=首尾相接；
+        实心多边形=半透明填充+同色描边，与 SFML 行为一致）
+      - PhysicsWorld::renderDebug 签名 `sf::RenderWindow* → eng::Renderer*`（前置声明同步）；
+        Scene 旧 render 的 renderDebug 调用移除（职责移入 PhysicsTestScene）
+      - `eng::Uint8` 别名补入 Types.h（颜色转换需要）
+      - **插曲**：PhysicsDebugDraw.h/.cpp 两次 Write 均被编辑器缓冲区还原未落盘
+        （探测文件证实 Write 工具正常、目标文件时间戳未变），经"写新文件名 + PowerShell
+        Move-Item 替换"绕过解决，全部 12 项改动 PowerShell 逐项复核落盘
+- **验证**：编译；PhysicsTest 场景：方块/球/斜面/地面渲染一致（含旋转体）；
+  开 CONFIG.game.debug 后调试图形（形状描边/质心轴/速度箭头）与迁移前一致；
+  鼠标放球位置正确（screenToWorld）；其余场景不受影响
 - [ ] **6c Mario 系**：SuperMarioScene 3 处、4 个 State 共 7 处、Animation、Brick、FireBall、Box
 - [ ] **6d UI 场景**：Button 6 处、Toggle 4 处、TextInput 4 处、MenuScene 2 处、SettingsScene 2 处
 - [ ] **6e 3D 与杂项**：GameObject3D 线框（顶点圆 + 线，`drawCircle`/`drawLines` 覆盖）、

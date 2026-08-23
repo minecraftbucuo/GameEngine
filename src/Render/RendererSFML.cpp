@@ -83,21 +83,25 @@ void Renderer::drawTexture(const TextureHandle h, const FloatRect& src, const Fl
     sf::Sprite sprite(texture);
     sprite.setTextureRect(sf::IntRect(static_cast<int>(src.left), static_cast<int>(src.top),
                                       static_cast<int>(src.width), static_cast<int>(src.height)));
-    sprite.setPosition(dst.left, dst.top);
+    // dst 为未旋转可视矩形：支点落点 = dst 左上角 + origin
+    sprite.setPosition(dst.left + origin.x, dst.top + origin.y);
+    sprite.setOrigin(origin);
     if (src.width > 0.f && src.height > 0.f) {
         sprite.setScale(dst.width / src.width, dst.height / src.height);
     }
-    sprite.setRotation(rotationDeg);
-    sprite.setOrigin(origin);
+    if (rotationDeg != 0.f) sprite.setRotation(rotationDeg);
     sprite.setColor(tint);
     window->draw(sprite);
 }
 
 void Renderer::drawRect(const FloatRect& r, const Color fillColor, const bool filled,
-                        const float outlineThickness, const Color outlineColor) {
+                        const float outlineThickness, const Color outlineColor,
+                        const float rotationDeg, const Vec2f origin) {
     if (!window) return;
     sf::RectangleShape shape(Vec2f(r.width, r.height));
-    shape.setPosition(r.left, r.top);
+    shape.setPosition(r.left + origin.x, r.top + origin.y);
+    shape.setOrigin(origin);
+    if (rotationDeg != 0.f) shape.setRotation(rotationDeg);
     shape.setFillColor(filled ? fillColor : Color::Transparent);
     if (outlineThickness != 0.f) {
         shape.setOutlineColor(outlineColor);
@@ -135,17 +139,18 @@ void Renderer::drawPolygon(const std::vector<Vec2f>& points, const Color c) {
     window->draw(shape);
 }
 
-void Renderer::drawCircle(const Vec2f center, const float radius, const Color c, const bool filled) {
+void Renderer::drawCircle(const Vec2f center, const float radius, const Color c, const bool filled,
+                          const float outlineThickness, const Color outlineColor) {
     if (!window) return;
     sf::CircleShape shape(radius);
     // SFML CircleShape 的 position 是外接方形左上角，换算为中心定位
     shape.setPosition(center.x - radius, center.y - radius);
-    if (filled) {
-        shape.setFillColor(c);
-    } else {
-        shape.setFillColor(Color::Transparent);
-        shape.setOutlineColor(c);
-        shape.setOutlineThickness(1.f);
+    shape.setFillColor(filled ? c : Color::Transparent);
+    // 非填充时保证至少有 1px 轮廓可见（与迁移前 SFML 行为一致）
+    const float thickness = outlineThickness != 0.f ? outlineThickness : (filled ? 0.f : 1.f);
+    if (thickness != 0.f) {
+        shape.setOutlineColor(outlineThickness != 0.f ? outlineColor : c);
+        shape.setOutlineThickness(thickness);
     }
     window->draw(shape);
 }

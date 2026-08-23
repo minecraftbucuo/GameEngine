@@ -11,6 +11,7 @@
 #include "PhysicsTypes.h"
 #include "PhysicsWorld.h"
 #include "SceneManager.h"
+#include "ConfigManager.h"
 #include "Logger.h"
 #include <random>
 
@@ -30,15 +31,11 @@ public:
         phys->setCollisionFilter(physics::Category::Player, physics::Category::All);
     }
 
-    void render(sf::RenderWindow* window) override {
-        sf::RectangleShape shape(getSize());
-        shape.setOrigin(getSize() * 0.5f);
-        shape.setPosition(getPosition() + getSize() * 0.5f);
-        shape.setRotation(rotation);
-        shape.setFillColor(eng::Color(255, 200, 80));
-        shape.setOutlineColor(eng::Color::White);
-        shape.setOutlineThickness(2);
-        window->draw(shape);
+    void render(eng::Renderer& renderer) override {
+        // 绕中心旋转：dst 为未旋转可视矩形，origin=尺寸一半为支点（与迁移前 SFML 行为一致）
+        renderer.drawRect(eng::FloatRect(getPosition(), getSize()),
+                          eng::Color(255, 200, 80), true, 2.f, eng::Color::White,
+                          rotation, getSize() * 0.5f);
     }
 
     void handleEvent(const eng::EngineEvent& event) override {
@@ -103,15 +100,10 @@ public:
         phys->setAngularDamping(0.05f);
     }
 
-    void render(sf::RenderWindow* window) override {
-        sf::RectangleShape shape(getSize());
-        shape.setOrigin(getSize() * 0.5f);
-        shape.setPosition(getPosition() + getSize() * 0.5f);
-        shape.setRotation(rotation);
-        shape.setFillColor(fillColor);
-        shape.setOutlineColor(eng::Color::White);
-        shape.setOutlineThickness(2);
-        window->draw(shape);
+    void render(eng::Renderer& renderer) override {
+        renderer.drawRect(eng::FloatRect(getPosition(), getSize()),
+                          fillColor, true, 2.f, eng::Color::White,
+                          rotation, getSize() * 0.5f);
     }
 private:
     eng::Color fillColor;
@@ -132,15 +124,9 @@ public:
         phys->setAngularDamping(0.3f);
     }
 
-    void render(sf::RenderWindow* window) override {
-        sf::CircleShape shape(radius);
-        shape.setOrigin(radius, radius);
-        shape.setPosition(getPosition() + eng::Vec2f(radius, radius));
-        shape.setRotation(rotation);
-        shape.setFillColor(eng::Color(255, 100, 100));
-        shape.setOutlineColor(eng::Color::White);
-        shape.setOutlineThickness(2);
-        window->draw(shape);
+    void render(eng::Renderer& renderer) override {
+        renderer.drawCircle(getPosition() + eng::Vec2f(radius, radius), radius,
+                            eng::Color(255, 100, 100), true, 2.f, eng::Color::White);
     }
 private:
     float radius;
@@ -158,13 +144,9 @@ public:
         phys->setFriction(0.5f);
     }
 
-    void render(sf::RenderWindow* window) override {
-        sf::RectangleShape shape(getSize());
-        shape.setPosition(getPosition());
-        shape.setFillColor(fillColor);
-        shape.setOutlineColor(eng::Color::White);
-        shape.setOutlineThickness(2);
-        window->draw(shape);
+    void render(eng::Renderer& renderer) override {
+        renderer.drawRect(eng::FloatRect(getPosition(), getSize()),
+                          fillColor, true, 2.f, eng::Color::White);
     }
 private:
     eng::Color fillColor;
@@ -184,15 +166,10 @@ public:
         phys->setInitialAngle(angleDeg * 3.14159265f / 180.0f);
     }
 
-    void render(sf::RenderWindow* window) override {
-        sf::RectangleShape shape(getSize());
-        shape.setPosition(getPosition().x + getSize().x * 0.5f, getPosition().y + getSize().y * 0.5f);
-        shape.setOrigin(getSize() * 0.5f);
-        shape.setRotation(angle);
-        shape.setFillColor(eng::Color(160, 120, 80));
-        shape.setOutlineColor(eng::Color::White);
-        shape.setOutlineThickness(2);
-        window->draw(shape);
+    void render(eng::Renderer& renderer) override {
+        renderer.drawRect(eng::FloatRect(getPosition(), getSize()),
+                          eng::Color(160, 120, 80), true, 2.f, eng::Color::White,
+                          angle, getSize() * 0.5f);
     }
 private:
     float angle;
@@ -251,7 +228,7 @@ void PhysicsTestScene::handleEvent(const eng::EngineEvent& event) {
     // 鼠标点击放球
     if (event.type == eng::EventType::MouseButtonPress && event.mouseButton == eng::MouseButton::Left) {
         eng::Vec2i mousePos = eng::Input::getMousePosition();
-        eng::Vec2f worldPos = window->mapPixelToCoords(mousePos);
+        eng::Vec2f worldPos = renderer->screenToWorld(mousePos);
         auto ball = std::make_shared<PhysicsBall>(worldPos.x - 20.f, worldPos.y - 20.f, 20.0f);
         addObjectWithMap(ball); // 先设置 scene
         ball->start();          // 再 start 创建 body
@@ -265,6 +242,18 @@ void PhysicsTestScene::exit() {
     game_objects_map.clear();
     if (physics_world) {
         physics_world->clear();
+    }
+}
+
+void PhysicsTestScene::render(eng::Renderer& _renderer) {
+    for (const auto& obj : game_objects) {
+        if (obj->isActive()) {
+            obj->render(_renderer);
+        }
+    }
+    // Box2D 调试绘制：开关跟随 CONFIG.game.debug，关闭时零开销
+    if (physics_world && CONFIG.game.debug) {
+        physics_world->renderDebug(&_renderer);
     }
 }
 #endif

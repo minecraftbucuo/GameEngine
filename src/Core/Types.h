@@ -21,6 +21,7 @@ namespace eng {
     using Vec3f = sf::Vector3f;
     using Time  = sf::Time;
     using Color = sf::Color;
+    using Uint8 = sf::Uint8;
     using IntRect   = sf::IntRect;
     using FloatRect = sf::FloatRect;
 }

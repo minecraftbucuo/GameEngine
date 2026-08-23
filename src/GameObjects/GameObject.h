@@ -34,9 +34,12 @@ public:
         updateComponents(deltaTime);
     }
 
-    // SDL3 迁移 Step 6a：新渲染签名（组件逐个迁移到 Renderer 绘制命令，Step 6e 移除旧签名）
+    // SDL3 迁移 Step 6a/6b：新渲染签名，默认转发旧虚 render
+    //（未迁移子类的旧 override 经此继续生效；已迁移子类直接覆盖本签名。Step 6e 移除旧签名）
     virtual void render(eng::Renderer& renderer) {
-        renderComponents(renderer);
+        if (sf::RenderWindow* w = renderer.getSfmlWindow()) {
+            render(w);
+        }
     }
 
     // 【过渡期旧签名 — Step 6e 删除】

@@ -9,7 +9,7 @@
 #include <memory>
 #include "Core/Types.h"
 
-namespace sf { class RenderWindow; }
+namespace eng { class Renderer; }
 
 namespace physics {
 
@@ -39,8 +39,8 @@ public:
     const b2World* getWorld() const;
 
 #ifndef SERVER_BUILD
-    // 调试绘制：绘制所有 body 形状/质心/接触点（CONFIG.game.debug 时由 Scene::render 调用）
-    void renderDebug(sf::RenderWindow* window);
+    // 调试绘制：绘制所有 body 形状/质心/接触点（CONFIG.game.debug 时由 PhysicsTestScene::render 调用）
+    void renderDebug(eng::Renderer* renderer);
 #endif
 
 private:

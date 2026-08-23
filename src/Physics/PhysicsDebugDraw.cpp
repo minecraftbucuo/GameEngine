@@ -9,133 +9,94 @@
 
 #include "PhysicsTypes.h"
 
-#include <SFML/Graphics/CircleShape.hpp>
-#include <SFML/Graphics/ConvexShape.hpp>
-#include <SFML/Graphics/Vertex.hpp>
-#include <SFML/Graphics/VertexArray.hpp>
 #include <cmath>
+#include <vector>
 
 namespace physics {
 
-eng::Color PhysicsDebugDraw::toSfColor(const b2Color& c) {
+eng::Color PhysicsDebugDraw::toColor(const b2Color& c) {
     return eng::Color(
-        static_cast<sf::Uint8>(c.r * 255.0f),
-        static_cast<sf::Uint8>(c.g * 255.0f),
-        static_cast<sf::Uint8>(c.b * 255.0f),
-        static_cast<sf::Uint8>(c.a * 255.0f)
+        static_cast<eng::Uint8>(c.r * 255.0f),
+        static_cast<eng::Uint8>(c.g * 255.0f),
+        static_cast<eng::Uint8>(c.b * 255.0f),
+        static_cast<eng::Uint8>(c.a * 255.0f)
     );
 }
 
 void PhysicsDebugDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
-    if (!window || vertexCount < 2) return;
+    if (!renderer || vertexCount < 2) return;
 
-    sf::VertexArray lines(sf::LineStrip, static_cast<size_t>(vertexCount) + 1);
+    // 闭合折线：首尾相连
+    std::vector<eng::Vec2f> points;
+    points.reserve(static_cast<std::size_t>(vertexCount) + 1);
     for (int32 i = 0; i < vertexCount; ++i) {
-        eng::Vec2f p = toPixels(vertices[i]);
-        lines[static_cast<size_t>(i)].position = p;
-        lines[static_cast<size_t>(i)].color = toSfColor(color);
+        points.push_back(toPixels(vertices[i]));
     }
-    // 闭合
-    lines[static_cast<size_t>(vertexCount)].position = toPixels(vertices[0]);
-    lines[static_cast<size_t>(vertexCount)].color = toSfColor(color);
-    window->draw(lines);
+    points.push_back(toPixels(vertices[0]));
+    renderer->drawLines(points, toColor(color));
 }
 
 void PhysicsDebugDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {
-    if (!window || vertexCount < 3) return;
+    if (!renderer || vertexCount < 3) return;
 
-    sf::ConvexShape shape(static_cast<size_t>(vertexCount));
-    eng::Color fill = toSfColor(color);
-    fill.a = static_cast<sf::Uint8>(fill.a * 0.5f); // 半透明填充
+    // 半透明填充 + 同色描边（与迁移前 SFML 行为一致）
+    std::vector<eng::Vec2f> points;
+    points.reserve(static_cast<std::size_t>(vertexCount));
     for (int32 i = 0; i < vertexCount; ++i) {
-        shape.setPoint(static_cast<size_t>(i), toPixels(vertices[i]));
+        points.push_back(toPixels(vertices[i]));
     }
-    shape.setFillColor(fill);
-    shape.setOutlineColor(toSfColor(color));
-    shape.setOutlineThickness(1.0f);
-    window->draw(shape);
+    eng::Color fill = toColor(color);
+    fill.a = static_cast<eng::Uint8>(fill.a * 0.5f);
+    renderer->drawPolygon(points, fill);
+    points.push_back(points.front());
+    renderer->drawLines(points, toColor(color));
 }
 
 void PhysicsDebugDraw::DrawCircle(const b2Vec2& center, float radius, const b2Color& color) {
-    if (!window) return;
+    if (!renderer) return;
 
-    float r = toPixels(radius);
-    sf::CircleShape shape(r);
-    shape.setOrigin(r, r);
-    shape.setPosition(toPixels(center));
-    shape.setFillColor(eng::Color::Transparent);
-    shape.setOutlineColor(toSfColor(color));
-    shape.setOutlineThickness(1.0f);
-    window->draw(shape);
+    renderer->drawCircle(toPixels(center), toPixels(radius), toColor(color), false);
 }
 
 void PhysicsDebugDraw::DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis, const b2Color& color) {
-    if (!window) return;
+    if (!renderer) return;
 
-    float r = toPixels(radius);
-    sf::CircleShape shape(r);
-    shape.setOrigin(r, r);
-    shape.setPosition(toPixels(center));
-    eng::Color fill = toSfColor(color);
-    fill.a = static_cast<sf::Uint8>(fill.a * 0.5f);
-    shape.setFillColor(fill);
-    shape.setOutlineColor(toSfColor(color));
-    shape.setOutlineThickness(1.0f);
-    window->draw(shape);
+    const float r = toPixels(radius);
+    eng::Color fill = toColor(color);
+    fill.a = static_cast<eng::Uint8>(fill.a * 0.5f);
+    renderer->drawCircle(toPixels(center), r, fill, true, 1.f, toColor(color));
 
     // 朝向轴（半径方向的一根线）。axis 是单位方向向量，无量纲，不做米/像素换算
-    eng::Vec2f c = toPixels(center);
-    eng::Vec2f dir(axis.x, axis.y);
-    sf::Vertex line[] = {
-        sf::Vertex(c, toSfColor(color)),
-        sf::Vertex(c + dir * r, toSfColor(color))
-    };
-    window->draw(line, 2, sf::Lines);
+    const eng::Vec2f c = toPixels(center);
+    renderer->drawLine(c, c + eng::Vec2f(axis.x, axis.y) * r, toColor(color));
 }
 
 void PhysicsDebugDraw::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
-    if (!window) return;
+    if (!renderer) return;
 
-    sf::Vertex line[] = {
-        sf::Vertex(toPixels(p1), toSfColor(color)),
-        sf::Vertex(toPixels(p2), toSfColor(color))
-    };
-    window->draw(line, 2, sf::Lines);
+    renderer->drawLine(toPixels(p1), toPixels(p2), toColor(color));
 }
 
 void PhysicsDebugDraw::DrawTransform(const b2Transform& xf) {
-    if (!window) return;
+    if (!renderer) return;
 
     const float axisLen = 0.4f; // 米
-    eng::Vec2f p = toPixels(xf.p);
+    const eng::Vec2f p = toPixels(xf.p);
 
     // X 轴红色
-    sf::Vertex xAxis[] = {
-        sf::Vertex(p, eng::Color::Red),
-        sf::Vertex(p + toPixels(axisLen * xf.q.GetXAxis()), eng::Color::Red)
-    };
-    window->draw(xAxis, 2, sf::Lines);
-
+    renderer->drawLine(p, p + toPixels(axisLen * xf.q.GetXAxis()), eng::Color::Red);
     // Y 轴绿色
-    sf::Vertex yAxis[] = {
-        sf::Vertex(p, eng::Color::Green),
-        sf::Vertex(p + toPixels(axisLen * xf.q.GetYAxis()), eng::Color::Green)
-    };
-    window->draw(yAxis, 2, sf::Lines);
+    renderer->drawLine(p, p + toPixels(axisLen * xf.q.GetYAxis()), eng::Color::Green);
 }
 
 void PhysicsDebugDraw::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
-    if (!window) return;
+    if (!renderer) return;
 
-    sf::CircleShape shape(size);
-    shape.setOrigin(size, size);
-    shape.setPosition(toPixels(p));
-    shape.setFillColor(toSfColor(color));
-    window->draw(shape);
+    renderer->drawCircle(toPixels(p), size, toColor(color), true);
 }
 
 void PhysicsDebugDraw::drawVelocities(b2World* world) {
-    if (!window || !world) return;
+    if (!renderer || !world) return;
 
     const float scale = 0.10f; // 速度(m/s) → 线长(像素) 的缩放，可按需调
     for (b2Body* body = world->GetBodyList(); body; body = body->GetNext()) {
@@ -143,29 +104,20 @@ void PhysicsDebugDraw::drawVelocities(b2World* world) {
         b2Vec2 v = body->GetLinearVelocity();
         if (v.Length() < 0.05f) continue;                // 几乎静止的不画
 
-        eng::Vec2f p = toPixels(body->GetPosition());
+        const eng::Vec2f p = toPixels(body->GetPosition());
         // 速度是 m/s，直接当米用 PPM 转成像素长度，再整体缩放
-        eng::Vec2f tip = p + toPixels(v) * scale;
-        sf::Vertex line[] = {
-            sf::Vertex(p, eng::Color::Cyan),
-            sf::Vertex(tip, eng::Color::Cyan)
-        };
-        window->draw(line, 2, sf::Lines);
+        const eng::Vec2f tip = p + toPixels(v) * scale;
+        renderer->drawLine(p, tip, eng::Color::Cyan);
 
         // 箭头头部（两根短线）
         eng::Vec2f dir = tip - p;
-        float len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+        const float len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
         if (len < 8.0f) continue;
         dir /= len;
-        eng::Vec2f perp(-dir.y, dir.x);
-        eng::Vec2f headBase = tip - dir * 8.0f;
-        sf::Vertex head[] = {
-            sf::Vertex(headBase + perp * 4.0f, eng::Color::Cyan),
-            sf::Vertex(tip, eng::Color::Cyan),
-            sf::Vertex(tip, eng::Color::Cyan),
-            sf::Vertex(headBase - perp * 4.0f, eng::Color::Cyan)
-        };
-        window->draw(head, 4, sf::Lines);
+        const eng::Vec2f perp(-dir.y, dir.x);
+        const eng::Vec2f headBase = tip - dir * 8.0f;
+        renderer->drawLine(headBase + perp * 4.0f, tip, eng::Color::Cyan);
+        renderer->drawLine(tip, headBase - perp * 4.0f, eng::Color::Cyan);
     }
 }
 
