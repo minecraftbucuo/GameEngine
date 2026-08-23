@@ -247,24 +247,35 @@ struct EngineEvent {
 ### 阶段一：类型与事件抽象（机械替换为主，与后端无关）
 
 #### Step 1 — Core/Types.h 数值类型别名
-- [ ] 新建 `src/Core/Types.h`（内容见技术决策 3）
-- [ ] 全局机械替换：`sf::Vector2f → eng::Vec2f` 等 8 个别名
+- [x] 新建 `src/Core/Types.h`（内容见技术决策 3）
+- [x] 全局机械替换：`sf::Vector2f → eng::Vec2f` 等 8 个别名
       （**排除**：`src/Network/`；`Physics/` 内 b2Vec2 互转处随替换）
-- **验证**：编译通过；所有场景运行表现不变
+- **验证**：编译通过；所有场景运行表现不变（用户已确认）
 - **新增文件**：`src/Core/Types.h`
 - **改动文件**：90 个（纯类型名替换 + 添加 include；已验证：8 种旧类型零残留，
       所有 eng:: 使用者均含 `#include "Core/Types.h"`，include 均在无条件编译区）
 - **原子性保证**：别名即原类型，语义零变化，编译器逐处校验
 
-#### Step 2 — EngineEvent + Key 枚举 + SFML 转换器（纯新增）
-- [ ] 新建 `src/Core/Event.h`（`EventType` / `MouseButton` / `EngineEvent`）
-- [ ] 新建 `src/Core/KeyCodes.h`（`enum class Key`，覆盖现有代码用到的全部按键）
-- [ ] 新建 `src/Core/EventConvertSFML.h/.cpp`（**临时文件，Step 11 删除**）：
-      `toEngineEvent(const sf::Event&) -> std::optional<EngineEvent>`；
-      `sf::Keyboard::Key ↔ Key` 双向映射表
-- **验证**：编译通过（尚无人引用）；临时自测转换正确性
-- **新增文件**：3 组新文件
-- **原子性保证**：纯新增，零引用
+#### Step 2 — EngineEvent + Key 枚举 + 输入轮询 + SFML 转换器（纯新增）
+- [x] 新建 `src/Core/Event.h`（`EventType` / `MouseButton` / `EngineEvent`，
+      覆盖现有全部事件：Closed/Resized/Key*/MouseButton*/MouseMoved/MouseWheelScrolled/TextEntered + 焦点备用）
+- [x] 新建 `src/Core/KeyCodes.h`（`enum class Key`：现有按键 A/D/W/J/R/Space/Escape/Enter/方向键
+      + 常用键前瞻：字母/数字/F1-F12/修饰键/编辑键/标点，物理键位语义）
+- [x] 新建 `src/Core/Input.h`（**计划外补充，实施时发现**：现有代码存在轮询式输入——
+      `sf::Keyboard::isKeyPressed`（PhysicsTestScene）与 `sf::Mouse::getPosition`（6 处，均在
+      handleEvent 链内）——抽象为 `eng::Input::isKeyPressed / getMousePosition`）
+- [x] 新建 `src/Core/EventConvertSFML.h/.cpp`（**临时文件，Step 11 删除**）：
+      `toEngineEvent(const sf::Event&) -> std::optional<EngineEvent>`（SFML 特有事件返回 nullopt）；
+      `sf::Keyboard::Key ↔ Key` 双向映射（int 参数 + 前向声明，头文件零 SFML include）；
+      `eng::Input` 的 SFML 实现（`setInputWindow` 注册窗口后提供窗口相对鼠标坐标）
+- **验证**：编译通过（尚无人引用，纯新增）
+- **新增文件**：`KeyCodes.h`、`Event.h`、`Input.h`、`EventConvertSFML.h/.cpp`
+- **原子性保证**：纯新增，零引用；枚举名已对照 lib/SFML-2.6.1 头文件核实（Hyphen/Grave/Middle 等）
+- **实施发现（记入 Step 3）**：
+  1. `NetworkManager::handleEvent(sf::Event&)` 被 Scene 挂在事件链上（Closed 断连 + Client 按 R 重生），
+     Step 3 必须同切 EngineEvent（仅 2 处判断；`sf::Packet/Socket` 属 sfml-network 范围外，不动）；
+  2. PhysicsTestScene 的 `isKeyPressed` 轮询与 6 处 `sf::Mouse::getPosition` 在 Step 3 同切 `eng::Input`；
+  3. `GameEngine` 主循环启动时需调 `eng::detail::setInputWindow(window)` 注册轮询窗口。
 
 #### Step 3 — handleEvent 链路切换
 - [ ] `Component / GameObject / Scene / SceneManager / Camera` 的 `handleEvent` 签名：
