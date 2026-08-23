@@ -62,9 +62,19 @@ void Scene::render(eng::Renderer& _renderer) {
 }
 
 void Scene::render(sf::RenderWindow* _window) {
-    for (const auto& obj : game_objects) {
-        if (obj->isActive()) {
-            obj->render(_window);
+    // SDL3 迁移 6d 修复：对象循环改走新链（renderObjects）。
+    // 此前为旧循环 obj->render(sfml)，GameScene 等无 override 场景下
+    // 新签名组件（BoxCollision/CircleCollision 调试图等）收不到渲染调用，
+    // 表现为 Demo 场景碰撞框消失。对象的旧 override 经 GameObject 基类
+    // 新签名默认转发继续生效，行为不受影响。
+    (void)_window;
+    if (renderer) {
+        renderObjects(*renderer);
+    } else {
+        for (const auto& obj : game_objects) {
+            if (obj->isActive()) {
+                obj->render(_window);
+            }
         }
     }
     // Box2D 调试绘制已随 SDL3 迁移 6b 移入 PhysicsTestScene::render(eng::Renderer&)

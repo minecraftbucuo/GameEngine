@@ -60,11 +60,14 @@ public:
     // 圆角矩形：填充色 + 可选描边（先画外扩描边层再画填充层）
     void drawRoundedRect(const FloatRect& r, float radius, Color fillColor,
                          float outlineThickness = 0.f, Color outlineColor = Color::White);
-    // text 按 UTF-8 解释（中文可直接传入）
+    // text 按 UTF-8 解释（中文可直接传入）。
+    // size = 光栅化字号（字形按此尺寸渲染一次）；scale = 变换缩放（GPU 拉伸，不重新光栅化）。
+    // 连续缩放动画（如按钮 hover）应固定 size、动画 scale——逐帧变 size 会不断重新光栅化，
+    // 字形 hinting/字距跳动产生"变形"感（与 SDL_ttf 期同一策略）
     void drawText(FontHandle h, const std::string& text, Vec2f pos,
-                  unsigned size, Color c);
-    // 文本尺寸测量（用于居中排版；与 drawText 同一字体管线）
-    [[nodiscard]] Vec2f measureText(FontHandle h, const std::string& text, unsigned size);
+                  float size, Color c, float scale = 1.f);
+    // 文本尺寸测量（用于居中排版；与 drawText 同一字体管线，scale 语义同上）
+    [[nodiscard]] Vec2f measureText(FontHandle h, const std::string& text, float size, float scale = 1.f);
 
     // ── 相机 ──
     struct CameraState {

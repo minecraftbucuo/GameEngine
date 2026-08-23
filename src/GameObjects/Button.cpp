@@ -47,17 +47,21 @@ void Button::render(eng::Renderer& renderer) {
                              cornerRadius * currentScale, colors.fill,
                              outlineThickness, colors.outline);
 
-    // 文字缩放并居中：基准字号测量 → 实际字号 = 基准 × (适配缩放 × 动画缩放)
-    const eng::Vec2f base = renderer.measureText(font, label, BASE_FONT_SIZE);
+    // 文字：与原版 sf::Text 完全一致的渲染策略——
+    // 固定基准字号光栅化，适配缩放×hover 动画缩放全部走变换 scale（GPU 平滑拉伸，
+    // 不逐帧重新光栅化，字形无抖动变形）
+    const eng::Vec2f base = renderer.measureText(font, label, static_cast<float>(BASE_FONT_SIZE));
     const float fitScale = std::min(size.y * 0.7f / base.y, size.x * 0.7f / base.x);
-    const unsigned glyphSize = static_cast<unsigned>(
-        std::max(1.f, static_cast<float>(BASE_FONT_SIZE) * fitScale * currentScale));
-    const eng::Vec2f glyphSize2 = renderer.measureText(font, label, glyphSize);
+    const float textScale = fitScale * currentScale;
+    const eng::Vec2f glyphSize = renderer.measureText(font, label,
+                                                      static_cast<float>(BASE_FONT_SIZE), textScale);
 
-    const eng::Vec2f textPos(center - glyphSize2 * 0.5f);
+    const eng::Vec2f textPos(center - glyphSize * 0.5f);
     const eng::Vec2f shadowOffset(1.5f, 1.5f);
-    renderer.drawText(font, label, textPos + shadowOffset, glyphSize, eng::Color(0, 0, 0, 80));
-    renderer.drawText(font, label, textPos, glyphSize, eng::Color(30, 30, 46));
+    renderer.drawText(font, label, textPos + shadowOffset, static_cast<float>(BASE_FONT_SIZE),
+                      eng::Color(0, 0, 0, 80), textScale);
+    renderer.drawText(font, label, textPos, static_cast<float>(BASE_FONT_SIZE),
+                      eng::Color(30, 30, 46), textScale);
 }
 
 void Button::handleEvent(const eng::EngineEvent& event) {

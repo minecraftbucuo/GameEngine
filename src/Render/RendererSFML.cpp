@@ -82,23 +82,29 @@ void Renderer::drawTexture(const TextureHandle h, const FloatRect& src, const Fl
                            const float rotationDeg, const Vec2f origin, const Color tint,
                            const bool flipX) {
     if (!window || !h.isValid()) return;
+    if (src.width <= 0.f || src.height <= 0.f) return;
     const sf::Texture& texture = AssetManager::getInstance().getTexture(h);
     sf::Sprite sprite(texture);
-    // 水平镜像：翻转 src 矩形（内容在 dst 内镜像，dst 不变；SDL3 用 flip 参数等价实现）
-    const float srcLeft = flipX
-        ? static_cast<float>(texture.getSize().x) - src.left - src.width
-        : src.left;
-    sprite.setTextureRect(sf::IntRect(static_cast<int>(srcLeft), static_cast<int>(src.top),
+    // src 原样采样（镜像绝不能翻 src——sprite 图集会取到无关贴图）
+    sprite.setTextureRect(sf::IntRect(static_cast<int>(src.left), static_cast<int>(src.top),
                                       static_cast<int>(src.width), static_cast<int>(src.height)));
-    // dst 为未旋转可视矩形：支点落点 = dst 左上角 + origin
-    sprite.setPosition(dst.left + origin.x, dst.top + origin.y);
-    sprite.setOrigin(origin);
-    if (src.width > 0.f && src.height > 0.f) {
-        sprite.setScale(dst.width / src.width, dst.height / src.height);
-    }
-    if (rotationDeg != 0.f) sprite.setRotation(rotationDeg);
     sprite.setColor(tint);
-    window->draw(sprite);
+    // sprite 分解变换保持默认（position 0 / origin 0 / scale 1 / rotation 0），
+    // 用 RenderStates 仿射一次到位。语义与 SDL_RenderCopyRotF(center+flip) 一致：
+    // dst 为最终显示矩形，flipX 只镜像 dst 内的内容，origin 为 dst 内旋转支点。
+    // 变换链：T(C) * R(θ) * T(B-C) * [M] * S
+    //   C = 支点世界位置(dst.lefttop+origin)；B = 镜像基准(dst.righttop，非镜像时 dst.lefttop)
+    const float sx = dst.width / src.width;
+    const float sy = dst.height / src.height;
+    const Vec2f C(dst.left + origin.x, dst.top + origin.y);
+    const Vec2f B(flipX ? dst.left + dst.width : dst.left, dst.top);
+    sf::Transform t;
+    t.translate(C)
+     .rotate(rotationDeg)
+     .translate(B.x - C.x, B.y - C.y);
+    if (flipX) t.scale(-1.f, 1.f);
+    t.scale(sx, sy);
+    window->draw(sprite, sf::RenderStates(t));
 }
 
 void Renderer::drawRect(const FloatRect& r, const Color fillColor, const bool filled,
@@ -217,23 +223,31 @@ void Renderer::drawRoundedRect(const FloatRect& r, const float radius, const Col
 }
 
 void Renderer::drawText(const FontHandle h, const std::string& text, const Vec2f pos,
-                        const unsigned size, const Color c) {
+                        const float size, const Color c, const float scale) {
     if (!window || !h.isValid()) return;
     const sf::Font& font = AssetManager::getInstance().getFont(h);
     const sf::String str = sf::String::fromUtf8(text.begin(), text.end());
-    sf::Text t(str, font, size);
+    // 光栅化字号固定（size 四舍五入到整数，残差并入变换 scale）：
+    // 动画期间调用方保持 size 不变、只动 scale ⇒ 字形不重新光栅化，GPU 平滑拉伸
+    const unsigned baseSize = std::max(1u, static_cast<unsigned>(std::lround(size)));
+    sf::Text t(str, font, baseSize);
+    const float totalScale = size / static_cast<float>(baseSize) * scale;
+    if (totalScale != 1.f) t.setScale(totalScale, totalScale);
     t.setPosition(pos);
     t.setFillColor(c);
     window->draw(t);
 }
 
-Vec2f Renderer::measureText(const FontHandle h, const std::string& text, const unsigned size) {
+Vec2f Renderer::measureText(const FontHandle h, const std::string& text, const float size,
+                            const float scale) {
     if (!h.isValid()) return {};
     const sf::Font& font = AssetManager::getInstance().getFont(h);
     const sf::String str = sf::String::fromUtf8(text.begin(), text.end());
-    const sf::Text t(str, font, size);
+    const unsigned baseSize = std::max(1u, static_cast<unsigned>(std::lround(size)));
+    const sf::Text t(str, font, baseSize);
     const sf::FloatRect bounds = t.getGlobalBounds();
-    return {bounds.width, bounds.height};
+    const float totalScale = size / static_cast<float>(baseSize) * scale;
+    return {bounds.width * totalScale, bounds.height * totalScale};
 }
 
 // ── 相机 ──

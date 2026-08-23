@@ -40,17 +40,24 @@ void Animation::update(const eng::Time& deltaTime) {
 
 void Animation::render(eng::Renderer& renderer, const eng::Vec2f& position) {
     const Frame& f = getFrame();
-    // 负 scale.x（JSON 帧数据里的镜像帧）→ flipX，dst 尺寸取绝对值
+    // 负 scale.x（JSON 帧数据里的镜像帧）→ flipX；dst 尺寸取绝对值
     const bool flip = f.scale.x < 0.f;
     const float w = getFrameWidth();
     const float h = getFrameHeight();
+    // 复现原 SFML 帧布局：显示区域端点 = position + scale*(v - origin)，v∈{0, rectSize}
+    //（左向帧 origin=(rect.w,0)+负 scale ⇒ 与右向帧同区域、内容镜像）
+    const float rectW = static_cast<float>(f.textureRect.width);
+    const float left = flip
+        ? position.x + f.scale.x * (rectW - f.origin.x)
+        : position.x - f.scale.x * f.origin.x;
+    const float top = position.y - f.scale.y * f.origin.y;
     renderer.drawTexture(f.texture,
                          eng::FloatRect(static_cast<float>(f.textureRect.left),
                                         static_cast<float>(f.textureRect.top),
-                                        static_cast<float>(f.textureRect.width),
+                                        rectW,
                                         static_cast<float>(f.textureRect.height)),
-                         eng::FloatRect(position, eng::Vec2f(w, h)),
-                         0.f, f.origin, eng::Color::White, flip);
+                         eng::FloatRect(left, top, w, h),
+                         0.f, {0.f, 0.f}, eng::Color::White, flip);
 }
 
 bool Animation::isOver() const {
