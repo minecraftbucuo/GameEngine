@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.20)
+# 3.28 门槛：FetchContent 的 EXCLUDE_FROM_ALL 参数要求（老版本会报 unknown argument）
+cmake_minimum_required(VERSION 3.28)
 
 # ══════════ 用户开关（仅此两个，命令行可用 -D 覆盖）══════════════
 # 客户端(OFF)：窗口/渲染/输入/音频/网络全量
@@ -65,6 +66,21 @@ FetchContent_MakeAvailable(Box2D)
 # 以下 set 均为依赖内部配置（非用户开关）：解码器按 Asset 实际格式裁剪，
 # 用不到的关掉以省编译时间与体积。
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)   # vendored freetype 兼容 CMake 4
+
+# 无头服务器：SDL 只是 SDL_net 的底座（线程/时钟/原子属核心设施，不受子系统开关影响）。
+# 必须关图形/音频子系统，否则 SDL 在 Linux 配置期检查 X11/Wayland/ALSA 等开发包，
+# 无图形环境直接失败（如 Couldn't find dependency package for XCURSOR）。
+# 开关名已核 sdl-src/CMakeLists.txt 的 define_sdl_subsystem 宏（L238-263）
+if (BUILD_FOR_SERVER)
+    set(SDL_VIDEO OFF CACHE BOOL "" FORCE)     # 连带 X11/Wayland/KMSDRM/GPU/Render/Camera
+    set(SDL_AUDIO OFF CACHE BOOL "" FORCE)     # 连带 ALSA/PulseAudio/PipeWire/JACK
+    set(SDL_JOYSTICK OFF CACHE BOOL "" FORCE)
+    set(SDL_HAPTIC OFF CACHE BOOL "" FORCE)
+    set(SDL_HIDAPI OFF CACHE BOOL "" FORCE)    # 连带 libusb 检查
+    set(SDL_SENSOR OFF CACHE BOOL "" FORCE)
+    set(SDL_DIALOG OFF CACHE BOOL "" FORCE)
+    set(SDL_TRAY OFF CACHE BOOL "" FORCE)
+endif ()
 
 # SDL_image：资源全为 PNG，裁掉其余格式；PNG 走 vendored libpng+zlib
 set(SDLIMAGE_JPG OFF)
