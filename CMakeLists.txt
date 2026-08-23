@@ -70,23 +70,44 @@ if (BUILD_WITH_BOX2D)
 endif ()
 # ───────────────────────────────────────────────────────────────────
 
-# ── SDL3 渲染栈（迁移 Step 11 起唯一后端，客户端构建无条件拉取）──────
+# ── SDL3 本体 + SDL_net（SDL_net 迁移 N2 起两端共用）──────────────
 # 版本对齐（已核实各卫星库源码 CMakeLists 的 SDL_REQUIRED_VERSION）：
 #   mixer 3.2.0 要求 SDL≥3.4.0，ttf 3.2.0 要求 ≥3.2.6，image 3.2.0 要求 ≥3.2.0
 #   → SDL 核心 3.4.14（2026-08，3.4 系列 ABI 稳定）满足全部。
+# 客户端专属卫星库（image/ttf/mixer）见下方 NOT BUILD_FOR_SERVER 块。
+# SDL_net 依赖 SDL3 核心，而服务端（SERVER_BUILD）也要用网络 →
+# SDL 本体从"仅客户端"提升为无条件拉取；image/ttf/mixer 仍留客户端块。
+# SDL_net 3 无 release tag（最新 release 仍是 2.2.0），pin main 分支 commit。
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
+
+# SDL 本体：静态库（与 SFML 静态链接策略一致）
+set(SDL_STATIC ON)
+set(SDL_SHARED OFF)
+set(SDL_TEST OFF)
+set(SDL_INSTALL OFF)
+
+# SDL_net：静态构建（已核对其 main CMakeLists：无 SDLNET_STATIC 专有开关，
+# 走标准 BUILD_SHARED_LIBS；子项目模式下检测到 SDL3::SDL3 目标即跳过 find_package）
+# 缓存形式防子项目 cmake_dependent_option 以默认值覆盖
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(SDLNET_INSTALL OFF)
+
+include(FetchContent)
+FetchContent_Declare(
+    SDL
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG release-3.4.14
+)
+FetchContent_Declare(
+    SDL_net
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL_net.git
+    GIT_TAG 4dd9d8418e9781d10481fd6177e3a1064ca201fe   # main 2026-06-17 "PS Vita support"
+)
+# SDL 必须在前，SDL_net 通过 SDL3::SDL3 目标找到它
+FetchContent_MakeAvailable(SDL SDL_net)
+
 if (NOT BUILD_FOR_SERVER)
     message(STATUS "Building with SDL3 ecosystem (renderer backend)")
-    include(FetchContent)
-
-    # vendored freetype 声明 cmake_minimum_required(3.0)，CMake 4.x 已移除 <3.5 兼容；
-    # 官方缓解：放宽策略版本下限（仅影响旧策略告警，不影响构建产物）
-    set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
-
-    # SDL 本体：静态库（与 SFML 静态链接策略一致）
-    set(SDL_STATIC ON)
-    set(SDL_SHARED OFF)
-    set(SDL_TEST OFF)
-    set(SDL_INSTALL OFF)
 
     # SDL_image：资源全为 PNG；PNG 走内置 stb 解码（零外部依赖），裁掉用不到的格式
     set(SDLIMAGE_JPG OFF)
@@ -117,11 +138,6 @@ if (NOT BUILD_FOR_SERVER)
     set(SDL3MIXER_INSTALL OFF)
 
     FetchContent_Declare(
-        SDL
-        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-3.4.14
-    )
-    FetchContent_Declare(
         SDL_image
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
         GIT_TAG release-3.2.0
@@ -136,8 +152,8 @@ if (NOT BUILD_FOR_SERVER)
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
         GIT_TAG release-3.2.0
     )
-    # SDL 必须在最前，卫星库通过 SDL3::SDL3 目标自动找到它
-    FetchContent_MakeAvailable(SDL SDL_image SDL_ttf SDL_mixer)
+    # SDL 本体已在上方两端共用块拉取；这里只拉客户端专属卫星库
+    FetchContent_MakeAvailable(SDL_image SDL_ttf SDL_mixer)
 endif ()
 # ───────────────────────────────────────────────────────────────────
 

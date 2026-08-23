@@ -183,3 +183,19 @@ N5  SFML 全仓移除：CMake 三套分支清零 + lib/ 目录删除 + 验收
 - 设计细节：枚举按底层类型分派（1B 直拷 / 4B 大端）；`operator bool` 失效语义
   复刻 sf 惯用法；`append/getDataSize/clear` 供 N3 TcpClient 组帧使用。
 - 待用户验证：双版本编译通过（Packet.cpp 会被 GLOB 自动收编，纯新增不触碰现有代码）。
+
+### N2 完成（2026-08-23）
+
+- [CMakeLists.txt](file:///e:/Projects/GameEngine/CMakeLists.txt)：SDL 本体（release-3.4.14）
+  从 `NOT BUILD_FOR_SERVER` 块提升为**两端无条件拉取**；新增 SDL_net FetchContent，
+  pin main 分支 commit `4dd9d84`（2026-06-17，查 GitHub API 核实为最新）；
+  客户端块只保留 image/ttf/mixer。
+- **选项名实测纠正**（吸取 Step 8 教训，先拉源码 grep 再写）：
+  SDL_net 3 无 `SDLNET_STATIC` 专有开关，走标准 `BUILD_SHARED_LIBS`
+  （已设 `OFF` 缓存 FORCE，防子项目 `cmake_dependent_option` 默认值覆盖）；
+  子项目模式下检测到 `SDL3::SDL3` 目标即跳过 `find_package(SDL3)`
+  （CMakeLists.txt L79-81 原文核实），故 `MakeAvailable(SDL SDL_net)` 同批顺序调用即可。
+- 对齐渲染迁移 Step 8 惯例：**只拉取构建，不链接**——主目标（客户端/服务端）均未
+  `target_link_libraries(SDL3_net)`，N4 才链。
+- 影响：服务端构建首次拉取并编译 SDL 本体 + SDL_net 静态库（编译时间增加属预期，
+  计划风险 #3 兑现，一次到位）；客户端行为零变化（SDL 本体同 tag 不会重编）。
