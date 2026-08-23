@@ -3,9 +3,11 @@
 // SDL_net 迁移 N4：传输层换 SDL_net（NET_StreamSocket），对外契约不变（eng::Packet + Status 四态）。
 // 组帧仍为自研 uint32 大端长度前缀，线格式与 SFML 时代逐字节兼容。
 //
-// SDL_net 3 语义要点（已核本地 sdl_net-src/include/SDL3_net/SDL_net.h）：
-// - 全异步模型：NET_WriteToStreamSocket 入内部队列（false=队列满，本帧未入队），
-//   内部线程自动冲刷；NET_ReadFromStreamSocket >0 字节 / 0 无数据 / -1 断开或报废
+// SDL_net 3 语义要点（已核本地 sdl_net-src 源码，注意与文档直觉的差异）：
+// - NET_AcceptClient：true = 无错误（无连接时也 true，出参为 NULL），必须验出参
+// - NET_WriteToStreamSocket：直接写；内核满 → 余量进内部 pending 队列仍返回 true，
+//   false 仅真实错误（已核 SDL_net.c L1927）
+// - NET_ReadFromStreamSocket：>0 字节 / 0 无数据或 WouldBlock / -1 EOF 或错误
 // - 无阻塞概念：setBlocking 已随 SFML 移除
 // - NET_Address 解析异步：NET_ResolveHostname → NET_WaitUntilResolved(timeoutMS)
 //
@@ -107,9 +109,13 @@ public:
     }
 
     // ── 服务端侧：accept / 远端信息 ─────────────────────────
+    // 注意：本版 SDL_net 的 NET_AcceptClient 无连接时也返回 true（true=无错误，
+    // 已核 sdl_net-src SDL_net.c L1863 "return true; // nothing new."），
+    // 必须验出参非空才算真正接到连接
     [[nodiscard]] bool acceptFrom(NET_Server* server) const {
         NET_StreamSocket* s = nullptr;
-        if (!NET_AcceptClient(server, &s)) return false;   // 无待接入连接
+        NET_AcceptClient(server, &s);
+        if (!s) return false;
         m_holder->sock = s;
         return true;
     }

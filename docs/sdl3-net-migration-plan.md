@@ -253,3 +253,41 @@ N5  SFML 全仓移除：CMake 三套分支清零 + lib/ 目录删除 + 验收
 - **真实 socket 回环测试 10/10 全过**（测后即删）：init/listen/connect/accept/
   远端地址校验/聚合帧双向解码/粘包拆分/断连检测——自研组帧在 SDL_net 传输上等价性实测
 - 待用户验证：双版本编译 + 双客户端联机回归。
+
+### N5 完成（2026-08-23）——SDL_net 迁移收官，SFML 退出项目
+
+- [CMakeLists.txt](file:///e:/Projects/GameEngine/CMakeLists.txt)：删除 SFML 全部痕迹——
+  `BUILD_SFML_FROM_SOURCE` 选项、FetchContent SFML 块、find_package 兜底、
+  bundled 路径分支、`SFML_STATIC` 定义、include 路径 `${SFML_ROOT}/include`
+- **lib/SFML-2.6.1-gcc、lib/SFML-2.6.1-linux 目录删除**（未被 git 跟踪，文件系统删除）；
+  lib/ 仅剩 nlohmann
+- src/ 过时注释修正 3 处（Types.h"Network 继续用 sf"已失实、KeyCodes.h"两个后端"
+  已失实、GameEngine.cpp"仍可取 sf::RenderWindow*"已失实）；其余 50 处
+  "SDL3 迁移 xx：原 sf::xxx"历史注释保留（迁移记录，有价值）
+- 终态验收（grep 实测）：CMake SFML 代码零引用（仅 2 处历史对照注释）、
+  src 零代码引用、lib 目录不存在
+- 待用户验证：`cmake -S . -B build` 重新配置（SFML 移除后 include 路径变化）+
+  双版本编译 + 联机回归 + 全场景渲染回归（确认删 lib 无隐性影响）。
+
+### N4 修复（2026-08-23 晚）：服务端假连接 spam + 客户端握手失败
+
+用户实测反馈两个 N4 引入的 bug，根因均已核 sdl_net-src 源码定位：
+
+1. **服务端无连接时每帧刷 "New TCP connection established with ?"**
+   - 根因：本版 `NET_AcceptClient` **无连接时也返回 true**（SDL_net.c L1863
+     `return true; // nothing new.`，true=无错误而非有客户端），旧代码拿返回值
+     当"有连接"判断 → 每帧接受一个 NULL socket → 地址 `?`、垃圾连接堆积
+   - 修复：acceptFrom 改为**验出参非空**（`*client_stream == NULL` → false）
+2. **客户端连不上（token 验证必失败）**
+   - 根因：SFML 时代握手期 socket 阻塞，`receive()` 天然等待服务端回应；
+     SDL_net 全异步，回应不可能 0ms 到达 → 单次 receive 立即 NotReady → 放弃
+   - 修复：connectToServer 握手改**轮询等待**（5ms 间隔，上限 CONFIG.network.timeout，
+     NotReady 之外的状态立即退出循环）
+3. 顺带核实读写语义无误：NET_ReadFromStreamSocket WouldBlock→0/EOF→-1（映射正确）；
+   NET_WriteToStreamSocket 内核满时余量进内部 pending 队列且返回 true（false=真错误），
+   头部注释同步修正
+4. **针对性回归测试 13/13 全过**（测后即删）：无连接 accept 必须 false（原坑1）、
+   真实时序完整握手——token 先发、服务端后 accept、双端轮询收发（原坑2）。
+   上轮回环测试没抓住这两 bug 的原因：测试时序"太顺"（accept 前客户端已就绪、
+   收发前先 sleep），真实时序的竞态被掩盖
+- 待用户验证：双端编译 + 联机回归（开服无 spam；两客户端可连入同步）。

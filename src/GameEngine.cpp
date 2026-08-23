@@ -61,7 +61,7 @@ void GameEngine::init() {
 #endif
     scene_manager = std::make_shared<SceneManager>();
 #ifndef SERVER_BUILD
-    // SDL3 迁移 Step 6a：场景统一持有 Renderer（内部过渡期仍可取 sf::RenderWindow*）
+    // SDL3 迁移 Step 6a：场景统一持有 Renderer
     scene_manager->addScene<GameScene>(&renderer);
     scene_manager->addScene<GameScene3D>(&renderer);
     scene_manager->addScene<SuperMarioScene>(&renderer);

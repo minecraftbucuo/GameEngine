@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.20)
 
 set(WIN_STATIC_LINK ON)
 set(BUILD_FOR_SERVER OFF)
-option(BUILD_SFML_FROM_SOURCE "Build SFML from source using FetchContent" OFF)
 
 if (BUILD_FOR_SERVER)
     message("Build for Server")
@@ -14,40 +13,7 @@ else ()
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 endif ()
 
-if (BUILD_SFML_FROM_SOURCE)
-    message(STATUS "Building SFML from source via FetchContent")
-    include(FetchContent)
-    FetchContent_Declare(
-        SFML
-        GIT_REPOSITORY https://github.com/SFML/SFML.git
-        GIT_TAG 2.6.1
-    )
-    # SDL3 迁移 Step 11：渲染栈已换 SDL3，SFML 只剩 network+system 给 Network/ 用
-    set(BUILD_SHARED_LIBS OFF)
-    set(SFML_BUILD_AUDIO OFF)
-    set(SFML_BUILD_NETWORK ON)
-    set(SFML_BUILD_GRAPHICS OFF)
-    set(SFML_BUILD_WINDOW OFF)
-    FetchContent_MakeAvailable(SFML)
-    set(SFML_ROOT "${sfml_SOURCE_DIR}")
-else ()
-    # 设置 SFML 路径（仅 network + system，Network/ 模块迁移范围外保留）
-    find_package(SFML 2.6 COMPONENTS system network QUIET)
-    if (SFML_FOUND)
-        message(STATUS "Using system SFML: ${SFML_DIR}")
-    else ()
-        # 如果系统没有提供 SFML，使用项目提供的版本
-        message(STATUS "System SFML not found, using bundled version")
-        if (WIN32)
-            set(SFML_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/lib/SFML-2.6.1-gcc")
-        else ()
-            set(SFML_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/lib/SFML-2.6.1-linux")
-        endif ()
-    endif ()
-endif ()
-
 if (WIN32 AND WIN_STATIC_LINK)
-    add_definitions(-DSFML_STATIC)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
 endif ()
 
@@ -182,10 +148,9 @@ target_include_directories(
         ${SRC_DIR}/Physics
 
         ${LIB_DIR}
-        ${SFML_ROOT}/include
 )
 
-# ── 链接（SDL_net 迁移 N4：网络 = SDL_net，SFML 链接清零）──────────
+# ── 链接（SDL_net 迁移 N5：SFML 全仓移除，SDL 全家 + Box2D）────────
 # 客户端：渲染/窗口/输入/音频/网络 = SDL3 全家；
 # 服务端：SDL_net（传递链接 SDL3 核心）
 if (NOT BUILD_FOR_SERVER)

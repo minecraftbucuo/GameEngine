@@ -5,7 +5,7 @@
 
 // 引擎自有键码（SDL3 迁移 Step 2）
 // 覆盖：现有代码使用的全部按键（A/D/W/J/R/Space/Escape/Enter/方向键）
-// + 常用键前瞻（字母/数字/F 区/修饰键/编辑键/标点），两个后端（SFML/SDL3 scancode）均可直接映射。
+// + 常用键前瞻（字母/数字/F 区/修饰键/编辑键/标点），SDL3 scancode 直接映射。
 // 语义为物理键位（scancode 心智模型），与布局无关。
 namespace eng {
 

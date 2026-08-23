@@ -5,6 +5,7 @@
 #include "NetworkManager.h"
 
 #include <ranges>
+#include <thread>
 
 #include "Logger.h"
 #include "Scene.h"
@@ -63,9 +64,21 @@ bool NetworkManager::connectToServer(const std::string& address) {
     verifyPacket << CLIENT_TOKEN;
     clientSocket.sendImmediate(verifyPacket);
 
-    // 等待服务端返回验证结果
+    // 等待服务端返回验证结果（SDL_net 全异步：轮询等待至超时；
+    // SFML 时代此处靠阻塞 socket 天然等待，语义等价）
     eng::Packet resultPacket;
-    if (clientSocket.receive(resultPacket) != TcpClient::Status::Done) {
+    TcpClient::Status status = TcpClient::Status::NotReady;
+    const auto deadline = std::chrono::steady_clock::now()
+        + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+            std::chrono::duration<float>(CONFIG.network.timeout));
+    while (std::chrono::steady_clock::now() < deadline
+           && status == TcpClient::Status::NotReady) {
+        status = clientSocket.receive(resultPacket);
+        if (status == TcpClient::Status::NotReady) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+    }
+    if (status != TcpClient::Status::Done) {
         LOG_WARN("Failed to receive verifying response!");
         return false;
     }
