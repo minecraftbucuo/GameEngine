@@ -72,6 +72,9 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)   # vendored freetyp
 # 无图形环境直接失败（如 Couldn't find dependency package for XCURSOR）。
 # 开关名已核 sdl-src/CMakeLists.txt 的 define_sdl_subsystem 宏（L238-263）
 if (BUILD_FOR_SERVER)
+    # SDL 配置收尾检查（macros.cmake L405）：UNIX 上没找到 X11/Wayland 即 FATAL_ERROR，
+    # 与子系统开关无关；此变量是官方逃生门 = "我确实不要桌面窗口"（服务器场景）
+    set(SDL_UNIX_CONSOLE_BUILD ON CACHE BOOL "" FORCE)
     set(SDL_VIDEO OFF CACHE BOOL "" FORCE)     # 连带 X11/Wayland/KMSDRM/GPU/Render/Camera
     set(SDL_AUDIO OFF CACHE BOOL "" FORCE)     # 连带 ALSA/PulseAudio/PipeWire/JACK
     set(SDL_JOYSTICK OFF CACHE BOOL "" FORCE)
