@@ -488,19 +488,31 @@ SFML 退缩为以下实现面文件的内部细节（Step 9~11 逐个替换/删�
       Step 9/10 音频按新 API 写（详见 Step 9 条目）。
 - **原子性保证**：新依赖只编译不链接进主目标的行为
 
-#### Step 9 — SDL3 实现文件（纯新增，可编译未启用）
-- [ ] `src/Render/RendererSDL3.cpp`：实现 `Renderer.h` 全部接口
-      （`SDL_RenderTexture/RenderLine/RenderGeometry`；相机 = 内部统一变换；
-      文字 = SDL_ttf + 纹理缓存（按 font+text+size 做 key，LRU 淘汰）；
-      事件泵 = `SDL_PollEvent` + `SDL_Scancode → Key` 映射表）
-- [ ] `AssetManager.cpp` 的 SDL3 内部实现（SDL_image → `SDL_Texture`，接口不变）——
-      与脚手架版本并存的方式：临时用 `#ifdef ENGINE_SDL3` 或两份 `.cpp` 按 CMake 选择
-- [ ] SDL_mixer 音频：`Mix_Chunk`/`Mix_Music` 加载与播放（对应现有 `sf::Sound`/`sf::Music` 调用点的目标写法）
-      （**更正**：SDL_mixer 3.2.x 已重写为 track API——`MIX_Init(MIX_INIT_OGG)` →
-      `MIX_CreateMixer` → BGM：`MIX_LoadAudio`+`MIX_CreateTrack`+`MIX_PlayTrack(loop)`；
-      音效：同一 `MIX_Audio` 每次 `MIX_CreateTrack` 短播即毁，对应 sf::Sound 语义）
-- **验证**：编译通过；`ENGINE_SDL3` 未定义时行为完全不变
-- **原子性保证**：新实现全部在编译开关后，默认路径零影响
+#### Step 9 — SDL3 实现文件（纯新增，可编译未启用）✅ 2026-08-23 完成
+- [x] `src/Render/RendererSDL3.cpp`：实现 `Renderer.h` 全部接口
+      （`SDL_RenderTextureRotated/RenderLines/RenderGeometry`；相机 = 内部统一变换；
+      文字 = SDL_ttf + 纹理缓存（按 size+text 做 key，白字纹理 + ColorMod 着色，LRU 上限 128）；
+      事件泵 = `SDL_PollEvent` + `SDL_Scancode ↔ Key` 双向映射表）
+- [x] `src/Manager/AssetManagerSDL3.cpp` + `AssetManager.h` 双分支（`#ifdef ENGINE_SDL3`）：
+      贴图走 SDL_image（load 时解码 surface，首次取用时经渲染器上传纹理后释放 surface）；
+      句柄表逻辑与 SFML 版逐行一致
+- [x] SDL_mixer 3.2 音频加载侧：`MIX_Init()`（无 flags）→ `MIX_CreateMixerDevice(默认播放设备)`
+      → `MIX_LoadAudio(predecode=true)`（对齐 sf::SoundBuffer 全量解码）；
+      播放侧（MIX_CreateTrack/PlayTrack 封装）留 Step 10 与 MarioController 一起切
+- [x] CMake `EngineSDL3` 静态库目标：**只编译不链接**（编译验证），主目标 glob 排除两个 SDL3 文件
+- **实施要点（踩坑记录）**：
+  - SDL3_ttf 3.2 API 改名：`TTF_RenderUTF8_Blended` → `TTF_RenderText_Blended(font, text, length, color)`；
+    测量用 `TTF_GetStringSize`；`TTF_OpenFont` 的 ptsize 为 float
+  - SDL3_image 3.2 已删除 `IMG_Init/IMG_Quit`，解码器自动注册，直接 `IMG_Load`
+  - SDL 文本事件只含可打印字符：退格需在 `SDL_EVENT_KEY_DOWN(BACKSPACE, 非repeat)` 时
+    **合成 `TextEntered(8)` 补发**（内部 pending 队列），否则 TextInput 退格删除失效
+  - SDL 需显式 `SDL_StartTextInput(window)` 才会产生 TEXT_INPUT 事件（SFML 恒开启）
+  - `closeWindow()` 用 closeRequested 标志实现（SDL 无 window->close 等价物）
+  - 字号绑定的 TTF_Font 由 RendererSDL3 按整数 baseSize 缓存（AssetManager 只给字体路径）；
+    drawText 光栅化 baseSize + 残差并入 scale 的策略与脚手架一致（动画不重新光栅化）
+  - 帧率限制：present 后按 PerformanceCounter 睡眠剩余节拍（SDL_DelayNS）
+- **验证**：编译通过（`EngineSDL3` 目标）；主目标行为完全不变（SFML 路径未动）
+- **原子性保证**：SDL3 代码全在 `#if defined(ENGINE_SDL3)` 之后且不进主目标，默认路径零影响
 
 #### Step 10 — 切换：SDL3 生效（单一目的提交）
 - [ ] CMake：源文件从 `RendererSFML.cpp` 换成 `RendererSDL3.cpp`，定义 `ENGINE_SDL3`，
