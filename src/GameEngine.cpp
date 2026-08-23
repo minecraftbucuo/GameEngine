@@ -13,7 +13,6 @@
 #include "MenuScene.h"
 #include "SettingsScene.h"
 #include "PhysicsTestScene.h"
-#include "Core/EventConvertSFML.h"
 #endif
 #include "SuperMarioScene.h"
 #include "FrameManager.h"
@@ -29,11 +28,7 @@ static std::filesystem::path getExeDir() {
 #endif
 }
 
-GameEngine::~GameEngine() {
-#ifndef SERVER_BUILD
-    delete window;
-#endif
-}
+GameEngine::~GameEngine() = default;
 
 void GameEngine::init() {
     // 更改工作目录为主程序所在目录
@@ -60,19 +55,18 @@ void GameEngine::init() {
     FrameManager::getInstance().loadFrame();
     LOG_INFO("SuperMarioScene resources loaded.");
 
-    if (!window) window = new sf::RenderWindow(
-        sf::VideoMode(CONFIG.window.width, CONFIG.window.height), CONFIG.window.title);
-    // 注册轮询窗口：eng::Input::getMousePosition 依赖（SDL3 迁移 Step 3）
-    eng::detail::setInputWindow(window);
+    // SDL3 迁移 Step 5：窗口创建统一走 Renderer（内部注册轮询窗口）
+    renderer.createWindow(eng::Vec2u(CONFIG.window.width, CONFIG.window.height), CONFIG.window.title);
 #endif
     scene_manager = std::make_shared<SceneManager>();
 #ifndef SERVER_BUILD
-    scene_manager->addScene<GameScene>(window);
-    scene_manager->addScene<GameScene3D>(window);
-    scene_manager->addScene<SuperMarioScene>(window);
-    scene_manager->addScene<MenuScene>(window);
-    scene_manager->addScene<SettingsScene>(window);
-    scene_manager->addScene<PhysicsTestScene>(window);
+    // 过渡期：场景仍接收 sf::RenderWindow*（Step 6a 起改为 Renderer&）
+    scene_manager->addScene<GameScene>(renderer.getSfmlWindow());
+    scene_manager->addScene<GameScene3D>(renderer.getSfmlWindow());
+    scene_manager->addScene<SuperMarioScene>(renderer.getSfmlWindow());
+    scene_manager->addScene<MenuScene>(renderer.getSfmlWindow());
+    scene_manager->addScene<SettingsScene>(renderer.getSfmlWindow());
+    scene_manager->addScene<PhysicsTestScene>(renderer.getSfmlWindow());
     scene_manager->loadScene("MenuScene");
 #else
     scene_manager->addScene<SuperMarioScene>();
@@ -81,31 +75,29 @@ void GameEngine::init() {
 }
 
 #ifndef SERVER_BUILD
-void GameEngine::start() const {
-    window->setFramerateLimit(CONFIG.window.fps);
+void GameEngine::start() {
+    renderer.setFramerateLimit(CONFIG.window.fps);
     sf::Clock clock;
-    while (window->isOpen()) {
+    while (renderer.isWindowOpen()) {
         const eng::Time deltaTime = clock.restart();
-        sf::Event event{};
-        while (window->pollEvent(event)) {
-            // sf::Event → EngineEvent 转换（SFML 特有事件被过滤）
-            const auto engineEvent = eng::toEngineEvent(event);
-            if (!engineEvent) continue;
-            if (engineEvent->type == eng::EventType::WindowClose) {
-                window->close();
+        eng::EngineEvent event{};
+        while (renderer.pollEvent(event)) {
+            if (event.type == eng::EventType::WindowClose) {
+                renderer.closeWindow();
                 break;
             }
-            scene_manager->handleEvent(*engineEvent);
+            scene_manager->handleEvent(event);
         }
-        if (!window->isOpen()) break;
+        if (!renderer.isWindowOpen()) break;
         scene_manager->update(deltaTime);
-        window->clear();
-        scene_manager->render(window);
-        window->display();
+        renderer.clear();
+        // 过渡期：场景渲染仍走旧 sf::RenderWindow 路径（Step 6a~6e 渐进切换）
+        scene_manager->render(renderer.getSfmlWindow());
+        renderer.present();
     }
 }
 #else
-[[noreturn]] void GameEngine::start() const {
+[[noreturn]] void GameEngine::start() {
     sf::Clock clock;
     const float targetFPS = CONFIG.window.fps;
     const eng::Time frameTime = sf::seconds(1.0f / targetFPS);

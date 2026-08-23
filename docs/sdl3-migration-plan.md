@@ -305,16 +305,32 @@ struct EngineEvent {
 - **验证**：编译通过（无人引用）
 - **原子性保证**：纯新增
 
-#### Step 5 — Renderer.h + RendererSFML.cpp 脚手架（纯新增）
-- [ ] 新建 `src/Render/Renderer.h`（接口草案见四，头文件零第三方 include）
-- [ ] 新建 `src/Render/RendererSFML.cpp`（**脚手架，临时**）：
-      内部持有 `sf::RenderWindow`；`drawTexture` 用临时 `sf::Sprite`；`drawText` 用 `sf::Text`；
-      `setCamera` 映射 `sf::View`；`screenToWorld` 用 `mapPixelToCoords`；
-      `pollEvent` 内部 `sf::Event → EngineEvent` 转换（复用 Step 2 转换器）
-- [ ] `GameEngine` 改为通过 `Renderer` 创建窗口（**渲染调用暂仍走旧路径**）
-- **验证**：编译通过；窗口正常打开，各场景表现不变
-- **原子性保证**：Renderer 已接管窗口创建与事件泵，绘制仍走原 `window->draw` 路径（`sf::RenderWindow*` 可从 Renderer 取出过渡使用）
-- **注**：`Scene::getWindow()` 返回的 `sf::RenderWindow*` 在 6a~6e 期间逐步失去调用者，Step 6e 后删除
+#### Step 5 — Renderer.h + RendererSFML.cpp 脚手架 + GameEngine 接管
+- [x] 新建 `src/Render/Renderer.h`：窗口/事件泵/帧控制/绘制命令/相机全套接口，
+      头文件零第三方 include（SFML 仅前向声明，供临时 `getSfmlWindow()` 过渡 API，Step 6e 删）。
+      **实施时接口补充**（相对草案）：`closeWindow()`（对应原 window->close）、
+      `setFramerateLimit()`（原主循环调用）、`drawPolygon()`（实心凸多边形，PhysicsDebugDraw
+      实心多边形/圆角矩形拼合需要）、`drawRect` 增加 `outlineColor` 参数
+      （物理调试框"填充色+白描边"两色需求）
+- [x] 新建 `src/Render/RendererSFML.cpp`（**脚手架，临时，Step 10 整体替换**）：
+      持有 `sf::RenderWindow`；`pollEvent` 内部循环跳过 SFML 特有事件（nullopt 继续 poll，
+      不会误报"无事件"）；`drawTexture` 临时 `sf::Sprite` 路径；`drawText` 用
+      `sf::String::fromUtf8`（UTF-8 直传中文）；`setCamera` 映射 `sf::View`；
+      `screenToWorld` 用 `mapPixelToCoords`；createWindow 内部完成 `setInputWindow` 注册。
+      全文件 `#ifndef SERVER_BUILD` 包裹
+- [x] **AssetManager 句柄 API 提前到本步**（原计划在 Step 7）：`drawTexture(TextureHandle)`
+      需要句柄解析，故以**纯增量**方式加入——`getTextureHandle(name)`（首次访问分配 id）、
+      `getTexture(TextureHandle)`（Renderer 内部用）、`getFontHandle()`（单字体固定 id=1）、
+      `getFont(FontHandle)`；**旧按名 API 原样保留**，现有调用点零改动（Step 7 再迁移并移除旧 API）
+- [x] `GameEngine` 接管：`eng::Renderer renderer` 成员替代 `sf::RenderWindow* window`
+      （析构不再手写 delete）；`start()` 去 const（Renderer 方法非 const，main.cpp 调用不受影响）；
+      主循环 `renderer.pollEvent/clear/present`；场景构造传 `renderer.getSfmlWindow()`（过渡）
+- [x] 顺手修正：`Core/EventConvertSFML.cpp` 加 `#ifndef SERVER_BUILD` 守卫
+      （引用 sfml-window 符号，服务端构建不链接该库；Step 3 遗漏）
+- **验证**：编译通过；窗口正常打开，各场景表现不变（渲染仍走旧 window->draw 路径，
+      仅窗口创建/事件泵/clear/present 四件事换由 Renderer 执行）
+- **原子性保证**：Renderer 已接管窗口生命周期与事件泵；绘制路径未动，
+      行为差异理论为零（事件经同一转换器，语义不变）
 
 #### Step 6 — render 链路渐进切换（5 个子提交，每个可独立运行）
 - [ ] **6a 基类与基础设施**：`Scene/GameObject/Component/SceneManager` 的 render 签名

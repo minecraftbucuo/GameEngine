@@ -42,6 +42,38 @@ sf::Texture& AssetManager::getTexture(const std::string& name) {
     return textures[name];
 }
 
+eng::TextureHandle AssetManager::getTextureHandle(const std::string& name) {
+    if (const auto it = texture_handle_ids.find(name); it != texture_handle_ids.end()) {
+        return eng::TextureHandle{it->second};
+    }
+    const auto id = static_cast<uint32_t>(handle_texture_names.size()) + 1;
+    handle_texture_names.push_back(name);
+    texture_handle_ids[name] = id;
+    return eng::TextureHandle{id};
+}
+
+const sf::Texture& AssetManager::getTexture(const eng::TextureHandle h) {
+    if (h.isValid() && h.id <= handle_texture_names.size()) {
+        const std::string& name = handle_texture_names[h.id - 1];
+        if (textures.contains(name)) {
+            return textures[name];
+        }
+        LOG_ERROR_FMT("Texture {} (handle {}) does not exist!", name, h.id);
+    } else {
+        LOG_ERROR_FMT("Invalid texture handle: {}", h.id);
+    }
+    return textures["default"];
+}
+
+eng::FontHandle AssetManager::getFontHandle() {
+    return eng::FontHandle{1};
+}
+
+const sf::Font& AssetManager::getFont(const eng::FontHandle h) {
+    (void)h;   // 引擎当前只有一款字体
+    return getFont();
+}
+
 const sf::Font& AssetManager::getFont() {
     if (!have_load_font) {
         font.loadFromFile(CONFIG.assets.font);

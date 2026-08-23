@@ -5,6 +5,7 @@
 // 【临时脚手架文件 — SDL3 迁移 Step 11 删除，届时由 RendererSDL3.cpp 接管实现】
 #include "Core/EventConvertSFML.h"
 
+#ifndef SERVER_BUILD   // 客户端专用：引用 sfml-window 符号，服务端构建不链接
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
@@ -275,3 +276,5 @@ Vec2i getMousePosition() {
 }
 
 } // namespace eng::Input
+
+#endif // SERVER_BUILD
