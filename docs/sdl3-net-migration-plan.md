@@ -224,3 +224,32 @@ N5  SFML 全仓移除：CMake 三套分支清零 + lib/ 目录删除 + 验收
   等价于实测"新旧 exe 可互联"。
 - 残留 sf（计划内，N4 清）：TcpClient.h 传输层、NetworkManager 的 listener 两处。
 - 待用户验证：双版本编译 + 双客户端联机回归（连接/验证/生成/同步/火球/重生/断开）。
+
+### N4 完成（2026-08-23）
+
+**传输层切换：src/ 代码层 SFML 引用彻底清零（仅余历史注释），SDL_net 上线。**
+
+- [TcpClient.h](file:///e:/Projects/GameEngine/src/Network/TcpClient.h) 传输层重写
+  （对外接口与 N3 完全一致，游戏层零感知）：
+  - sf::TcpSocket → NET_StreamSocket；**SocketHolder 共享持有**：拷贝共享连接
+    （对齐旧 shared_ptr 语义）、disconnect 幂等、析构自动 NET_DestroyStreamSocket
+  - 连接：NET_ResolveHostname → NET_WaitUntilResolved → NET_CreateClient →
+    NET_WaitUntilConnected（timeoutSeconds 毫秒化，0=无限等）
+  - 发送：NET_WriteToStreamSocket 入内部异步队列（false=队列满 → 暂存 m_sendBuf
+    下帧冲刷）；接收：NET_ReadFromStreamSocket >0/0/-1 → 数据/NotReady/Disconnected
+  - 自研组帧不动：uint32 大端长度前缀，线格式与 SFML 时代逐字节兼容
+- **API 签名全部核本地 sdl_net-src 头文件，纠正计划 4 处假设**：
+  无 NET_WaitForResolvedAddress（实为 NET_WaitUntilResolved）；NET_AcceptClient 是
+  bool+出参式（非返回 socket）；销毁函数叫 NET_DestroyStreamSocket（非 Close）；
+  NET_Status 枚举 -1/0/1
+- [NetworkManager.h](file:///e:/Projects/GameEngine/src/Network/NetworkManager.h)/.cpp：
+  sf::TcpListener → NET_Server*（nullptr=监听全部接口）；NET_Init/NET_Quit 生命周期
+  （startServer/connectToServer 初始化，析构配对清理；服务端路径补 SDL_Init(0)）；
+  删 setBlocking 全部调用（SDL_net 全异步无此概念）；新连接日志去端口
+  （SDL_net 无远端端口查询 API）
+- [CMakeLists.txt](file:///e:/Projects/GameEngine/CMakeLists.txt)：客户端链
+  SDL3_net::SDL3_net，服务端链 SDL3_net::SDL3_net（传递链 SDL3 核心）；
+  **SFML 链接块三套分支整体删除**
+- **真实 socket 回环测试 10/10 全过**（测后即删）：init/listen/connect/accept/
+  远端地址校验/聚合帧双向解码/粘包拆分/断连检测——自研组帧在 SDL_net 传输上等价性实测
+- 待用户验证：双版本编译 + 双客户端联机回归。

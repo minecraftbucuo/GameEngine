@@ -185,36 +185,19 @@ target_include_directories(
         ${SFML_ROOT}/include
 )
 
-# ── 链接（SDL3 迁移 Step 11 单后端终态）─────────────────────────────
-# 客户端：渲染/窗口/输入/音频 = SDL3 全家；
-# 客户端与服务端共同：SFML network+system（Network/ 模块迁移范围外保留）
+# ── 链接（SDL_net 迁移 N4：网络 = SDL_net，SFML 链接清零）──────────
+# 客户端：渲染/窗口/输入/音频/网络 = SDL3 全家；
+# 服务端：SDL_net（传递链接 SDL3 核心）
 if (NOT BUILD_FOR_SERVER)
     target_link_libraries(${PROJECT_NAME} PRIVATE
             SDL3::SDL3
             SDL3_image::SDL3_image
             SDL3_ttf::SDL3_ttf
             SDL3_mixer::SDL3_mixer
+            SDL3_net::SDL3_net
     )
-endif ()
-
-if (BUILD_SFML_FROM_SOURCE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE sfml-network sfml-system)
 else ()
-    target_link_directories(${PROJECT_NAME} PRIVATE ${SFML_ROOT}/lib)
-    if (WIN32)
-        if (WIN_STATIC_LINK)
-            target_link_libraries(${PROJECT_NAME} PRIVATE
-                    debug sfml-network-s-d optimized sfml-network-s
-                    debug sfml-system-s-d optimized sfml-system-s
-                    ws2_32 winmm)
-        else ()
-            target_link_libraries(${PROJECT_NAME} PRIVATE
-                    debug sfml-network-d optimized sfml-network
-                    debug sfml-system-d optimized sfml-system)
-        endif ()
-    else ()
-        target_link_libraries(${PROJECT_NAME} PRIVATE sfml-network sfml-system)
-    endif ()
+    target_link_libraries(${PROJECT_NAME} PRIVATE SDL3_net::SDL3_net)
 endif ()
 
 # 链接 Box2D（物理引擎，两端共用）

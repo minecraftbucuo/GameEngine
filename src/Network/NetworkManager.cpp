@@ -18,12 +18,22 @@ bool NetworkManager::startServer() {
     }
     LOG_INFO_FMT("Starting server on port {} ...", port);
 
-    if (listener.listen(port) != sf::Socket::Done) {
+    // SDL 核心初始化（服务端构建无渲染器路径，SDL_net 的线程/原子依赖它）
+    if (!SDL_Init(0)) {
+        LOG_WARN("Failed to init SDL for networking");
+        return false;
+    }
+    if (!NET_Init()) {
+        LOG_WARN("Failed to init SDL_net");
+        return false;
+    }
+
+    listener = NET_CreateServer(nullptr, static_cast<Uint16>(port), 0);   // nullptr = 监听全部接口
+    if (!listener) {
         LOG_WARN("Failed to start server");
         return false;
     }
 
-    listener.setBlocking(false);
     network_type = NetworkType::Server;
     LOG_INFO("Server started successfully!");
     return true;
@@ -36,6 +46,12 @@ bool NetworkManager::connectToServer(const std::string& address) {
         return false;
     }
     LOG_INFO_FMT("Connecting to server at {}:{}", address, port);
+
+    // SDL 核心初始化（客户端通常已由渲染器初始化，SDL_Init 幂等无害）
+    if (!SDL_Init(0) || !NET_Init()) {
+        LOG_WARN("Failed to init SDL_net");
+        return false;
+    }
 
     if (clientSocket.connect(address, port, CONFIG.network.timeout) != TcpClient::Status::Done) {
         LOG_WARN("Failed to connect to server!");
@@ -62,7 +78,6 @@ bool NetworkManager::connectToServer(const std::string& address) {
     }
     LOG_INFO_FMT("Verification succeeded: {}", message);
 
-    clientSocket.setBlocking(false);
     network_type = NetworkType::Client;
     LOG_INFO("Connected to server successfully!");
     return true;
@@ -110,10 +125,8 @@ void NetworkManager::handleEvent(const eng::EngineEvent& event) {
 
 void NetworkManager::receiveNewConnection() {
     if (const auto newClient = TcpClient(); newClient.acceptFrom(listener)) {
-        newClient.setBlocking(false);
         unverified.emplace_back(newClient, std::chrono::steady_clock::now());
-        LOG_INFO_FMT("New TCP connection established with {}:{}",
-            newClient.getRemoteAddress(), newClient.getRemotePort());
+        LOG_INFO_FMT("New TCP connection established with {}", newClient.getRemoteAddress());
     }
 }
 

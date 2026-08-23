@@ -7,7 +7,7 @@
 #include <memory>
 #include "ISerializable.h"
 #include <string>
-#include <SFML/Network.hpp>   // N3 过渡：sf::TcpListener 仍用，N4 换 NET_Server 后移除
+#include <SDL3_net/SDL_net.h>   // N4：listener 用 NET_Server，传输层全 SDL_net
 
 #include "ConfigManager.h"
 #include "GameObject.h"
@@ -24,7 +24,10 @@ public:
         Client
     };
     NetworkManager() = default;
-    ~NetworkManager() = default;
+    ~NetworkManager() {
+        if (listener) NET_DestroyServer(listener);
+        NET_Quit();   // 与 startServer/connectToServer 的 NET_Init 配对
+    }
 
     NetworkType getNetworkType() const {
         return network_type;
@@ -68,7 +71,7 @@ private:
     NetworkType network_type = NetworkType::None;
     unsigned int port = CONFIG.network.port;
     TcpClient clientSocket;
-    sf::TcpListener listener;
+    NET_Server* listener = nullptr;   // NET_CreateServer 延迟创建；addr=NULL 监听全部接口
     std::vector<std::shared_ptr<TcpClient>> clients;
     std::vector<std::pair<TcpClient, std::chrono::steady_clock::time_point>> unverified;
     std::unordered_map<TcpClient*, std::weak_ptr<ISerializable>> players;
