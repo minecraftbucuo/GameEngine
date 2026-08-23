@@ -5,6 +5,7 @@
 #include "HealthBar.h"
 #include "GameObject.h"
 #include "Core/Types.h"
+#include "Render/Renderer.h"
 
 HealthBar::HealthBar() {
     invulnerable_timer.setCallback([this]() { invulnerable = false; });
@@ -33,24 +34,20 @@ bool HealthBar::isDead() const {
 }
 
 #ifndef SERVER_BUILD
-void HealthBar::render(sf::RenderWindow* window) {
-    Component::render(window);
+// SDL3 迁移 6e：sf::RectangleShape ×2 → drawRect（bg 深灰带 1px 黑描边，fg 按血量变色）
+void HealthBar::render(eng::Renderer& renderer) {
+    Component::render(renderer);
     if (dead) return;
     // TODO: 根据 owner 改变血条形状
-    float barWidth = 48.f;
-    float barHeight = 5.f;
-    float barX = owner->getCenter().x - barWidth / 2;
-    float barY = owner->getPosition().y - 10.f;
+    const float barWidth = 48.f;
+    const float barHeight = 5.f;
+    const float barX = owner->getCenter().x - barWidth / 2;
+    const float barY = owner->getPosition().y - 10.f;
 
-    sf::RectangleShape bg(eng::Vec2f(barWidth, barHeight));
-    bg.setFillColor(eng::Color(60, 60, 60));
-    bg.setPosition(barX, barY);
-    bg.setOutlineThickness(1.f);
-    bg.setOutlineColor(eng::Color(0, 0, 0));
-    window->draw(bg);
+    renderer.drawRect(eng::FloatRect(barX, barY, barWidth, barHeight),
+                      eng::Color(60, 60, 60), true, 1.f, eng::Color(0, 0, 0));
 
-    float healthRatio = static_cast<float>(health) / static_cast<float>(max_health);
-    sf::RectangleShape fg(eng::Vec2f(barWidth * healthRatio, barHeight));
+    const float healthRatio = static_cast<float>(health) / static_cast<float>(max_health);
     eng::Color fgColor;
     if (healthRatio > 0.5f) {
         fgColor = eng::Color::Green;
@@ -62,8 +59,6 @@ void HealthBar::render(sf::RenderWindow* window) {
     if (invulnerable) {
         fgColor = eng::Color(150, 150, 150);
     }
-    fg.setFillColor(fgColor);
-    fg.setPosition(barX, barY);
-    window->draw(fg);
+    renderer.drawRect(eng::FloatRect(barX, barY, barWidth * healthRatio, barHeight), fgColor);
 }
 #endif

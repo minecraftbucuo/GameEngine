@@ -6,8 +6,9 @@
 #include "SceneManager.h"
 #include "Logger.h"
 #include "ConfigManager.h"
+#include <chrono>
+#include <thread>
 #ifndef SERVER_BUILD
-#include <SFML/Graphics.hpp>
 #include "GameScene.h"
 #include "GameScene3D.h"
 #include "MenuScene.h"
@@ -77,9 +78,14 @@ void GameEngine::init() {
 #ifndef SERVER_BUILD
 void GameEngine::start() {
     renderer.setFramerateLimit(CONFIG.window.fps);
-    sf::Clock clock;
+    // SDL3 迁移 6e：计时改 std::chrono（sf::Clock 属 sfml-system，终态要删；
+    // eng::Time 目前仍是 sf::Time 别名，Step 10 自研后此处只换包装）
+    auto last = std::chrono::steady_clock::now();
     while (renderer.isWindowOpen()) {
-        const eng::Time deltaTime = clock.restart();
+        const auto now = std::chrono::steady_clock::now();
+        const eng::Time deltaTime = sf::seconds(
+            std::chrono::duration<float>(now - last).count());
+        last = now;
         eng::EngineEvent event{};
         while (renderer.pollEvent(event)) {
             if (event.type == eng::EventType::WindowClose) {
@@ -91,24 +97,26 @@ void GameEngine::start() {
         if (!renderer.isWindowOpen()) break;
         scene_manager->update(deltaTime);
         renderer.clear();
-        // SDL3 迁移 Step 6a：渲染分发走 Renderer（未迁移场景经默认转发走旧路径）
         scene_manager->render(renderer);
         renderer.present();
     }
 }
 #else
 [[noreturn]] void GameEngine::start() {
-    sf::Clock clock;
-    const float targetFPS = CONFIG.window.fps;
-    const eng::Time frameTime = sf::seconds(1.0f / targetFPS);
+    // SDL3 迁移 6e：服务端固定节拍计时改 std::chrono（原 sf::Clock + sf::sleep）
+    auto last = std::chrono::steady_clock::now();
+    const auto frameTime = std::chrono::duration<float>(1.0f / static_cast<float>(CONFIG.window.fps));
 
     while (true) {
-        const eng::Time deltaTime = clock.restart();
+        const auto frameStart = std::chrono::steady_clock::now();
+        const eng::Time deltaTime = sf::seconds(
+            std::chrono::duration<float>(frameStart - last).count());
+        last = frameStart;
         scene_manager->update(deltaTime);
 
-        // 计算帧时间并睡眠剩余时间
-        if (const eng::Time sleepTime = frameTime - clock.getElapsedTime(); sleepTime > eng::Time::Zero) {
-            sf::sleep(sleepTime);
+        // 帧耗时不足目标节拍则睡眠剩余时间
+        if (const auto elapsed = std::chrono::steady_clock::now() - frameStart; frameTime > elapsed) {
+            std::this_thread::sleep_for(frameTime - elapsed);
         }
     }
 }

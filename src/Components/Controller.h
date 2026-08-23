@@ -5,7 +5,6 @@
 #pragma once
 
 #include "Component.h"
-#include <SFML/Graphics.hpp>
 
 class Controller : public Component {
 public:

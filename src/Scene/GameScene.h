@@ -5,7 +5,6 @@
 #pragma once
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
-#include <SFML/Graphics.hpp>
 #include <memory>
 #include "Scene.h"
 

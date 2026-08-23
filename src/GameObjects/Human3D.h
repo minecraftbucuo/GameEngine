@@ -11,7 +11,7 @@
 class Human3D : public GameObject3D {
 public:
     Human3D();
-    void render(sf::RenderWindow* window) override;
+    void render(eng::Renderer& renderer) override;
 
     void update(eng::Time deltaTime) override;
 };

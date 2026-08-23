@@ -5,7 +5,6 @@
 #pragma once
 
 #include <box2d/box2d.h>
-#include <SFML/System/Time.hpp>
 #include <memory>
 #include "Core/Types.h"
 

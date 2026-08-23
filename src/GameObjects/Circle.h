@@ -6,11 +6,8 @@
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "GameObject.h"
-#include <SFML/Graphics.hpp>
 
-#include "FrameManager.h"
-#include "AssetManager.h"
-
+namespace eng { class Renderer; }
 
 class Circle : public GameObject {
 public:
@@ -18,7 +15,7 @@ public:
 
     ~Circle() override;
 
-    void render(sf::RenderWindow* window) override;
+    void render(eng::Renderer& renderer) override;
 
     void start() override;
 
@@ -30,8 +27,6 @@ private:
     void setPosition(float x, float y) override;
 
     void setSpeed(float x, float y);
-
-    sf::CircleShape shape;
 };
 #endif
 

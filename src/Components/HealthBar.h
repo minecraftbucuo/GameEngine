@@ -14,7 +14,7 @@ public:
     void update(const eng::Time& deltaTime) override;
 
 #ifndef SERVER_BUILD
-    void render(sf::RenderWindow* window) override;
+    void render(eng::Renderer& renderer) override;
 #endif
 
     void takeDamage(int damage);

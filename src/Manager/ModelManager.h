@@ -4,8 +4,9 @@
 
 #pragma once
 #include <fstream>
+#include <string>
 #include <unordered_map>
-#include <SFML/Graphics.hpp>
+#include <vector>
 #include "Core/Types.h"
 
 struct Model {

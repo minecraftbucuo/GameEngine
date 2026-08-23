@@ -9,25 +9,28 @@
 #include "Scene.h"
 #include "ModelManager.h"
 
+namespace eng { class Renderer; }
+
 class GameObject3D : public GameObject {
 public:
     GameObject3D() = default;
 
-    void render(sf::RenderWindow* window) override {
-        drawPoints(window);
-        drawFaces(window);
+    // SDL3 迁移 6e：线框渲染切绘制命令（原 sf::CircleShape 顶点 + sf::Lines 边）
+    void render(eng::Renderer& renderer) override {
+        drawPoints(renderer);
+        drawFaces(renderer);
     }
 
     void update(eng::Time deltaTime) override;
 
 protected:
-    void drawPoints(sf::RenderWindow* window) const {
+    void drawPoints(eng::Renderer& renderer) const {
         for (const auto& point : model->points) {
-            drawPoint(window, trans(point, position));
+            drawPoint(renderer, trans(point, position));
         }
     }
 
-    void drawFaces(sf::RenderWindow* window) const;
+    void drawFaces(eng::Renderer& renderer) const;
 
     static eng::Vec2f transToWindow(const eng::Vec2f& pos, eng::Vec2u windowSize);
 
@@ -35,9 +38,9 @@ protected:
         return {pos.x / pos.z, pos.y / pos.z};
     }
 
-    static void drawPoint(sf::RenderWindow* window, const eng::Vec2f& pos);
+    static void drawPoint(eng::Renderer& renderer, const eng::Vec2f& pos);
 
-    static void drawEdge(sf::RenderWindow* window, const eng::Vec2f& p1, const eng::Vec2f& p2);
+    static void drawEdge(eng::Renderer& renderer, const eng::Vec2f& p1, const eng::Vec2f& p2);
 
     static eng::Vec3f rotateXY(eng::Vec3f pos, float angle);
 

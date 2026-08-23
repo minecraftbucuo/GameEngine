@@ -47,6 +47,10 @@ Vec2u Renderer::getSize() const {
     return window ? window->getSize() : Vec2u(0, 0);
 }
 
+void Renderer::setSize(const Vec2u size) {
+    if (window) window->setSize(size);
+}
+
 void Renderer::setFramerateLimit(const unsigned fps) {
     if (window) window->setFramerateLimit(fps);
 }
@@ -274,7 +278,7 @@ Vec2f Renderer::screenToWorld(const Vec2i screenPos) const {
     return window->mapPixelToCoords(screenPos);
 }
 
-// getSfmlWindow 为 Renderer.h 类内 inline 定义（服务端构建无本文件也能链接）
+// SDL3 迁移 6e：getSfmlWindow 过渡 API 已删除——渲染器窗口成为私有实现细节
 
 } // namespace eng
 

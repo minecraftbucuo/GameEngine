@@ -4,7 +4,6 @@
 
 #pragma once
 #include <functional>
-#include <SFML/Graphics.hpp>
 #include "Core/Types.h"
 
 class Timer {

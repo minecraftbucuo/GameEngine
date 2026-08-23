@@ -52,35 +52,15 @@ void Scene::update(eng::Time deltaTime) {
 }
 
 #ifndef SERVER_BUILD
-// SDL3 迁移 Step 6c 修正：基类新签名默认 = 虚转发旧签名。
-// 未迁移场景（Menu/Settings 等覆盖旧签名）的标题/粒子等自有绘制由此继续生效
-//（曾误改为新对象循环，导致未迁移场景的旧 override 被绕过、标题消失）
+// 渲染签名（SDL3 迁移 6e：旧 sf::RenderWindow 签名已删除）。
+// 基类默认 = 对象循环；场景级 override（Menu/Settings/SuperMario/PhysicsTest）
+// 各自绘制自有内容并按需调用 renderObjects
 void Scene::render(eng::Renderer& _renderer) {
-    if (sf::RenderWindow* w = _renderer.getSfmlWindow()) {
-        render(w);
-    }
-}
-
-void Scene::render(sf::RenderWindow* _window) {
-    // SDL3 迁移 6d 修复：对象循环改走新链（renderObjects）。
-    // 此前为旧循环 obj->render(sfml)，GameScene 等无 override 场景下
-    // 新签名组件（BoxCollision/CircleCollision 调试图等）收不到渲染调用，
-    // 表现为 Demo 场景碰撞框消失。对象的旧 override 经 GameObject 基类
-    // 新签名默认转发继续生效，行为不受影响。
-    (void)_window;
-    if (renderer) {
-        renderObjects(*renderer);
-    } else {
-        for (const auto& obj : game_objects) {
-            if (obj->isActive()) {
-                obj->render(_window);
-            }
-        }
-    }
+    renderObjects(_renderer);
     // Box2D 调试绘制已随 SDL3 迁移 6b 移入 PhysicsTestScene::render(eng::Renderer&)
 }
 
-// 对象循环（新虚链）：供已迁移场景（SuperMario 等）在自己 render 内调用
+// 对象循环：遍历活跃对象调 render(eng::Renderer&)
 void Scene::renderObjects(eng::Renderer& _renderer) {
     for (const auto& obj : game_objects) {
         if (obj->isActive()) {

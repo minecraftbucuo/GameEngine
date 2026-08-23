@@ -4,6 +4,7 @@
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include "GameObject3D.h"
+#include "Render/Renderer.h"
 #include <cmath>
 
 void GameObject3D::update(const eng::Time deltaTime) {
@@ -14,14 +15,14 @@ void GameObject3D::update(const eng::Time deltaTime) {
     position.z += 0.01f * sign;
 }
 
-void GameObject3D::drawFaces(sf::RenderWindow* window) const {
+void GameObject3D::drawFaces(eng::Renderer& renderer) const {
     for (const auto& face : model->faces) {
         const int len = static_cast<int>(face.size());
         for (int i = 0; i < len; i++) {
             const int x = i, y = (i + 1) % len;
             const auto p1 = trans(model->points[face[x]], position);
             const auto p2 = trans(model->points[face[y]], position);
-            drawEdge(window, p1, p2);
+            drawEdge(renderer, p1, p2);
         }
     }
 }
@@ -30,19 +31,14 @@ eng::Vec2f GameObject3D::transToWindow(const eng::Vec2f& pos, eng::Vec2u windowS
     return {(pos.x + 1) / 2 * static_cast<float>(windowSize.x), (1 - pos.y) / 2 * static_cast<float>(windowSize.y)};
 }
 
-void GameObject3D::drawPoint(sf::RenderWindow* window, const eng::Vec2f& pos) {
-    sf::CircleShape circle_shape;
-    circle_shape.setRadius(4.0f);
-    circle_shape.setOrigin(circle_shape.getRadius(), circle_shape.getRadius());
-    circle_shape.setPosition(pos);
-    window->draw(circle_shape);
+// 顶点 = 4px 白色圆（原 setOrigin(radius,radius) ⇒ pos 为圆心）
+void GameObject3D::drawPoint(eng::Renderer& renderer, const eng::Vec2f& pos) {
+    renderer.drawCircle(pos, 4.f, eng::Color::White);
 }
 
-void GameObject3D::drawEdge(sf::RenderWindow* window, const eng::Vec2f& p1, const eng::Vec2f& p2) {
-    sf::VertexArray line(sf::Lines, 2);
-    line[0].position = p1;
-    line[1].position = p2;
-    window->draw(line);
+// 边 = 白色线段
+void GameObject3D::drawEdge(eng::Renderer& renderer, const eng::Vec2f& p1, const eng::Vec2f& p2) {
+    renderer.drawLine(p1, p2, eng::Color::White);
 }
 
 eng::Vec3f GameObject3D::rotateXY(eng::Vec3f pos, const float angle) {

@@ -15,10 +15,8 @@
 #include "Scene.h"
 
 Circle::Circle(const float x, const float y, const float radius, const std::string& tag) {
-    shape.setRadius(radius);
     this->position = eng::Vec2f(x, y);
     this->size = eng::Vec2f(radius * 2, radius * 2);
-    shape.setPosition(x, y);
 
     this->addComponent<Collision, CircleCollision>(this->position.x + radius, this->position.y + radius, this->size.x / 2);
     this->addComponent<CollisionHandle, CircleCollisionHandle>();
@@ -34,9 +32,10 @@ Circle::~Circle() {
     EventBus::getInstance().removeSubscribe("onCollision" + this->tag);
 }
 
-void Circle::render(sf::RenderWindow* window) {
-    window->draw(shape);
-    renderComponents(window);
+// SDL3 迁移 6e：sf::CircleShape 数据化，与 Player 同构（半径 = size.x/2）
+void Circle::render(eng::Renderer& renderer) {
+    renderer.drawCircle(position + size * 0.5f, size.x * 0.5f, eng::Color::White);
+    renderComponents(renderer);
 }
 
 void Circle::start() {
@@ -81,7 +80,6 @@ bool Circle::needGravity() {
 
 void Circle::setPosition(const float x, const float y) {
     GameObject::setPosition(x, y);
-    shape.setPosition(x, y);
 }
 
 void Circle::setSpeed(const float x, const float y) {

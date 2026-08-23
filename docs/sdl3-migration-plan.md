@@ -400,11 +400,22 @@ struct EngineEvent {
 - **验证**：编译双版本；Mario 场景全回归：跑动动画（左右镜像）、跳跃/死亡帧、
   火球+爆炸动画、箱子顶开动画（setBack 往返）、砖块贴图、背景铺满、死亡屏
   （半透明遮罩+居中文字+R 重生/Esc 退出）、开 debug 看碰撞红框/速度箭头/血条
-- [ ] **6d UI 场景**：Button 6 处、Toggle 4 处、TextInput 4 处、MenuScene 2 处、SettingsScene 2 处
-- [ ] **6e 3D 与杂项**：GameObject3D 线框（顶点圆 + 线，`drawCircle`/`drawLines` 覆盖）、
-      Cube3D/Human3D/Penguin3D/NewModel3D、Player/Circle、碰撞调试框 2 处、
-      MoveComponent 速度箭头、HealthBar；完成后删除 `Scene::getWindow()` 与
-      `RendererSFML.cpp` 暴露的过渡取窗接口
+- [x] **6d UI 场景**：Button 6 处、Toggle 4 处、TextInput 4 处、MenuScene 2 处、SettingsScene 2 处
+  （实施补充：sf::String 全部换 UTF-8 std::string；drawRoundedRect 收进脚手架；
+  drawText 分离"光栅化字号 size"与"变换缩放 scale"两个参数——连续文字动画必须
+  固定字号走 GPU 缩放，否则逐帧重新光栅化产生字形抖动）
+- [x] **6e 3D 与杂项**：GameObject3D 线框（顶点 4px 白圆 + 白色边线）、
+      Cube3D/Human3D/Penguin3D/NewModel3D、Player/Circle（sf::CircleShape 数据化）、
+      HealthBar（drawRect ×2）；**旧渲染签名全部删除**：
+      `Component/GameObject/Scene::render(sf::RenderWindow*)`、
+      `renderComponents(sf::RenderWindow*)`、`Scene::window` 成员、`Scene::getWindow()`、
+      `Renderer::getSfmlWindow()`（窗口指针降为 Renderer 私有实现细节）；
+      `Renderer::setSize()` 新增（GameScene3D 进出场改分辨率）；
+      GameEngine 主循环计时 sf::Clock → std::chrono（服务端节拍同步替换）；
+      多余 SFML include 清理（Timer/GameScene/Controller/ModelManager/Mario/
+      Physics 四件头/NetworkManager Graphics）——
+      游戏层 SFML include 现仅剩：Types.h（别名）、AssetManager（资源）、
+      MarioController.h（sf::Sound）、脚手架两文件、Network/
 - **验证**：每切一个子项跑对应场景；全部完成后逐场景核对与迁移前一致
 - **原子性保证**：每个子提交自洽可编译；同一场景的改动不跨提交
 

@@ -8,7 +8,7 @@
 #include "SceneManager.h"
 
 void GameScene3D::init() {
-    window->setSize(eng::Vec2u(1200, 1200));
+    renderer->setSize(eng::Vec2u(1200, 1200));
     Scene::init();
     if (is_init) return;
     is_init = true;
@@ -27,6 +27,6 @@ void GameScene3D::handleEvent(const eng::EngineEvent& event) {
 }
 
 void GameScene3D::exit() {
-    window->setSize(eng::Vec2u(CONFIG.window.width, CONFIG.window.height));
+    renderer->setSize(eng::Vec2u(CONFIG.window.width, CONFIG.window.height));
 }
 #endif

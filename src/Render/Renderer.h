@@ -15,7 +15,7 @@
 // 头文件零第三方 include；实现文件整体替换（脚手架期 RendererSFML.cpp，
 // SDL3 终态 RendererSDL3.cpp），游戏层代码不随实现变化。
 namespace sf {
-    class RenderWindow;   // 仅供临时过渡 API 前向声明，Step 6e 删除
+    class RenderWindow;   // 仅私有指针成员前向声明（不完整类型），非公共 API
 }
 
 namespace eng {
@@ -33,6 +33,7 @@ public:
     void closeWindow();                      // 请求关闭（随后 isWindowOpen 变 false）
     [[nodiscard]] bool isWindowOpen() const;
     [[nodiscard]] Vec2u getSize() const;
+    void setSize(Vec2u size);                 // 运行时改窗口尺寸（3D 场景进出场切换分辨率用）
     void setFramerateLimit(unsigned fps);
 
     // ── 事件泵（内部完成 sf::Event / SDL_Event → EngineEvent 转换，引擎不关心的事件被跳过）──
@@ -80,13 +81,6 @@ public:
     [[nodiscard]] CameraState getCamera() const;   // 保存当前相机（配合 setCamera 恢复）
     void resetCamera();                            // 屏幕坐标系（窗口大小，左上原点）
     [[nodiscard]] Vec2f screenToWorld(Vec2i screenPos) const;
-
-    // 【临时过渡 API — Step 6e 删除】
-    // 供尚未迁移到 Renderer 绘制命令的旧渲染路径（Scene::getWindow 等）取底层窗口
-    // 类内 inline 定义：服务端构建（无 RendererSFML.cpp）被 vtable 引用时也不产生外部符号依赖
-    [[nodiscard]] sf::RenderWindow* getSfmlWindow() const {
-        return window;
-    }
 
 private:
     sf::RenderWindow* window{};   // 脚手架期内部持有；SDL3 期换 SDL_Window*/SDL_Renderer*

@@ -3,10 +3,8 @@
 //
 
 #pragma once
-#include <SFML/Graphics.hpp>
 #include "NetworkGameObject.h"
 #include "Events.h"
-#include <SFML/Audio.hpp>
 #include "Core/Types.h"
 
 class Mario : public NetworkGameObject {

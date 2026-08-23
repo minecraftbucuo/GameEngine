@@ -4,7 +4,6 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include <SFML/Graphics/RenderWindow.hpp>
 #include "Core/Types.h"
 #include "Core/Event.h"
 #include "NetworkManager.h"
@@ -18,9 +17,9 @@ class Scene {
 public:
 #ifndef SERVER_BUILD
     explicit Scene(eng::Renderer* _renderer)
-        : renderer(_renderer), window(_renderer ? _renderer->getSfmlWindow() : nullptr), scene_name("Scene") {}
+        : renderer(_renderer), scene_name("Scene") {}
     explicit Scene(eng::Renderer* _renderer, std::string _name)
-        : renderer(_renderer), window(_renderer ? _renderer->getSfmlWindow() : nullptr), scene_name(std::move(_name)) {}
+        : renderer(_renderer), scene_name(std::move(_name)) {}
 #else
     explicit Scene() : scene_name("Scene") {}
     explicit Scene(std::string _name) : scene_name(std::move(_name)) {}
@@ -51,15 +50,11 @@ public:
 
     // 场景渲染方法
 #ifndef SERVER_BUILD
-    // SDL3 迁移 Step 6a/6c：新渲染签名。基类默认虚转发旧签名——
-    // 未迁移场景（覆盖旧签名）的原实现经虚分发继续生效；已迁移场景覆盖本签名，
-    // 需要渲染对象时调 renderObjects()。Step 6e 移除旧签名后基类默认改为 renderObjects
+    // 渲染签名（SDL3 迁移 6e：旧 sf::RenderWindow 签名已删除，唯一虚签名；
+    // 基类默认 = renderObjects，场景级 override 自行决定是否调用它）
     virtual void render(eng::Renderer& _renderer);
 
-    // 【过渡期旧签名 — Step 6e 删除】基类默认 = 旧虚对象循环
-    virtual void render(sf::RenderWindow* _window);
-
-    // 对象循环（新虚链）：遍历活跃对象调 render(eng::Renderer&)
+    // 对象循环：遍历活跃对象调 render(eng::Renderer&)
     void renderObjects(eng::Renderer& _renderer);
 
     // 场景事件处理方法
@@ -129,11 +124,6 @@ public:
     }
 
 #ifndef SERVER_BUILD
-    // 【过渡期旧 API — Step 6e 删除】场景内部 window->draw 调用逐步迁移到 Renderer 绘制命令
-    [[nodiscard]] sf::RenderWindow* getWindow() const {
-        return window;
-    }
-
     [[nodiscard]] eng::Vec2i getMousePosition() const;
 #endif
 
@@ -156,7 +146,6 @@ protected:
 
 #ifndef SERVER_BUILD
     eng::Renderer* renderer{};
-    sf::RenderWindow* window{};   // 【过渡期成员 — Step 6e 删除】= renderer->getSfmlWindow()
     std::unique_ptr<Camera> camera;
 #endif
 

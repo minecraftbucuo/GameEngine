@@ -27,8 +27,8 @@ void MenuScene::init() {
 }
 
 void MenuScene::initScene() {
-    const float winW = static_cast<float>(window->getSize().x);
-    const float winH = static_cast<float>(window->getSize().y);
+    const float winW = static_cast<float>(renderer->getSize().x);
+    const float winH = static_cast<float>(renderer->getSize().y);
     const float btnW = 280.f;
     const float btnH = 55.f;
     const float startY = winH * 0.45f;
@@ -91,8 +91,8 @@ void MenuScene::initScene() {
 void MenuScene::update(eng::Time deltaTime) {
     Scene::update(deltaTime);
 
-    const float winW = static_cast<float>(window->getSize().x);
-    const float winH = static_cast<float>(window->getSize().y);
+    const float winW = static_cast<float>(renderer->getSize().x);
+    const float winH = static_cast<float>(renderer->getSize().y);
     const float dt = deltaTime.asSeconds();
 
     for (auto& p : particles) {

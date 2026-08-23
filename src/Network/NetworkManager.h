@@ -6,7 +6,6 @@
 #include <memory>
 #include "ISerializable.h"
 #include <string>
-#include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 
 #include "ConfigManager.h"

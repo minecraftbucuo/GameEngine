@@ -5,7 +5,6 @@
 #pragma once
 
 #include <box2d/box2d.h>
-#include <SFML/System/Vector2.hpp>
 #include "Core/Types.h"
 
 namespace physics {

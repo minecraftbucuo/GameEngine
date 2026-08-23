@@ -80,7 +80,7 @@ void GameScene::handleEvent(const eng::EngineEvent& event) {
             if (obj->getTag().substr(0, 6) == "ground") {
                 // obj->setSize(size.x, size.y);
                 const std::shared_ptr<Ground> obj_ground = std::dynamic_pointer_cast<Ground>(obj);
-                obj_ground->setPosition(0.f, window->getSize().y - 20.f);
+                obj_ground->setPosition(0.f, renderer->getSize().y - 20.f);
                 break;
             }
         }

@@ -19,8 +19,8 @@ Human3D::Human3D() {
     className = "Human3D";
 }
 
-void Human3D::render(sf::RenderWindow* window) {
-    drawFaces(window);
+void Human3D::render(eng::Renderer& renderer) {
+    drawFaces(renderer);
 }
 
 void Human3D::update(const eng::Time deltaTime) {

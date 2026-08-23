@@ -20,8 +20,8 @@ NewModel3D::NewModel3D() {
     className = "NewModel3D";
 }
 
-void NewModel3D::render(sf::RenderWindow* window) {
-    drawFaces(window);
+void NewModel3D::render(eng::Renderer& renderer) {
+    drawFaces(renderer);
 }
 
 void NewModel3D::update(const eng::Time deltaTime) {

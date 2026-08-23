@@ -28,7 +28,7 @@ void SettingsScene::init() {
 }
 
 void SettingsScene::initScene() {
-    const float winW = static_cast<float>(window->getSize().x);
+    const float winW = static_cast<float>(renderer->getSize().x);
     const float labelX = winW * 0.25f;
     const float inputX = winW * 0.5f;
     const float inputW = 250.f;

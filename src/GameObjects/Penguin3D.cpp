@@ -20,8 +20,8 @@ Penguin3D::Penguin3D() {
     className = "Penguin3D";
 }
 
-void Penguin3D::render(sf::RenderWindow* window) {
-    drawFaces(window);
+void Penguin3D::render(eng::Renderer& renderer) {
+    drawFaces(renderer);
 }
 
 void Penguin3D::update(const eng::Time deltaTime) {
