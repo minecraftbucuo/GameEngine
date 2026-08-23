@@ -1,64 +1,84 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(WIN_STATIC_LINK ON)
-set(BUILD_FOR_SERVER OFF)
+# ══════════ 用户开关（仅此两个，命令行可用 -D 覆盖）══════════════
+# 客户端(OFF)：窗口/渲染/输入/音频/网络全量
+# 服务端(ON) ：纯网络+物理，无渲染无音频（SERVER_BUILD 宏生效）
+#   例：cmake -S . -B build-server -DBUILD_FOR_SERVER=ON
+option(BUILD_FOR_SERVER "Build headless server (no renderer/audio)" OFF)
+# ON ：全部依赖静态链入 exe（单文件发布，编译慢体积大）
+# OFF：动态链接（exe 小、编译快，运行需 SDL3.dll 等陪同）
+option(BUILD_STATIC "Statically link all dependencies into the exe" OFF)
+# ═══════════════════════════════════════════════════════════════
 
 if (BUILD_FOR_SERVER)
     message("Build for Server")
     project(GameEngineServer LANGUAGES CXX)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/server)
 else ()
-    message("Build for C/S")
+    message("Build for Client")
     project(GameEngine LANGUAGES CXX)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 endif ()
 
-if (WIN32 AND WIN_STATIC_LINK)
-    set(CMAKE_EXE_LINKER_FLAGS "-static")
+# 静态/动态统一驱动：控制所有依赖库的构建方式与 exe 链接方式
+# （CACHE FORCE 保证在同一 build 目录里切换时子项目旧缓存不残留）
+if (BUILD_STATIC)
+    message("Build for Static")
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)   # Box2D / SDL_net 走此标准开关
+    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    if (WIN32)
+        set(CMAKE_EXE_LINKER_FLAGS "-static")   # MinGW 全静态 exe
+    endif ()
+else ()
+    message("Build for Dynamic")
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+    set(SDL_STATIC OFF CACHE BOOL "" FORCE)
+    set(SDL_SHARED ON CACHE BOOL "" FORCE)
 endif ()
 
-# ── Box2D 物理引擎接入 ──────────────────────────────────────────────
-# 原子性：纯新增依赖，不改任何现有源码逻辑；关 BUILD_WITH_BOX2D 即恢复原状态
-option(BUILD_WITH_BOX2D "Build with Box2D physics engine" ON)
-if (BUILD_WITH_BOX2D)
-    message(STATUS "Building with Box2D physics engine")
-    include(FetchContent)
-    FetchContent_Declare(
-        Box2D
-        GIT_REPOSITORY https://github.com/erincatto/box2d.git
-        GIT_TAG v2.4.1
-    )
-    # Box2D 默认会编译示例和测试，关闭以加速构建
-    set(BUILD_SHARED_LIBS OFF)
-    set(BOX2D_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(BOX2D_BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(Box2D)
-endif ()
-# ───────────────────────────────────────────────────────────────────
-
-# ── SDL3 本体 + SDL_net（SDL_net 迁移 N2 起两端共用）──────────────
-# 版本对齐（已核实各卫星库源码 CMakeLists 的 SDL_REQUIRED_VERSION）：
-#   mixer 3.2.0 要求 SDL≥3.4.0，ttf 3.2.0 要求 ≥3.2.6，image 3.2.0 要求 ≥3.2.0
-#   → SDL 核心 3.4.14（2026-08，3.4 系列 ABI 稳定）满足全部。
-# 客户端专属卫星库（image/ttf/mixer）见下方 NOT BUILD_FOR_SERVER 块。
-# SDL_net 依赖 SDL3 核心，而服务端（SERVER_BUILD）也要用网络 →
-# SDL 本体从"仅客户端"提升为无条件拉取；image/ttf/mixer 仍留客户端块。
-# SDL_net 3 无 release tag（最新 release 仍是 2.2.0），pin main 分支 commit。
-set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
-
-# SDL 本体：静态库（与 SFML 静态链接策略一致）
-set(SDL_STATIC ON)
-set(SDL_SHARED OFF)
-set(SDL_TEST OFF)
-set(SDL_INSTALL OFF)
-
-# SDL_net：静态构建（已核对其 main CMakeLists：无 SDLNET_STATIC 专有开关，
-# 走标准 BUILD_SHARED_LIBS；子项目模式下检测到 SDL3::SDL3 目标即跳过 find_package）
-# 缓存形式防子项目 cmake_dependent_option 以默认值覆盖
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-set(SDLNET_INSTALL OFF)
-
+# ── 依赖一：Box2D v2.4（物理，引擎核心依赖，两端共用）─────────────
 include(FetchContent)
+set(BOX2D_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BOX2D_BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    Box2D
+    GIT_REPOSITORY https://github.com/erincatto/box2d.git
+    GIT_TAG v2.4.1
+)
+FetchContent_MakeAvailable(Box2D)
+
+# ── 依赖二：SDL3 全家（窗口/渲染/输入/音频/网络）─────────────────
+# 版本对齐（已核各卫星库源码 SDL_REQUIRED_VERSION）：mixer 3.2.0 要求
+# SDL≥3.4.0 → 核心 3.4.14 满足全部。SDL_net 3 无 release tag，pin main commit。
+# 以下 set 均为依赖内部配置（非用户开关）：解码器按 Asset 实际格式裁剪，
+# 用不到的关掉以省编译时间与体积。
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)   # vendored freetype 兼容 CMake 4
+
+# SDL_image：资源全为 PNG（内置 stb 解码零外部依赖），裁掉其余格式
+set(SDLIMAGE_JPG OFF)
+set(SDLIMAGE_TIF OFF)
+set(SDLIMAGE_WEBP OFF)
+set(SDLIMAGE_JXL OFF)
+set(SDLIMAGE_AVIF OFF)
+
+# SDL_ttf：vendored freetype；关 harfbuzz/plutosvg（中文 UTF-8 渲染不需要）
+set(SDLTTF_VENDORED ON)
+set(SDLTTF_HARFBUZZ OFF)
+set(SDLTTF_PLUTOSVG OFF)
+
+# SDL_mixer：资源仅 ogg/wav（WAVE 内置、OGG 走 stb_vorbis 默认开），裁其余
+set(SDLMIXER_MP3 OFF)
+set(SDLMIXER_FLAC OFF)
+set(SDLMIXER_MOD OFF)
+set(SDLMIXER_OPUS OFF)
+set(SDLMIXER_MIDI OFF)
+set(SDLMIXER_GME OFF)
+set(SDLMIXER_WAVPACK OFF)
+set(SDLMIXER_AIFF OFF)
+set(SDLMIXER_VOC OFF)
+set(SDLMIXER_AU OFF)
+
 FetchContent_Declare(
     SDL
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
@@ -67,42 +87,10 @@ FetchContent_Declare(
 FetchContent_Declare(
     SDL_net
     GIT_REPOSITORY https://github.com/libsdl-org/SDL_net.git
-    GIT_TAG 4dd9d8418e9781d10481fd6177e3a1064ca201fe   # main 2026-06-17 "PS Vita support"
+    GIT_TAG 4dd9d8418e9781d10481fd6177e3a1064ca201fe   # main 2026-06-17
 )
-# SDL 必须在前，SDL_net 通过 SDL3::SDL3 目标找到它
-FetchContent_MakeAvailable(SDL SDL_net)
-
 if (NOT BUILD_FOR_SERVER)
-    message(STATUS "Building with SDL3 ecosystem (renderer backend)")
-
-    # SDL_image：资源全为 PNG；PNG 走内置 stb 解码（零外部依赖），裁掉用不到的格式
-    set(SDLIMAGE_JPG OFF)
-    set(SDLIMAGE_TIF OFF)
-    set(SDLIMAGE_WEBP OFF)
-    set(SDLIMAGE_JXL OFF)
-    set(SDLIMAGE_AVIF OFF)
-    set(SDLIMAGE_INSTALL OFF)
-
-    # SDL_ttf：vendored freetype（子模块已随 FetchContent 拉取）；
-    # 关 harfbuzz/plutosvg（重依赖，中文 UTF-8 渲染不需要文本整形）
-    set(SDLTTF_VENDORED ON)
-    set(SDLTTF_HARFBUZZ OFF)
-    set(SDLTTF_PLUTOSVG OFF)
-    set(SDLTTF_INSTALL OFF)
-
-    # SDL_mixer：WAV 核心内置；OGG 默认 stb_vorbis（源码内置零依赖）；
-    # 关掉用不到的格式（前缀两种写法都设，源码尚未下载无法确认，多余项无害）
-    set(SDLMIXER_MP3 OFF)
-    set(SDL3MIXER_MP3 OFF)
-    set(SDLMIXER_FLAC OFF)
-    set(SDL3MIXER_FLAC OFF)
-    set(SDLMIXER_MOD OFF)
-    set(SDL3MIXER_MOD OFF)
-    set(SDLMIXER_OPUS OFF)
-    set(SDL3MIXER_OPUS OFF)
-    set(SDLMIXER_INSTALL OFF)
-    set(SDL3MIXER_INSTALL OFF)
-
+    # 客户端专属卫星库
     FetchContent_Declare(
         SDL_image
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
@@ -118,11 +106,14 @@ if (NOT BUILD_FOR_SERVER)
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
         GIT_TAG release-3.2.0
     )
-    # SDL 本体已在上方两端共用块拉取；这里只拉客户端专属卫星库
+endif ()
+# SDL 在前：SDL_net 经 SDL3::SDL3 目标找到它
+FetchContent_MakeAvailable(SDL SDL_net)
+if (NOT BUILD_FOR_SERVER)
     FetchContent_MakeAvailable(SDL_image SDL_ttf SDL_mixer)
 endif ()
-# ───────────────────────────────────────────────────────────────────
 
+# ── 引擎源码与目标 ────────────────────────────────────────────────
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
@@ -150,9 +141,9 @@ target_include_directories(
         ${LIB_DIR}
 )
 
-# ── 链接（SDL_net 迁移 N5：SFML 全仓移除，SDL 全家 + Box2D）────────
-# 客户端：渲染/窗口/输入/音频/网络 = SDL3 全家；
-# 服务端：SDL_net（传递链接 SDL3 核心）
+# 链接：客户端 = SDL 全家 + Box2D；服务端 = SDL_net + SDL 核心 + Box2D
+# （SDL_net 静态构建不声明对 SDL3 的链接依赖——已核 sdl_net-src L164 仅共享
+#   分支才链 SDL3::SDL3-shared，静态消费方必须自己显式链 SDL3）
 if (NOT BUILD_FOR_SERVER)
     target_link_libraries(${PROJECT_NAME} PRIVATE
             SDL3::SDL3
@@ -162,18 +153,11 @@ if (NOT BUILD_FOR_SERVER)
             SDL3_net::SDL3_net
     )
 else ()
-    target_link_libraries(${PROJECT_NAME} PRIVATE SDL3_net::SDL3_net)
+    target_link_libraries(${PROJECT_NAME} PRIVATE SDL3_net::SDL3_net SDL3::SDL3)
 endif ()
+target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 
-# 链接 Box2D（物理引擎，两端共用）
-if (BUILD_WITH_BOX2D)
-    target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
-endif ()
-
-# ───────────────────────────────────────────────────────────────────
-# （SDL3 迁移 Step 9 的 EngineSDL3 编译验证目标已在 Step 10 移除：
-#   主目标已直接编译 RendererSDL3.cpp / AssetManager.cpp）
-
+# 客户端：资源目录随构建拷到 exe 旁
 if (NOT BUILD_FOR_SERVER)
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
