@@ -75,6 +75,80 @@ if (BUILD_WITH_BOX2D)
 endif ()
 # ───────────────────────────────────────────────────────────────────
 
+# ── SDL3 依赖接入（SDL3 迁移 Step 8）─────────────────────────────────
+# 原子性：仅拉取并编译依赖，不链接进主目标、不改任何源文件；
+# Step 10 切换 Renderer 实现时才 target_link_libraries；关 BUILD_WITH_SDL3 即恢复原状态。
+# 版本对齐（已核实各卫星库源码 CMakeLists 的 SDL_REQUIRED_VERSION）：
+#   mixer 3.2.0 要求 SDL≥3.4.0，ttf 3.2.0 要求 ≥3.2.6，image 3.2.0 要求 ≥3.2.0
+#   → SDL 核心 3.4.14（2026-08，3.4 系列 ABI 稳定）满足全部。
+option(BUILD_WITH_SDL3 "Fetch and build SDL3 + satellite libraries (SDL3 migration Step 8)" ON)
+if (BUILD_WITH_SDL3 AND NOT BUILD_FOR_SERVER)
+    message(STATUS "Building with SDL3 ecosystem (not linked into target yet - SDL3 migration Step 8)")
+    include(FetchContent)
+
+    # vendored freetype 声明 cmake_minimum_required(3.0)，CMake 4.x 已移除 <3.5 兼容；
+    # 官方缓解：放宽策略版本下限（仅影响旧策略告警，不影响构建产物）
+    set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
+
+    # SDL 本体：静态库（与 SFML 静态链接策略一致）
+    set(SDL_STATIC ON)
+    set(SDL_SHARED OFF)
+    set(SDL_TEST OFF)
+    set(SDL_INSTALL OFF)
+
+    # SDL_image：资源全为 PNG；PNG 走内置 stb 解码（零外部依赖），裁掉用不到的格式
+    set(SDLIMAGE_JPG OFF)
+    set(SDLIMAGE_TIF OFF)
+    set(SDLIMAGE_WEBP OFF)
+    set(SDLIMAGE_JXL OFF)
+    set(SDLIMAGE_AVIF OFF)
+    set(SDLIMAGE_INSTALL OFF)
+
+    # SDL_ttf：vendored freetype（子模块已随 FetchContent 拉取）；
+    # 关 harfbuzz/plutosvg（重依赖，中文 UTF-8 渲染不需要文本整形）
+    set(SDLTTF_VENDORED ON)
+    set(SDLTTF_HARFBUZZ OFF)
+    set(SDLTTF_PLUTOSVG OFF)
+    set(SDLTTF_INSTALL OFF)
+
+    # SDL_mixer：WAV 核心内置；OGG 默认 stb_vorbis（源码内置零依赖）；
+    # 关掉用不到的格式（前缀两种写法都设，源码尚未下载无法确认，多余项无害）
+    set(SDLMIXER_MP3 OFF)
+    set(SDL3MIXER_MP3 OFF)
+    set(SDLMIXER_FLAC OFF)
+    set(SDL3MIXER_FLAC OFF)
+    set(SDLMIXER_MOD OFF)
+    set(SDL3MIXER_MOD OFF)
+    set(SDLMIXER_OPUS OFF)
+    set(SDL3MIXER_OPUS OFF)
+    set(SDLMIXER_INSTALL OFF)
+    set(SDL3MIXER_INSTALL OFF)
+
+    FetchContent_Declare(
+        SDL
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-3.4.14
+    )
+    FetchContent_Declare(
+        SDL_image
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
+        GIT_TAG release-3.2.0
+    )
+    FetchContent_Declare(
+        SDL_ttf
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL_ttf.git
+        GIT_TAG release-3.2.0
+    )
+    FetchContent_Declare(
+        SDL_mixer
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
+        GIT_TAG release-3.2.0
+    )
+    # SDL 必须在最前，卫星库通过 SDL3::SDL3 目标自动找到它
+    FetchContent_MakeAvailable(SDL SDL_image SDL_ttf SDL_mixer)
+endif ()
+# ───────────────────────────────────────────────────────────────────
+
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 

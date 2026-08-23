@@ -447,9 +447,45 @@ SFML 退缩为以下实现面文件的内部细节（Step 9~11 逐个替换/删�
 ### 阶段三：SDL3 替换（核心大步）
 
 #### Step 8 — SDL3 依赖接入（不影响现有构建）
-- [ ] CMake `FetchContent` 拉取 SDL3（≥3.2）+ SDL_image 3.x + SDL_ttf 3.x + SDL_mixer 3.x
-- [ ] 仅声明依赖，不切换任何源文件
-- **验证**：`cmake --build` 通过；SFML 路径行为不变
+- [x] CMake `FetchContent` 拉取 SDL3（≥3.2）+ SDL_image 3.x + SDL_ttf 3.x + SDL_mixer 3.x
+- [x] 仅声明依赖，不切换任何源文件
+      （实施记录：锚定 SDL3 正式发布版组合 SDL release-3.2.0 / SDL_image release-3.2.0 /
+      SDL_ttf release-3.2.0 / SDL_mixer release-3.0.0，后续可自行升级；
+      全部静态构建（SDL_STATIC ON，与 SFML 静态策略一致），卫星库外部依赖全部 vendored
+      源码构建（libpng/zlib/freetype/libogg/libvorbis），Windows 零系统依赖；
+      按实际资源裁剪：SDL_image 仅 PNG（关 JPG/TIF/WEBP/JXL/AVIF），SDL_mixer 仅
+      Vorbis+WAV（Asset 音频全为 ogg/wav，关 MP3/FLAC/MOD/OPUS）——构建时间与体积最小化；
+      `BUILD_WITH_SDL3` 选项（默认 ON）控制，服务端构建不拉取；
+      **主目标未链接任何 SDL 库**，运行时行为零变化；Step 10 才 target_link_libraries）
+- **验证**：`cmake --build` 通过（首次配置需联网下载约百 MB 并编译 SDL3 全家，耗时数分钟，
+      属预期）；SFML 路径行为不变；`-DBUILD_WITH_SDL3=OFF` 可关掉整块（回滚证明）
+- **实施插曲（选项名前缀）**：卫星库 CMake 选项前缀**不带 3**——`SDLIMAGE_*` / `SDLTTF_*`；
+      首版误写成 `SDL3IMAGE_*` / `SDL3TTF_*` 导致 SDLTTF_VENDORED 未生效，
+      SDL_ttf 转找系统 Freetype 失败（MinGW 无系统库）硬报错。
+      修正：`SDLTTF_VENDORED ON` 走子模块 freetype（FetchContent 默认拉取子模块，
+      external/freetype 源码完整）；同时关 `SDLTTF_HARFBUZZ/PLUTOSVG`（中文 UTF-8
+      渲染不需要文本整形，省重依赖）。SDL_image 的 PNG 走内置 stb 解码（零外部依赖，
+      首次配置已验证通过）。SDL_mixer WAV 核心内置、OGG 默认 stb_vorbis（源码内置），
+      前缀两种写法（SDLMIXER_/SDL3MIXER_）都设以防枚举名不确定。
+- **实施插曲（CMake 4 策略版本）**：vendored freetype 声明 `cmake_minimum_required(3.0)`，
+      CMake 4.x 已移除 <3.5 兼容直接硬报错；官方缓解 `set(CMAKE_POLICY_VERSION_MINIMUM 3.5
+      CACHE STRING "" FORCE)`（放宽旧策略告警，不影响构建产物），已加在 FetchContent 之前。
+- **实施插曲（SDL_mixer 无 3.0.0 tag）**：SDL_mixer 3.x 从未发布 3.0.0，
+      首个正式版直接是 `release-3.2.0`（版本与 SDL 3.2.0 对齐；已查 GitHub tags 核实，
+      3.x 系列为 3.1.2 预发布 → 3.2.0 → 3.2.2 → 3.2.4）。修正 tag 为 release-3.2.0。
+- **实施插曲（核心与卫星库版本不对齐——最重要教训）**：卫星库 tag 号 ≠ SDL 核心 tag 号。
+      mixer 3.2.0 实际要求 SDL ≥ **3.4.0**（其 CMakeLists `set(SDL_REQUIRED_VERSION 3.4.0)`），
+      ttf 3.2.0 要求 ≥3.2.6，image 3.2.0 要求 ≥3.2.0；而 SDL 核心 release-3.2.0 是 2025-01
+      的旧版 → mixer 编译报 `SDL_ALIGNED` / `SDL_PROP_AUDIOSTREAM_AUTO_CLEANUP_BOOLEAN`
+      未定义。且 FetchContent 同场配置时 find_package 版本检查**不会**在 configure 期拦下，
+      直接漏到编译期才炸。修正：SDL 核心 → `release-3.4.14`（2026-08 最新稳定，
+      3.4 系列 ABI 稳定），满足全部卫星库。**规则：升级任一库前先读各卫星库源码的
+      `SDL_REQUIRED_VERSION` 再选核心版本。**
+- **实施插曲（SDL_mixer 3.2.x 为全新 API）**：3.2.0 起 mixer 重写为 track 模型
+      （`MIX_Init`/`MIX_CreateMixer`/`MIX_LoadAudio`/`MIX_CreateTrack`/`MIX_PlayTrack`），
+      **旧 `Mix_Chunk`/`Mix_Music`/`Mix_OpenAudio` API 已删除**——
+      本计划"技术决策 7"中 Mix_Chunk≈sf::Sound 的心智模型作废，
+      Step 9/10 音频按新 API 写（详见 Step 9 条目）。
 - **原子性保证**：新依赖只编译不链接进主目标的行为
 
 #### Step 9 — SDL3 实现文件（纯新增，可编译未启用）
@@ -460,6 +496,9 @@ SFML 退缩为以下实现面文件的内部细节（Step 9~11 逐个替换/删�
 - [ ] `AssetManager.cpp` 的 SDL3 内部实现（SDL_image → `SDL_Texture`，接口不变）——
       与脚手架版本并存的方式：临时用 `#ifdef ENGINE_SDL3` 或两份 `.cpp` 按 CMake 选择
 - [ ] SDL_mixer 音频：`Mix_Chunk`/`Mix_Music` 加载与播放（对应现有 `sf::Sound`/`sf::Music` 调用点的目标写法）
+      （**更正**：SDL_mixer 3.2.x 已重写为 track API——`MIX_Init(MIX_INIT_OGG)` →
+      `MIX_CreateMixer` → BGM：`MIX_LoadAudio`+`MIX_CreateTrack`+`MIX_PlayTrack(loop)`；
+      音效：同一 `MIX_Audio` 每次 `MIX_CreateTrack` 短播即毁，对应 sf::Sound 语义）
 - **验证**：编译通过；`ENGINE_SDL3` 未定义时行为完全不变
 - **原子性保证**：新实现全部在编译开关后，默认路径零影响
 
