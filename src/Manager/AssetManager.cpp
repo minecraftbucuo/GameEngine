@@ -34,14 +34,6 @@ void AssetManager::loadTexture(const char* path) {
     }
 }
 
-sf::Texture& AssetManager::getTexture(const std::string& name) {
-    if (!textures.contains(name)) {
-        LOG_ERROR_FMT("Texture {} does not exist!", name);
-        return textures["default"];
-    }
-    return textures[name];
-}
-
 eng::TextureHandle AssetManager::getTextureHandle(const std::string& name) {
     if (const auto it = texture_handle_ids.find(name); it != texture_handle_ids.end()) {
         return eng::TextureHandle{it->second};
@@ -74,11 +66,7 @@ eng::FontHandle AssetManager::getFontHandle() {
 }
 
 const sf::Font& AssetManager::getFont(const eng::FontHandle h) {
-    (void)h;   // 引擎当前只有一款字体
-    return getFont();
-}
-
-const sf::Font& AssetManager::getFont() {
+    (void)h;   // 引擎当前只有一款字体（懒加载，首次调用时载入）
     if (!have_load_font) {
         font.loadFromFile(CONFIG.assets.font);
         have_load_font = true;

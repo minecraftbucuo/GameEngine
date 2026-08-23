@@ -420,17 +420,27 @@ struct EngineEvent {
 - **原子性保证**：每个子提交自洽可编译；同一场景的改动不跨提交
 
 #### Step 7 — AssetManager 句柄化 + Animation 纯数据化
-- [ ] `getTexture/getFont` 返回 `TextureHandle/FontHandle`；sf 对象藏入内部 map
+- [x] `getTexture/getFont` 返回 `TextureHandle/FontHandle`；sf 对象藏入内部 map
       （**外部 API 从此与第三方无关**；音频照旧不动）
-- [ ] `Animation` 去掉 `sf::Sprite` 成员：只存帧矩形序列 + 帧时长（纯数据），
-      渲染由持有它的对象调 `drawTexture(handle, frameRect, dstRect, ...)`
-- [ ] 各 GameObject 移除 `sf::Sprite` 成员（Mario 状态机里的 `left_sprite/right_sprite` 改为
-      每帧计算 src/dst 矩形）
-- **验证**：Mario 跑/跳/死动画帧序列与迁移前一致
-- **原子性保证**：7a AssetManager（编译器强制改完所有调用点）、7b Animation+使用方
+      （实施记录：7a 本体 = 删除旧按名 API `getTexture(name)` / `addTexture(name, sf::Texture)` /
+      无参 `getFont()`（懒加载逻辑内联进 `getFont(FontHandle)`）；调用点已在 6c~6e 期间全部
+      切至句柄 API（Brick/状态机 ×3/FrameManager/SuperMarioScene/Button/TextInput/
+      MenuScene/SettingsScene），此步为纯删除，编译器验证零残留。
+      `getTexture(TextureHandle)` / `getFont(FontHandle)` 返回 sf 类型——仅供 RendererSFML.cpp
+      脚手架使用，属实现面 API，Step 9 与 SDL3 实现一起换签名）
+- [x] `Animation` 去掉 `sf::Sprite` 成员（6c 提前完成：Frame 存句柄 + 帧矩形 + 帧时长纯数据，
+      渲染由持有者调 `drawTexture(handle, frameRect, dstRect, ...)`）
+- [x] 各 GameObject 移除 `sf::Sprite` 成员（6c/6e 提前完成：Mario 状态机 ×4 / Brick / Box /
+      Player / Circle 均为句柄+矩形数据，左右方向用 `flipX` 表达）
+- **验证**：Mario 跑/跳/死动画帧序列与迁移前一致（6c 已验证）；本步纯删除后全量编译 +
+  抽查 Mario 场景（用户执行）
+- **原子性保证**：7a AssetManager（编译器强制改完所有调用点）、7b Animation+使用方（已并入 6c）
 
-**阶段一~二完成 = 脚手架里程碑**：游戏层已零 SFML 引用（Network/ 除外），
-SFML 退缩为 `RendererSFML.cpp` + `AssetManager.cpp` + 少量音频调用点三个文件的内部实现。
+**阶段一~二完成 = 脚手架里程碑（2026-08-23 达成）**：游戏层已零 SFML 引用，
+SFML 退缩为以下实现面文件的内部细节（Step 9~11 逐个替换/删除）：
+`RendererSFML.cpp` + `Core/EventConvertSFML.h/.cpp`（脚手架本体）、
+`AssetManager.h/.cpp`（纹理/字体/音频资源）、`MarioController.h`（sf::Sound 音频调用点）、
+`Core/Types.h`（数值别名，Step 10 换自研 struct）、`Network/`（范围外）。
 
 ---
 

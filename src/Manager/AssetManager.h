@@ -22,10 +22,8 @@ public:
 
     void loadTexture(const char* path);
 
-    sf::Texture& getTexture(const std::string& name);
-
-    // ── 句柄 API（SDL3 迁移 Step 5 新增；游戏层迁移到句柄后旧按名 API 移除）──
-    // 名字 → 句柄（首次访问时分配 id；游戏层从此只持有句柄）
+    // ── 句柄 API（SDL3 迁移 Step 5 新增；Step 7a 旧按名 API 已删，游戏层从此只持句柄）──
+    // 名字 → 句柄（首次访问时分配 id）
     eng::TextureHandle getTextureHandle(const std::string& name);
     // 句柄 → 纹理（Renderer 实现内部使用；句柄无效返回占位纹理）
     const sf::Texture& getTexture(eng::TextureHandle h);
@@ -34,12 +32,6 @@ public:
     // 字体句柄（当前引擎只有一款字体，固定 id=1）
     eng::FontHandle getFontHandle();
     const sf::Font& getFont(eng::FontHandle h);
-
-    void addTexture(const std::string& name, const sf::Texture& texture) {
-        textures[name] = texture;
-    }
-
-    const sf::Font& getFont();
 
     void loadSoundBuffer(const char* path);
 
