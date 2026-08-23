@@ -19,7 +19,7 @@ public:
 
     void setPosition(float posX, float posY) override;
 #ifndef SERVER_BUILD
-    void render(sf::RenderWindow* window) override;
+    void render(eng::Renderer& renderer) override;
 #endif
 
 private:

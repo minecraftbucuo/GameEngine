@@ -5,6 +5,7 @@
 #pragma once
 #ifndef SERVER_BUILD
 #include "AssetManager.h"
+#include "Render/Renderer.h"
 #endif
 #include "BaseState.h"
 #include "BoxCollision.h"
@@ -15,20 +16,16 @@
 #include "Timer.h"
 #include "MoveComponent.h"
 #include "Core/Types.h"
+#include <cmath>
 
 
 class MarioJumpState : public BaseState {
 public:
     MarioJumpState() : BaseState("MarioJumpState") {
 #ifndef SERVER_BUILD
-        const sf::Texture& mario_texture = AssetManager::getInstance().getTexture("mario_bros");
-        right_sprite.setTexture(mario_texture);
-        right_sprite.setTextureRect(eng::IntRect(144, 32, 16, 16));
-        right_sprite.setScale(4.f, 4.f);
-        left_sprite.setTexture(mario_texture);
-        left_sprite.setTextureRect(eng::IntRect(144, 32, 16, 16));
-        left_sprite.setScale(-4.f, 4.f);
-        left_sprite.setOrigin(static_cast<float>(right_sprite.getTextureRect().width), 0.f);
+        // 原 sf::Sprite 配置：mario_bros (144,32,16,16) 区域，4 倍放大，左向为镜像
+        texture = AssetManager::getInstance().getTextureHandle("mario_bros");
+        texture_rect = eng::IntRect(144, 32, 16, 16);
 #endif
     }
     ~MarioJumpState() override = default;
@@ -57,16 +54,21 @@ public:
         }
     }
 
-    void render(sf::RenderWindow* window) override {
-        if (getIsLeft()) {
-            if (owner) left_sprite.setPosition(owner->getPosition());
-            else LOG_ERROR("Owner is nullptr");
-            window->draw(left_sprite);
-        } else {
-            if (owner) right_sprite.setPosition(owner->getPosition());
-            else LOG_ERROR("Owner is nullptr");
-            window->draw(right_sprite);
+    void render(eng::Renderer& renderer) override {
+        if (!owner) {
+            LOG_ERROR("Owner is nullptr");
+            return;
         }
+        constexpr float scale_x = 4.f, scale_y = 4.f;
+        const eng::Vec2f size(scale_x * static_cast<float>(texture_rect.width),
+                              scale_y * static_cast<float>(texture_rect.height));
+        renderer.drawTexture(texture,
+                             eng::FloatRect(static_cast<float>(texture_rect.left),
+                                            static_cast<float>(texture_rect.top),
+                                            static_cast<float>(texture_rect.width),
+                                            static_cast<float>(texture_rect.height)),
+                             eng::FloatRect(owner->getPosition(), size),
+                             0.f, {}, eng::Color::White, getIsLeft());
     }
 #endif
     bool getIsLeft() const {
@@ -79,7 +81,8 @@ public:
 
 private:
 #ifndef SERVER_BUILD
-    sf::Sprite left_sprite;
-    sf::Sprite right_sprite;
+    // SDL3 迁移 6c：精灵数据化（原 sf::Sprite ×2），方向由 render 的 flipX 表达
+    eng::TextureHandle texture;
+    eng::IntRect texture_rect;
 #endif
 };

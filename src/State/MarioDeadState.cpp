@@ -14,10 +14,9 @@
 
 MarioDeadState::MarioDeadState() : BaseState("MarioDeadState") {
 #ifndef SERVER_BUILD
-    const sf::Texture& mario_texture = AssetManager::getInstance().getTexture("mario_bros");
-    sprite.setTexture(mario_texture);
-    sprite.setTextureRect(eng::IntRect(160, 32, 16, 16));
-    sprite.setScale(4.f, 4.f);
+    // 原 sf::Sprite 配置：mario_bros (160,32,16,16) 区域，4 倍放大
+    texture = AssetManager::getInstance().getTextureHandle("mario_bros");
+    texture_rect = eng::IntRect(160, 32, 16, 16);
 #endif
 }
 
@@ -42,10 +41,16 @@ void MarioDeadState::update(const eng::Time& deltaTime) {
 }
 
 #ifndef SERVER_BUILD
-void MarioDeadState::render(sf::RenderWindow* window) {
+void MarioDeadState::render(eng::Renderer& renderer) {
     if (owner) {
-        sprite.setPosition(owner->getPosition());
-        window->draw(sprite);
+        const eng::Vec2f size(scale.x * static_cast<float>(texture_rect.width),
+                              scale.y * static_cast<float>(texture_rect.height));
+        renderer.drawTexture(texture,
+                             eng::FloatRect(static_cast<float>(texture_rect.left),
+                                            static_cast<float>(texture_rect.top),
+                                            static_cast<float>(texture_rect.width),
+                                            static_cast<float>(texture_rect.height)),
+                             eng::FloatRect(owner->getPosition(), size));
     }
 }
 #endif

@@ -18,7 +18,7 @@ public:
 
     void start() override;
 #ifndef SERVER_BUILD
-    void render(sf::RenderWindow* window) override;
+    void render(eng::Renderer& renderer) override;
 #endif
     void update(eng::Time deltaTime) override;
 

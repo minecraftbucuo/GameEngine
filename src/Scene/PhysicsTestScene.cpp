@@ -246,11 +246,7 @@ void PhysicsTestScene::exit() {
 }
 
 void PhysicsTestScene::render(eng::Renderer& _renderer) {
-    for (const auto& obj : game_objects) {
-        if (obj->isActive()) {
-            obj->render(_renderer);
-        }
-    }
+    renderObjects(_renderer);
     // Box2D 调试绘制：开关跟随 CONFIG.game.debug，关闭时零开销
     if (physics_world && CONFIG.game.debug) {
         physics_world->renderDebug(&_renderer);

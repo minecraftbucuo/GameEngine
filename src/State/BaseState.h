@@ -3,7 +3,6 @@
 //
 
 #pragma once
-#include <SFML/Graphics.hpp>
 #include "Component.h"
 
 class BaseState : public Component {

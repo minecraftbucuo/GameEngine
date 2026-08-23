@@ -9,17 +9,20 @@
 #include <cmath>
 #include "ConfigManager.h"
 #include "Core/Types.h"
+#ifndef SERVER_BUILD
+#include "Render/Renderer.h"
+#endif
 
 void MoveComponent::update(const eng::Time& deltaTime) {
     owner->position += owner->speed * deltaTime.asSeconds();
     setPosition(owner->position.x, owner->position.y);
 }
 #ifndef SERVER_BUILD
-void MoveComponent::render(sf::RenderWindow* window) {
+void MoveComponent::render(eng::Renderer& renderer) {
     if (!CONFIG.game.debug) return;
     if (owner->speed.x == 0.f && owner->speed.y == 0.f) return;
     const auto center = owner->getCenter();
-    drawArrow(window, center.x, center.y, center.x + owner->speed.x / 10.f, center.y + owner->speed.y / 10.f);
+    drawArrow(renderer, center.x, center.y, center.x + owner->speed.x / 10.f, center.y + owner->speed.y / 10.f);
 }
 #endif
 void MoveComponent::setPosition(const eng::Vec2f& pos, const bool move_collision) const {
@@ -81,14 +84,10 @@ void MoveComponent::addSpeed(const eng::Vec2f& speed) const {
     owner->speed += speed;
 }
 #ifndef SERVER_BUILD
-void MoveComponent::drawArrow(sf::RenderWindow* window, const float x1, const float y1, const float x2, const float y2,
+void MoveComponent::drawArrow(eng::Renderer& renderer, const float x1, const float y1, const float x2, const float y2,
                               const float arrowSize, const eng::Color color) {
     // 绘制箭杆
-    const sf::Vertex line[] = {
-        sf::Vertex(eng::Vec2f(x1, y1), color),
-        sf::Vertex(eng::Vec2f(x2, y2), color)
-    };
-    window->draw(line, 2, sf::Lines);
+    renderer.drawLine(eng::Vec2f(x1, y1), eng::Vec2f(x2, y2), color);
 
     // 计算箭头方向角度
     const float angle = std::atan2(y2 - y1, x2 - x1);
@@ -101,12 +100,7 @@ void MoveComponent::drawArrow(sf::RenderWindow* window, const float x1, const fl
     const float y4 = y2 - arrowSize * sinf(angle - pi_6);
 
     // 绘制箭头头部（三角形）
-    const sf::Vertex arrowHead[] = {
-        sf::Vertex(eng::Vec2f(x2, y2), color),
-        sf::Vertex(eng::Vec2f(x3, y3), color),
-        sf::Vertex(eng::Vec2f(x4, y4), color)
-    };
-    window->draw(arrowHead, 3, sf::Triangles);
+    renderer.drawPolygon({eng::Vec2f(x2, y2), eng::Vec2f(x3, y3), eng::Vec2f(x4, y4)}, color);
 }
 #endif
 void MoveComponent::setCollisionPosition(const eng::Vec2f& pos) const {

@@ -6,13 +6,15 @@
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <vector>
-#include <SFML/Graphics.hpp>
+#include "Render/Handles.h"
 
+namespace eng { class Renderer; }
 
 class Animation {
 public:
+    // SDL3 迁移 6c：Frame 纯数据化，texture 存句柄而非 sf::Texture*
     struct Frame {
-        sf::Texture* texture;
+        eng::TextureHandle texture;
         eng::IntRect textureRect;
         eng::Vec2f origin = {0.f, 0.f};
         eng::Vec2f scale = {1.f, 1.f};
@@ -30,7 +32,7 @@ public:
 
     void update(const eng::Time& deltaTime);
 
-    void render(sf::RenderWindow* window, const eng::Vec2f& position);
+    void render(eng::Renderer& renderer, const eng::Vec2f& position);
 
     // 获取动画是否完整播放完一遍
     bool isOver() const;
@@ -38,8 +40,6 @@ public:
     Frame& getFrame() const;
 
     std::vector<Frame>& getFrames() const;
-
-    sf::Sprite& getSprite();
 
     float getFrameWidth() const;
 
@@ -49,7 +49,6 @@ private:
     unsigned int currentFrame = 0;
     unsigned int currentFrameDuration = 0;
     std::vector<Frame>* frames{};
-    sf::Sprite sprite;
     bool back = false;
     bool over = false;
     int add = 1;

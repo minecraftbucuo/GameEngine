@@ -375,7 +375,31 @@ struct EngineEvent {
 - **验证**：编译；PhysicsTest 场景：方块/球/斜面/地面渲染一致（含旋转体）；
   开 CONFIG.game.debug 后调试图形（形状描边/质心轴/速度箭头）与迁移前一致；
   鼠标放球位置正确（screenToWorld）；其余场景不受影响
-- [ ] **6c Mario 系**：SuperMarioScene 3 处、4 个 State 共 7 处、Animation、Brick、FireBall、Box
+- [x] **6c Mario 系**（含 Animation/FrameManager 数据化提前，原 Step 7 部分）：
+      - **Renderer 接口扩展**：`drawTexture` 加 `flipX`（镜像精灵，SFML 用 src 矩形翻转实现，
+        SDL3 用 flip 参数）；`CameraState/getCamera` + `setCamera(CameraState)`（死亡屏保存/恢复
+        相机，替代 sf::View 操作）；`measureText`（文本居中排版，SDL3 对应 TTF_SizeText）；
+        AssetManager 加 `getTextureSize(handle)`（背景等比缩放计算）
+      - **Animation 纯数据化**：`Frame.texture` 由 `sf::Texture*` → `eng::TextureHandle`；
+        删 `sf::Sprite` 成员与 `getSprite()`；`render(eng::Renderer&, pos)` 走 drawTexture
+        （JSON 帧负 scale.x → flipX + abs 尺寸）；FrameManager 同步句柄化；
+        Box 的 `getSprite().getGlobalBounds()` → `getFrameWidth/Height()`
+      - **状态机链**：BaseState 去 SFML include；StateMachine/4 状态 render 切新签名；
+        状态内 `sf::Sprite ×2`（左右）→ 句柄+矩形数据，方向用 `flipX = getIsLeft()` 表达
+        （原 setScale(-4,4)+setOrigin 镜像语义 = dst 不变内容镜像，已验证等价）
+      - **对象**：Brick/FireBall/Box render 切新签名（Brick 的 sf::Sprite → 句柄+矩形）
+      - **组件调试绘制**：MoveComponent::drawArrow（drawLine+drawPolygon）、
+        BoxCollision/CircleCollision debug 框切 drawRect/drawCircle
+      - **SuperMarioScene**：render 新签名 override；bg 的 sf::Sprite → 句柄+dst 矩形
+        （init 按窗口高度等比算）；死亡屏 sf::View 保存/恢复 → getCamera/resetCamera/setCamera，
+        sf::Text → drawText + measureText 居中
+      - **渲染链路闭合（关键修复）**：Scene 基类新签名默认改为**新对象循环**（原为转发旧，
+        会使 Mario 等无对象级 override 的对象收不到新签名组件渲染）；GameObject 新签名默认 =
+        转发旧虚 render + `renderComponents(renderer)`；旧虚 render 基类默认改空
+        （Player/Circle 等旧 override 子类手动调 renderComponents(window) 不受影响）
+- **验证**：编译双版本；Mario 场景全回归：跑动动画（左右镜像）、跳跃/死亡帧、
+  火球+爆炸动画、箱子顶开动画（setBack 往返）、砖块贴图、背景铺满、死亡屏
+  （半透明遮罩+居中文字+R 重生/Esc 退出）、开 debug 看碰撞红框/速度箭头/血条
 - [ ] **6d UI 场景**：Button 6 处、Toggle 4 处、TextInput 4 处、MenuScene 2 处、SettingsScene 2 处
 - [ ] **6e 3D 与杂项**：GameObject3D 线框（顶点圆 + 线，`drawCircle`/`drawLines` 覆盖）、
       Cube3D/Human3D/Penguin3D/NewModel3D、Player/Circle、碰撞调试框 2 处、

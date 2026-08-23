@@ -77,11 +77,16 @@ void Renderer::present() {
 // ── 绘制命令 ──
 
 void Renderer::drawTexture(const TextureHandle h, const FloatRect& src, const FloatRect& dst,
-                           const float rotationDeg, const Vec2f origin, const Color tint) {
+                           const float rotationDeg, const Vec2f origin, const Color tint,
+                           const bool flipX) {
     if (!window || !h.isValid()) return;
     const sf::Texture& texture = AssetManager::getInstance().getTexture(h);
     sf::Sprite sprite(texture);
-    sprite.setTextureRect(sf::IntRect(static_cast<int>(src.left), static_cast<int>(src.top),
+    // 水平镜像：翻转 src 矩形（内容在 dst 内镜像，dst 不变；SDL3 用 flip 参数等价实现）
+    const float srcLeft = flipX
+        ? static_cast<float>(texture.getSize().x) - src.left - src.width
+        : src.left;
+    sprite.setTextureRect(sf::IntRect(static_cast<int>(srcLeft), static_cast<int>(src.top),
                                       static_cast<int>(src.width), static_cast<int>(src.height)));
     // dst 为未旋转可视矩形：支点落点 = dst 左上角 + origin
     sprite.setPosition(dst.left + origin.x, dst.top + origin.y);
@@ -166,6 +171,15 @@ void Renderer::drawText(const FontHandle h, const std::string& text, const Vec2f
     window->draw(t);
 }
 
+Vec2f Renderer::measureText(const FontHandle h, const std::string& text, const unsigned size) {
+    if (!h.isValid()) return {};
+    const sf::Font& font = AssetManager::getInstance().getFont(h);
+    const sf::String str = sf::String::fromUtf8(text.begin(), text.end());
+    const sf::Text t(str, font, size);
+    const sf::FloatRect bounds = t.getGlobalBounds();
+    return {bounds.width, bounds.height};
+}
+
 // ── 相机 ──
 
 void Renderer::setCamera(const Vec2f center, const Vec2f size, const float zoom) {
@@ -173,6 +187,12 @@ void Renderer::setCamera(const Vec2f center, const Vec2f size, const float zoom)
     sf::View view(center, size);
     if (zoom != 1.f) view.zoom(zoom);
     window->setView(view);
+}
+
+Renderer::CameraState Renderer::getCamera() const {
+    if (!window) return {};
+    const sf::View& view = window->getView();
+    return {view.getCenter(), view.getSize(), 1.f};
 }
 
 void Renderer::resetCamera() {

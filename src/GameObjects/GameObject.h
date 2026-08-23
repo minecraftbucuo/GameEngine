@@ -34,17 +34,20 @@ public:
         updateComponents(deltaTime);
     }
 
-    // SDL3 迁移 Step 6a/6b：新渲染签名，默认转发旧虚 render
-    //（未迁移子类的旧 override 经此继续生效；已迁移子类直接覆盖本签名。Step 6e 移除旧签名）
+    // SDL3 迁移 Step 6c：新渲染签名默认 = 转发旧虚 render + 新签名组件循环
+    //（未迁移子类的旧 override 经转发继续生效；Mario 等无对象级 override 的对象
+    //  依赖 renderComponents(renderer) 让 StateMachine 等新签名组件收到渲染。Step 6e 移除旧签名）
     virtual void render(eng::Renderer& renderer) {
         if (sf::RenderWindow* w = renderer.getSfmlWindow()) {
             render(w);
         }
+        renderComponents(renderer);
     }
 
     // 【过渡期旧签名 — Step 6e 删除】
+    // 基类默认为空：组件循环统一走新签名（旧 override 子类如 Player/Circle 自行手动调用）
     virtual void render(sf::RenderWindow* window) {
-        renderComponents(window);
+        (void)window;
     }
 
     virtual void start();

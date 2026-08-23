@@ -10,6 +10,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include "ConfigManager.h"
+#include "Core/Types.h"
 #include "Render/Handles.h"
 
 class AssetManager {
@@ -28,6 +29,8 @@ public:
     eng::TextureHandle getTextureHandle(const std::string& name);
     // 句柄 → 纹理（Renderer 实现内部使用；句柄无效返回占位纹理）
     const sf::Texture& getTexture(eng::TextureHandle h);
+    // 句柄 → 纹理尺寸（像素；布局计算用，如背景铺满缩放）
+    eng::Vec2u getTextureSize(eng::TextureHandle h);
     // 字体句柄（当前引擎只有一款字体，固定 id=1）
     eng::FontHandle getFontHandle();
     const sf::Font& getFont(eng::FontHandle h);

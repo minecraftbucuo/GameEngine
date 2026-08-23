@@ -14,18 +14,16 @@ Brick::Brick(const float x, const float y, const std::string& tag) : BoxGameObje
     this->tag = tag + ":" + std::to_string(id);
     this->moveAble = false;
 #ifndef SERVER_BUILD
-    sprite.setTexture(AssetManager::getInstance().getTexture("tile_set"));
-    sprite.setTextureRect(eng::IntRect(16, 0, 16, 16));
-    sprite.setScale(4.f, 4.f);
-    sprite.setPosition(this->getPosition());
+    // SDL3 迁移 6c：精灵数据化（原 sf::Sprite：tile_set (16,0,16,16)，4 倍放大）
+    texture = AssetManager::getInstance().getTextureHandle("tile_set");
 
-    this->setSize(sprite.getGlobalBounds().width, sprite.getGlobalBounds().height);
+    this->setSize(64.f, 64.f);
 #else
     this->setSize(CONFIG.game.defaultBlockSize, CONFIG.game.defaultBlockSize);
 #endif
 
 #ifndef SERVER_BUILD
-    this->getComponent<Collision, BoxCollision>()->setSize(sprite.getGlobalBounds().width, sprite.getGlobalBounds().height);
+    this->getComponent<Collision, BoxCollision>()->setSize(64.f, 64.f);
 #else
     this->getComponent<Collision, BoxCollision>()->setSize(CONFIG.game.defaultBlockSize, CONFIG.game.defaultBlockSize);
 #endif

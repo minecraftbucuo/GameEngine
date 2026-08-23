@@ -66,8 +66,8 @@ void MarioRunState::handleEvent(const eng::EngineEvent& event) {
 }
 
 #ifndef SERVER_BUILD
-void MarioRunState::render(sf::RenderWindow* window) {
-    if (owner) this->getAnimation().render(window, owner->getPosition());
+void MarioRunState::render(eng::Renderer& renderer) {
+    if (owner) this->getAnimation().render(renderer, owner->getPosition());
     else LOG_ERROR("owner is nullptr");
 }
 #endif

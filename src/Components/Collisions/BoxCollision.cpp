@@ -8,6 +8,9 @@
 #include "ConfigManager.h"
 #include "GameObject.h"
 #include "Core/Types.h"
+#ifndef SERVER_BUILD
+#include "Render/Renderer.h"
+#endif
 
 BoxCollision::BoxCollision(const float x, const float y, const float width, const float height) {
     this->position.x = x;
@@ -32,14 +35,10 @@ void BoxCollision::update(const eng::Time& deltaTime) {
     // this->position = owner->getPosition();
 }
 #ifndef SERVER_BUILD
-void BoxCollision::render(sf::RenderWindow *window) {
+void BoxCollision::render(eng::Renderer &renderer) {
     if (!CONFIG.game.debug) return;
-    sf::RectangleShape rect(this->size);
-    rect.setPosition(this->getCollisionPosition());
-    rect.setFillColor(eng::Color::Transparent);
-    rect.setOutlineColor(eng::Color::Red);
-    rect.setOutlineThickness(2);
-    window->draw(rect);
+    renderer.drawRect(eng::FloatRect(getCollisionPosition(), size),
+                      eng::Color::Transparent, false, 2.f, eng::Color::Red);
 }
 #endif
 bool BoxCollision::checkCollision(const Collision &other) const {

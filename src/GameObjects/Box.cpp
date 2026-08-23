@@ -21,8 +21,9 @@ Box::Box(const float x, const float y, const std::string& tag) : BoxGameObject(x
 #endif
 
 #ifndef SERVER_BUILD
-    const auto w = animation.getSprite().getGlobalBounds().width;
-    const auto h = animation.getSprite().getGlobalBounds().height;
+    // SDL3 迁移 6c：getSprite().getGlobalBounds() → 帧尺寸计算（帧 0，与迁移前一致）
+    const auto w = animation.getFrameWidth();
+    const auto h = animation.getFrameHeight();
 #else
     const auto w = CONFIG.game.defaultBlockSize;
     const auto h = CONFIG.game.defaultBlockSize;
@@ -83,8 +84,8 @@ void Box::setPosition(const float posX, const float posY) {
 }
 
 #ifndef SERVER_BUILD
-void Box::render(sf::RenderWindow* window) {
-    animation.render(window, this->getPosition());
-    BoxGameObject::render(window);
+void Box::render(eng::Renderer& renderer) {
+    animation.render(renderer, this->getPosition());
+    BoxGameObject::render(renderer);
 }
 #endif

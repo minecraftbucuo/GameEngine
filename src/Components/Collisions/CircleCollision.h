@@ -14,7 +14,7 @@ public:
     // void start() override {}
     void update(const eng::Time& deltaTime) override;
 #ifndef SERVER_BUILD
-    void render(sf::RenderWindow* window) override;
+    void render(eng::Renderer& renderer) override;
 #endif
     void setPosition(const eng::Vec2f& position) override;
     [[nodiscard]] bool checkCollision(const Collision& other) const override;

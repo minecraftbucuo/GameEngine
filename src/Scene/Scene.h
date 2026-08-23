@@ -51,11 +51,16 @@ public:
 
     // 场景渲染方法
 #ifndef SERVER_BUILD
-    // SDL3 迁移 Step 6a：新渲染签名（默认转发旧签名，场景逐个覆盖迁移，Step 6e 移除旧签名）
+    // SDL3 迁移 Step 6a/6c：新渲染签名。基类默认虚转发旧签名——
+    // 未迁移场景（覆盖旧签名）的原实现经虚分发继续生效；已迁移场景覆盖本签名，
+    // 需要渲染对象时调 renderObjects()。Step 6e 移除旧签名后基类默认改为 renderObjects
     virtual void render(eng::Renderer& _renderer);
 
-    // 【过渡期旧签名 — Step 6e 删除】
+    // 【过渡期旧签名 — Step 6e 删除】基类默认 = 旧虚对象循环
     virtual void render(sf::RenderWindow* _window);
+
+    // 对象循环（新虚链）：遍历活跃对象调 render(eng::Renderer&)
+    void renderObjects(eng::Renderer& _renderer);
 
     // 场景事件处理方法
     virtual void handleEvent(const eng::EngineEvent& event);

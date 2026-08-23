@@ -54,10 +54,10 @@ void FireBall::start() {
 }
 
 #ifndef SERVER_BUILD
-void FireBall::render(sf::RenderWindow* window) {
-    GameObject::render(window);
-    if (is_exploded) explosionAnimation.render(window, this->position);
-    else animation.render(window, this->position);
+void FireBall::render(eng::Renderer& renderer) {
+    GameObject::render(renderer);
+    if (is_exploded) explosionAnimation.render(renderer, this->position);
+    else animation.render(renderer, this->position);
 }
 #endif
 

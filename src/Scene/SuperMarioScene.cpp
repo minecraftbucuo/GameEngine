@@ -15,6 +15,9 @@
 #include "FireBall.h"
 #include "Collision.h"
 #include "Core/Types.h"
+#ifndef SERVER_BUILD
+#include "Render/Renderer.h"
+#endif
 
 void SuperMarioScene::init() {
     Scene::init();
@@ -24,9 +27,14 @@ void SuperMarioScene::init() {
     is_init = true;
     collisionSystem = std::make_unique<CollisionSystem>();
 #ifndef SERVER_BUILD
-    bg.setTexture(AssetManager::getInstance().getTexture("level_1"));
-    const float bg_scale = static_cast<float>(window->getSize().y) / bg.getLocalBounds().height;
-    bg.setScale(bg_scale, bg_scale);
+    // SDL3 迁移 6c：背景数据化——按窗口高度等比缩放铺满（原 sf::Sprite setScale 逻辑）
+    bg_texture = AssetManager::getInstance().getTextureHandle("level_1");
+    const eng::Vec2u tex_size = AssetManager::getInstance().getTextureSize(bg_texture);
+    const eng::Vec2u win_size = renderer->getSize();
+    const float bg_scale = static_cast<float>(win_size.y) / static_cast<float>(tex_size.y);
+    bg_dst = eng::FloatRect(0.f, 0.f,
+                            static_cast<float>(tex_size.x) * bg_scale,
+                            static_cast<float>(tex_size.y) * bg_scale);
 
     EventBus::getInstance().subscribe<const bool>(
         "PlayerDied",
@@ -137,11 +145,18 @@ void SuperMarioScene::initDynamicObjects() {
 }
 
 #ifndef SERVER_BUILD
-void SuperMarioScene::render(sf::RenderWindow* _window) {
-    _window->draw(bg);
-    Scene::render(_window);
+void SuperMarioScene::render(eng::Renderer& _renderer) {
+    if (bg_texture.isValid()) {
+        const eng::Vec2u tex = AssetManager::getInstance().getTextureSize(bg_texture);
+        _renderer.drawTexture(bg_texture,
+                              eng::FloatRect(0.f, 0.f, static_cast<float>(tex.x), static_cast<float>(tex.y)),
+                              bg_dst);
+    }
+    // SDL3 迁移 6c：对象循环走新虚链（原 Scene::render(_renderer) 会虚转发回旧签名，
+    // 使 Mario 等无旧 override 的对象收不到新签名组件渲染）
+    renderObjects(_renderer);
     if (show_death_screen) {
-        showDeathScreen(_window);
+        showDeathScreen(_renderer);
     }
 }
 #endif
@@ -206,45 +221,28 @@ void SuperMarioScene::connectToServer(const std::string& address) {
 }
 
 #ifndef SERVER_BUILD
-void SuperMarioScene::showDeathScreen(sf::RenderWindow* _window) {
-    // TODO: 优化性能
-    sf::RectangleShape deathOverlay;
-    sf::Text deathText;
-    sf::Text deathHint;
+void SuperMarioScene::showDeathScreen(eng::Renderer& renderer) {
+    const eng::Vec2u win = renderer.getSize();
+    const float w = static_cast<float>(win.x);
+    const float h = static_cast<float>(win.y);
 
-    deathOverlay.setFillColor(eng::Color(0, 0, 0, 180));
-    deathText.setFont(AssetManager::getInstance().getFont());
-    deathText.setString("YOU DIED");
-    deathText.setCharacterSize(64);
-    deathText.setFillColor(eng::Color::Red);
-    deathText.setStyle(sf::Text::Bold);
-    deathHint.setFont(AssetManager::getInstance().getFont());
-    deathHint.setString("Press R to Respawn    Press Esc to Quit");
-    deathHint.setCharacterSize(24);
-    deathHint.setFillColor(eng::Color::White);
+    // 死亡屏固定屏幕坐标系：切默认视图，画完恢复原相机（原 sf::View 保存/恢复逻辑）
+    const eng::Renderer::CameraState oldCamera = renderer.getCamera();
+    renderer.resetCamera();
 
+    renderer.drawRect(eng::FloatRect(0.f, 0.f, w, h), eng::Color(0, 0, 0, 180));
 
-    sf::View oldView = _window->getView();
-    sf::View screenView(eng::FloatRect(0, 0,
-        static_cast<float>(_window->getSize().x),
-        static_cast<float>(_window->getSize().y)));
-    _window->setView(screenView);
+    const eng::FontHandle font = AssetManager::getInstance().getFontHandle();
+    const eng::Vec2f diedSize = renderer.measureText(font, "YOU DIED", 64);
+    renderer.drawText(font, "YOU DIED",
+                      eng::Vec2f(w / 2.f - diedSize.x / 2.f, h * 0.3f - diedSize.y / 2.f),
+                      64, eng::Color::Red);
 
-    const float w = static_cast<float>(_window->getSize().x);
-    const float h = static_cast<float>(_window->getSize().y);
-    deathOverlay.setSize(eng::Vec2f(w, h));
-    _window->draw(deathOverlay);
+    const eng::Vec2f hintSize = renderer.measureText(font, "Press R to Respawn    Press Esc to Quit", 24);
+    renderer.drawText(font, "Press R to Respawn    Press Esc to Quit",
+                      eng::Vec2f(w / 2.f - hintSize.x / 2.f, h * 0.55f),
+                      24, eng::Color::White);
 
-    deathText.setPosition(
-        w / 2.f - deathText.getGlobalBounds().width / 2.f,
-        h * 0.3f - deathText.getGlobalBounds().height / 2.f);
-    _window->draw(deathText);
-
-    deathHint.setPosition(
-        w / 2.f - deathHint.getGlobalBounds().width / 2.f,
-        h * 0.55f);
-    _window->draw(deathHint);
-
-    _window->setView(oldView);
+    renderer.setCamera(oldCamera);
 }
 #endif

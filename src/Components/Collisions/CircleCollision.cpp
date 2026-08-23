@@ -9,6 +9,9 @@
 
 #include "ConfigManager.h"
 #include "Core/Types.h"
+#ifndef SERVER_BUILD
+#include "Render/Renderer.h"
+#endif
 
 CircleCollision::CircleCollision(const float x, const float y, const float radius) {
     this->position = eng::Vec2f(x, y);
@@ -21,15 +24,9 @@ void CircleCollision::update(const eng::Time& deltaTime) {
     // this->position = owner->getPosition() + owner->getSize() * 0.5f;
 }
 #ifndef SERVER_BUILD
-void CircleCollision::render(sf::RenderWindow *window) {
+void CircleCollision::render(eng::Renderer &renderer) {
     if (!CONFIG.game.debug) return;
-    sf::CircleShape shape(radius);
-    shape.setPosition(this->getPos() - eng::Vec2f(radius, radius));
-    // std::cout << shape.getPosition().x << " " << shape.getPosition().y << std::endl;
-    shape.setFillColor(eng::Color::Transparent);
-    shape.setOutlineColor(eng::Color::Red);
-    shape.setOutlineThickness(2);
-    window->draw(shape);
+    renderer.drawCircle(getPos(), radius, eng::Color::Transparent, false, 2.f, eng::Color::Red);
 }
 #endif
 

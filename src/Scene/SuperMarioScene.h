@@ -7,6 +7,9 @@
 #include "CollisionSystem.h"
 #include "NetworkManager.h"
 #include "Core/Types.h"
+#ifndef SERVER_BUILD
+#include "Render/Handles.h"
+#endif
 
 
 class SuperMarioScene : public Scene {
@@ -35,7 +38,7 @@ public:
     void initDynamicObjects();
 
 #ifndef SERVER_BUILD
-    void render(sf::RenderWindow* _window) override;
+    void render(eng::Renderer& renderer) override;
 #endif
 
     void update(eng::Time deltaTime) override;
@@ -59,14 +62,16 @@ public:
     }
 
 #ifndef SERVER_BUILD
-    static void showDeathScreen(sf::RenderWindow* _window);
+    static void showDeathScreen(eng::Renderer& renderer);
 #endif
 
 private:
     std::unique_ptr<CollisionSystem> collisionSystem;
     NetworkManager simple_network;
 #ifndef SERVER_BUILD
-    sf::Sprite bg;
+    // SDL3 迁移 6c：背景数据化（原 sf::Sprite），dst 在 init 按窗口高度等比算出
+    eng::TextureHandle bg_texture;
+    eng::FloatRect bg_dst;
 #endif
     bool is_initDynamicObjects = false;
     bool show_death_screen = false;

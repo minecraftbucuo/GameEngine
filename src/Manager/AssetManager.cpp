@@ -65,6 +65,10 @@ const sf::Texture& AssetManager::getTexture(const eng::TextureHandle h) {
     return textures["default"];
 }
 
+eng::Vec2u AssetManager::getTextureSize(const eng::TextureHandle h) {
+    return getTexture(h).getSize();
+}
+
 eng::FontHandle AssetManager::getFontHandle() {
     return eng::FontHandle{1};
 }

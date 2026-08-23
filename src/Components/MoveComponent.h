@@ -12,7 +12,7 @@ public:
     MoveComponent() = default;
     void update(const eng::Time& deltaTime) override;
 #ifndef SERVER_BUILD
-    void render(sf::RenderWindow* window) override;
+    void render(eng::Renderer& renderer) override;
 #endif
     void setPosition(const eng::Vec2f& pos, bool move_collision = true) const;
 
@@ -40,7 +40,7 @@ public:
 
     void addSpeed(const eng::Vec2f& speed) const;
 #ifndef SERVER_BUILD
-    static void drawArrow(sf::RenderWindow* window, float x1, float y1, float x2, float y2,
+    static void drawArrow(eng::Renderer& renderer, float x1, float y1, float x2, float y2,
                           float arrowSize = 10.0f, eng::Color color = eng::Color::Red);
 #endif
 private:

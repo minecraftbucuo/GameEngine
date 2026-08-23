@@ -12,7 +12,9 @@ void FrameManager::loadFrameFromJson(const char* path) {
     json data = json::parse(file);
     for (const auto& frames_data : data["frames"]) {
         std::vector<Animation::Frame>& frame = frames[frames_data["frame_name"]];
-        sf::Texture* frame_texture = &AssetManager::getInstance().getTexture(frames_data["texture_name"]);
+        // SDL3 迁移 6c：帧数据持有纹理句柄（原 sf::Texture*）
+        const eng::TextureHandle frame_texture =
+            AssetManager::getInstance().getTextureHandle(frames_data["texture_name"]);
         for (const auto& frame_data : frames_data["frame"]) {
             frame.push_back({
                 frame_texture,

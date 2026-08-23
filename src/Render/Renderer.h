@@ -48,7 +48,7 @@ public:
     // src：源纹理上的矩形（像素）；dst：目标区域（世界/屏幕坐标，受相机影响）
     void drawTexture(TextureHandle h, const FloatRect& src, const FloatRect& dst,
                      float rotationDeg = 0.f, Vec2f origin = {},
-                     Color tint = Color::White);
+                     Color tint = Color::White, bool flipX = false);
     void drawRect(const FloatRect& r, Color fillColor, bool filled = true,
                   float outlineThickness = 0.f, Color outlineColor = Color::White,
                   float rotationDeg = 0.f, Vec2f origin = {});
@@ -60,10 +60,19 @@ public:
     // text 按 UTF-8 解释（中文可直接传入）
     void drawText(FontHandle h, const std::string& text, Vec2f pos,
                   unsigned size, Color c);
+    // 文本尺寸测量（用于居中排版；与 drawText 同一字体管线）
+    [[nodiscard]] Vec2f measureText(FontHandle h, const std::string& text, unsigned size);
 
     // ── 相机 ──
+    struct CameraState {
+        Vec2f center;
+        Vec2f size;
+        float zoom = 1.f;
+    };
     void setCamera(Vec2f center, Vec2f size, float zoom = 1.f);
-    void resetCamera();
+    void setCamera(const CameraState& c) { setCamera(c.center, c.size, c.zoom); }
+    [[nodiscard]] CameraState getCamera() const;   // 保存当前相机（配合 setCamera 恢复）
+    void resetCamera();                            // 屏幕坐标系（窗口大小，左上原点）
     [[nodiscard]] Vec2f screenToWorld(Vec2i screenPos) const;
 
     // 【临时过渡 API — Step 6e 删除】

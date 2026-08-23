@@ -12,9 +12,9 @@ void StateMachine::update(const eng::Time& deltaTime) {
     }
 }
 
-void StateMachine::render(sf::RenderWindow* window) {
+void StateMachine::render(eng::Renderer& renderer) {
     if (currentState) {
-        currentState->render(window);
+        currentState->render(renderer);
     }
 }
 

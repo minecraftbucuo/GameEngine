@@ -52,9 +52,13 @@ void Scene::update(eng::Time deltaTime) {
 }
 
 #ifndef SERVER_BUILD
-// SDL3 迁移 Step 6a：新签名默认转发旧路径（已迁移场景覆盖此函数，Step 6e 移除转发）
+// SDL3 迁移 Step 6c 修正：基类新签名默认 = 虚转发旧签名。
+// 未迁移场景（Menu/Settings 等覆盖旧签名）的标题/粒子等自有绘制由此继续生效
+//（曾误改为新对象循环，导致未迁移场景的旧 override 被绕过、标题消失）
 void Scene::render(eng::Renderer& _renderer) {
-    render(_renderer.getSfmlWindow());
+    if (sf::RenderWindow* w = _renderer.getSfmlWindow()) {
+        render(w);
+    }
 }
 
 void Scene::render(sf::RenderWindow* _window) {
@@ -64,6 +68,15 @@ void Scene::render(sf::RenderWindow* _window) {
         }
     }
     // Box2D 调试绘制已随 SDL3 迁移 6b 移入 PhysicsTestScene::render(eng::Renderer&)
+}
+
+// 对象循环（新虚链）：供已迁移场景（SuperMario 等）在自己 render 内调用
+void Scene::renderObjects(eng::Renderer& _renderer) {
+    for (const auto& obj : game_objects) {
+        if (obj->isActive()) {
+            obj->render(_renderer);
+        }
+    }
 }
 
 void Scene::handleEvent(const eng::EngineEvent& event) {

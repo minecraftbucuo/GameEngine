@@ -18,7 +18,7 @@ public:
     void handleEvent(const eng::EngineEvent& event) override;
 
 #ifndef SERVER_BUILD
-    void render(sf::RenderWindow* window) override;
+    void render(eng::Renderer& renderer) override;
 #endif
 
     bool getIsLeft() const;

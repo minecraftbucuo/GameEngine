@@ -14,25 +14,21 @@
 #include "MarioJumpState.h"
 #include "StateMachine.h"
 #include "Core/Types.h"
+#include <cmath>
 
 MarioIdleState::MarioIdleState() : BaseState("MarioIdleState") {
 #ifndef SERVER_BUILD
-    const sf::Texture& mario_texture = AssetManager::getInstance().getTexture("mario_bros");
-    right_sprite.setTexture(mario_texture);
-    right_sprite.setTextureRect(eng::IntRect(178, 32, 12, 16));
-    right_sprite.setScale(4.f, 4.f);
-    left_sprite.setTexture(mario_texture);
-    left_sprite.setTextureRect(eng::IntRect(178, 32, 12, 16));
-    left_sprite.setScale(-4.f, 4.f);
-    left_sprite.setOrigin(static_cast<float>(right_sprite.getTextureRect().width), 0.f);
+    // 原 sf::Sprite 配置：mario_bros 纹理 (178,32,12,16) 区域，4 倍放大，左右镜像
+    texture = AssetManager::getInstance().getTextureHandle("mario_bros");
+    texture_rect = eng::IntRect(178, 32, 12, 16);
 #endif
 }
 
 void MarioIdleState::start() {
     const auto box_collision = owner->getComponent<Collision, BoxCollision>();
 #ifndef SERVER_BUILD
-    const float w = left_sprite.getGlobalBounds().width;
-    const float h = left_sprite.getGlobalBounds().height;
+    const float w = std::abs(scale.x) * static_cast<float>(texture_rect.width);
+    const float h = std::abs(scale.y) * static_cast<float>(texture_rect.height);
     LOG_TRACE_FMT("MarioIdle sprite width:{}, height:{}", w, h);
 #else
     const float w = 48.f;
@@ -63,19 +59,20 @@ void MarioIdleState::handleEvent(const eng::EngineEvent& event) {
 }
 
 #ifndef SERVER_BUILD
-void MarioIdleState::render(sf::RenderWindow* window) {
-    if (getIsLeft()) {
-        if (owner) left_sprite.setPosition(owner->getPosition());
-        else
-            LOG_ERROR("Owner is nullptr");
-        window->draw(left_sprite);
+void MarioIdleState::render(eng::Renderer& renderer) {
+    if (!owner) {
+        LOG_ERROR("Owner is nullptr");
+        return;
     }
-    else {
-        if (owner) right_sprite.setPosition(owner->getPosition());
-        else
-            LOG_ERROR("Owner is nullptr");
-        window->draw(right_sprite);
-    }
+    const eng::Vec2f size(std::abs(scale.x) * static_cast<float>(texture_rect.width),
+                          std::abs(scale.y) * static_cast<float>(texture_rect.height));
+    renderer.drawTexture(texture,
+                         eng::FloatRect(static_cast<float>(texture_rect.left),
+                                        static_cast<float>(texture_rect.top),
+                                        static_cast<float>(texture_rect.width),
+                                        static_cast<float>(texture_rect.height)),
+                         eng::FloatRect(owner->getPosition(), size),
+                         0.f, {}, eng::Color::White, getIsLeft());
 }
 #endif
 
