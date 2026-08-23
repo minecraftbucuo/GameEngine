@@ -550,6 +550,8 @@ SFML 退缩为以下实现面文件的内部细节（Step 9~11 逐个替换/删�
 - **验证**：客户端+服务端双版本编译通过 + 全场景回归
 - **收官状态**：窗口/渲染/输入/音频 = SDL3；网络 = sfml-network（范围外）；
   渲染栈 SFML 依赖（graphics/window/audio/system 链接与其传递依赖）全部移除
+- **收官后整理**：`AssetManagerSDL3.cpp` 更名回 `AssetManager.cpp`（单后端后无需
+  后缀区分；git mv 保留历史）
 
 ---
 
@@ -581,14 +583,14 @@ SFML 退缩为以下实现面文件的内部细节（Step 9~11 逐个替换/删�
 ## 七、验收标准
 
 **阶段一~二（脚手架落地）**：
-- [ ] `src/Core/`、`src/Render/` 头文件无任何第三方 include
-- [ ] 除 `src/Network/`、`RendererSFML.cpp`、`AssetManager.cpp`（内部）、音频调用点外，
-      全仓 `#include <SFML/...>` 为零
-- [ ] 所有场景行为与抽象前一致
-- [ ] `SERVER_BUILD` 构建不受影响
+- [x] `src/Core/`、`src/Render/` 头文件无任何第三方 include
+- [x] 全仓 `#include <SFML/...>` 为零（2026-08-23 grep 验证：仅剩 Network/ 两文件，范围外）
+- [x] 所有场景行为与抽象前一致（Step 6a~6e 各步用户逐场景验证）
+- [x] `SERVER_BUILD` 构建不受影响（双版本持续可编译）
 
 **阶段三（SDL3 终态）**：
-- [ ] 除 `src/Network/` 外全仓零 SFML 引用；CMake 无 sfml-graphics/window/audio/system
-- [ ] 全场景功能对齐脚手架版本（容忍渲染细节的像素级差异）
-- [ ] 帧率不低于 SFML 版的 90%
-- [ ] 无 `ENGINE_BACKEND` 类开关——SDL3 是唯一实现
+- [x] 除 `src/Network/` 外全仓零 SFML 引用；CMake 无 sfml-graphics/window/audio/system
+- [x] 全场景功能对齐脚手架版本（Step 10 用户回归：马里奥跑动/跳跃/火球/音效/物理调试全通过；
+      模糊与动画减速两处差异已修：纹理 NEAREST 过滤 + 限帧 tick→ns 换算）
+- [x] 帧率不低于 SFML 版的 90%（限帧修复后 60fps 目标达成）
+- [x] 无 `ENGINE_BACKEND` 类开关——SDL3 是唯一实现（ENGINE_SDL3 宏全仓清零）

@@ -837,7 +837,7 @@ Vec2f Renderer::screenToWorld(const Vec2i screenPos) const {
 
 } // namespace eng
 
-// ── SDL3 实现层内部共享（供 AssetManagerSDL3 懒建纹理）──
+// ── SDL3 实现层内部共享（供 AssetManager.cpp 懒建纹理）──
 namespace eng::detail {
 
 SDL_Renderer* sdl3Renderer() {

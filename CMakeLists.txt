@@ -208,7 +208,7 @@ endif ()
 
 # ───────────────────────────────────────────────────────────────────
 # （SDL3 迁移 Step 9 的 EngineSDL3 编译验证目标已在 Step 10 移除：
-#   主目标已直接编译 RendererSDL3.cpp / AssetManagerSDL3.cpp）
+#   主目标已直接编译 RendererSDL3.cpp / AssetManager.cpp）
 
 if (NOT BUILD_FOR_SERVER)
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
