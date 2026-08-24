@@ -220,32 +220,56 @@ MEMFS 写入不持久。方案：`ConfigManager::save` 在 `__EMSCRIPTEN__` 下�
 - **改动文件**：`src/Network/NetworkManager.h/.cpp`、`src/Scene/SuperMarioScene.cpp`、`src/Scene/MenuScene.cpp`
 - **原子性保证**：除枚举新增与条件收窄（对既有类型行为等价）外，新逻辑全在 `__EMSCRIPTEN__` 内
 
-#### Step 6 — 音频手势解锁验证
-- [ ] 验证 SDL3 Emscripten 音频后端的自动恢复：首键/首击后 BGM 与音效正常
-- [ ] 若 MIX 设备在手势前创建导致静默：把 `ensureMixer` 首次创建延迟到首个输入事件之后（或监听 SDL_EVENT_AUDIO_DEVICE_ADDED）
-- **验证**：Mario 场景跳跃/金币音效、BGM 循环正常；刷新页面后依然正常
-- **改动文件**：预期 `src/Manager/AssetManager.cpp`（如需延迟初始化）
-- **风险说明**：浏览器 autoplay policy 是硬约束，SDL3 后端通常已处理 resume，此步以实测为准
+#### Step 6 — 音频手势解锁验证 ✅（2026-08-24，实测通过，零改动）
+- [x] 用户实测确认：进入马里奥场景 BGM 与音效正常——SDL3 Emscripten 音频后端已自动处理
+  AudioContext 手势解锁（audio worklet 挂起/恢复），无需延迟 ensureMixer
+- **结论**：风险项 6 解除；后续若在无手势场景（如自动重连）新增音频路径再复查
 
 ---
 
 ### 阶段三：体验打磨
 
-#### Step 7 — index.html 页面壳
-- [ ] 自定义 shell HTML：深色底、居中 canvas、按容器尺寸等比缩放（保持 1200:960 设计比例）、加载进度条（Module.setStatus）、"点击画面获得焦点"提示
-- **验证**：手机竖屏/桌面窄窗口下 canvas 不变形不溢出；加载期间有进度反馈
-- **新增文件**：`cmake/shell_web.html`（或 `web/` 目录）
+#### Step 7 — index.html 页面壳 ✅ 代码就位（2026-08-24，待构建验证）
+- [x] [web/shell.html](../web/shell.html)：深色底、居中 canvas、按视口等比缩放（保持设计比例，
+  MutationObserver 监听 SDL 设置的 canvas 尺寸属性后自适应）、加载进度条（官方模板同款
+  `Module.setStatus` 解析节流）、底部"点击画面获得键盘焦点"提示（postRun 后自动淡出）
+- [x] 方向键/空格 preventDefault 防页面滚动（不影响 SDL 输入监听）
+- [x] 引擎日志改走浏览器控制台（print/printErr 钩子），页面无调试输出区
+- [x] [CMakeLists.txt](../CMakeLists.txt#L38-L45) `SHELL:--shell-file web/shell.html`
+- **验证（由用户执行）**：加载期间有进度条；完成后遮罩淡出、画面居中不变形；
+  窄窗口缩放正常；方向键不滚动页面；游戏输入正常
+- **新增文件**：`web/shell.html`
 
-#### Step 8 — 设置保存的持久化取舍
-- [ ] 实现 localStorage 方案（决策 8）或在设置场景标注"网页版设置不持久"
-- **验证**：改分辨率/帧率 → 刷新 → 行为符合所选方案
-- **改动文件**：`src/Manager/ConfigManager.h/.cpp`（或 `src/Scene/SettingsScene.cpp`）
+#### Step 8 — 设置保存的持久化取舍 ⏭️ 跳过（2026-08-24 用户决策）
+- **决策**：不做持久化，不改任何代码。网页版设置刷新后回默认值，属已知且接受的行为；
+  MEMFS 写入的 config.json 仅本次会话有效
+- **后续如需启用**：优先 localStorage 方案（ConfigManager `__EMSCRIPTEN__` 分支同步存取 JSON，
+  约 5MB 额度对配置文件绰绰有余），IDBFS 异步 syncfs 复杂度不值得
 
-#### Step 9 — 体积与性能基线
-- [ ] Release `-O3` 下记录 wasm/js/data 体积基线（写入本文档附录）
-- [ ] 评估音乐 ogg 码率是否需要裁剪（当前 Asset 总量决定 .data 包大小）
-- [ ] 帧率实测：60Hz rAF 下 SuperMario 场景稳定满帧
-- **验证**：基线数据入档；明显超标项列出优化建议（不强行优化）
+#### Step 9 — 体积与性能基线 ✅ 基线入档（2026-08-24，帧率待用户确认）
+- [x] Release（emscripten 工具链映射 `-O3`）下产物基线见下表
+- [x] 大文件评估完成，优化建议按收益排序列出（**不强行优化**，仅登记）
+- [ ] 帧率实测：60Hz rAF 下 SuperMario 场景稳定满帧（用户游玩体感确认即可）
+
+##### 体积基线（build-web/web/）
+
+| 产物 | 体积 | 说明 |
+| --- | --- | --- |
+| GameEngine.wasm | 2,671 KB | SDL3+Box2D+json 静态链接，属合理范围 |
+| GameEngine.js | 228 KB | 运行时胶水 |
+| GameEngine.html | 3 KB | 自定义壳 |
+| GameEngine.data | 25,884 KB | 即 Asset 全量（25.88 MB） |
+| **首次加载合计** | **~28.8 MB** | gzip/brotli 后可显著下降（服务器开启压缩即可） |
+
+##### 资产侧优化建议（按收益排序，均未实施）
+
+1. **`Font/Minecraft_AE.ttf` 15.4 MB——占整包 58%，最大单项**。
+   建议用 pyftsubset 子集化：保留 ASCII + 界面实际用到的中文字符集，预计可压至 1~3 MB
+2. **疑似重复资源**：`SuperMario/resources/music/main_theme_sped_up.ogg` 与
+   `sound/main_theme_sped_up.ogg` 均为 2,458.1 KB、大小完全一致。确认用途后去重可直接省 2.4 MB
+3. **WAV 转 OGG**：world_clear(270KB)/stage_clear(244KB)/out_of_time(127KB) 三个 WAV，
+   转 OGG 约省 80%
+- wasm 若日后想再压：MinSizeRel（映射 `-Oz`）+ wasm-opt，代价是性能与调试性，非必要不动
 
 ---
 

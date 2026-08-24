@@ -40,6 +40,7 @@ if (EMSCRIPTEN)
             "-sALLOW_MEMORY_GROWTH=1"             # 资源全量预解码进内存，按需扩容
             "-sFORCE_FILESYSTEM=1"                # preload 虚拟文件系统
             "-sMAX_WEBGL_VERSION=2"
+            "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
             "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/src/Asset@/Asset"
     )
 endif ()

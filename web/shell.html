@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GameEngine · Web</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            background: #101418;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, "Microsoft YaHei", sans-serif;
+        }
+        /* 设计分辨率 1200x960，按视口等比缩放，不变形不溢出 */
+        #canvas {
+            background: #000;
+            border-radius: 6px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, .55);
+        }
+        #hint {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #7d8b99;
+            font-size: 13px;
+            user-select: none;
+            transition: opacity .4s;
+        }
+        #hint.hidden { opacity: 0; }
+        /* 加载遮罩：进度完成后淡出 */
+        #loading {
+            position: fixed;
+            inset: 0;
+            background: #101418;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 10;
+            transition: opacity .5s;
+        }
+        #loading.done { opacity: 0; pointer-events: none; }
+        #loading h1 { color: #e8eef4; font-size: 26px; letter-spacing: 2px; font-weight: 600; }
+        #status { color: #7d8b99; font-size: 14px; min-height: 20px; }
+        .bar-wrap {
+            width: 280px; height: 6px;
+            border-radius: 3px;
+            background: #232a31;
+            overflow: hidden;
+        }
+        #bar {
+            width: 0%; height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #3fa7ff, #7f5cff);
+            transition: width .15s ease-out;
+        }
+    </style>
+</head>
+<body>
+<main><canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas></main>
+<div id="hint">点击画面获得键盘焦点</div>
+
+<div id="loading">
+    <h1>GAME ENGINE</h1>
+    <div class="bar-wrap"><div id="bar"></div></div>
+    <p id="status">正在准备…</p>
+</div>
+
+<script type="text/javascript">
+    var statusElement = document.getElementById('status');
+    var barElement = document.getElementById('bar');
+    var loadingElement = document.getElementById('loading');
+    var hintElement = document.getElementById('hint');
+    var canvasElement = document.getElementById('canvas');
+
+    var Module = {
+        canvas: canvasElement,
+        preRun: [],
+        postRun: [function () {
+            // 引擎就绪：隐藏加载层与提示（音频/键盘已随首次交互可用）
+            Module.setStatus('');
+            setTimeout(function () { hintElement.classList.add('hidden'); }, 4000);
+        }],
+        print: function (text) { console.log(text); },
+        printErr: function (text) { console.warn(text); },
+        // 官方模板同款解析："Downloading data... (123/456)" 节流刷新进度条
+        setStatus: function (text) {
+            if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+            if (text === Module.setStatus.last.text) return;
+            var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+            var now = Date.now();
+            if (m && now - Module.setStatus.last.time < 30) return;
+            Module.setStatus.last.time = now;
+            Module.setStatus.last.text = text;
+            if (m) {
+                barElement.style.width = (parseInt(m[2]) / parseInt(m[4]) * 100) + '%';
+                statusElement.textContent = m[1].trim() || '正在下载资源…';
+                loadingElement.classList.remove('done');
+            } else {
+                barElement.style.width = '100%';
+                statusElement.textContent = text || '';
+                if (!text) loadingElement.classList.add('done');
+            }
+        },
+    };
+    Module.setStatus('正在下载引擎…');
+
+    // 方向键/空格防止页面滚动（SDL 的监听器不受影响）
+    window.addEventListener('keydown', function (e) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+    });
+
+    // canvas 尺寸属性被 SDL 设置后按视口等比缩放（保持设计比例）
+    function fitCanvas() {
+        var pad = 48;
+        var s = Math.min(
+            (window.innerWidth - pad) / canvasElement.width,
+            (window.innerHeight - pad - 30) / canvasElement.height,
+            1);
+        canvasElement.style.width = Math.round(canvasElement.width * s) + 'px';
+        canvasElement.style.height = Math.round(canvasElement.height * s) + 'px';
+    }
+    new MutationObserver(fitCanvas)
+        .observe(canvasElement, { attributes: true, attributeFilter: ['width', 'height'] });
+    window.addEventListener('resize', fitCanvas);
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>
