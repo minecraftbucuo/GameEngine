@@ -68,13 +68,12 @@ uint32 大端长度前缀分帧与 `m_recvBuf` 拆帧状态机**原样复用**�
 - [x] 读 vendored sdl_net-src：证实 `NET_Init()` 硬依赖线程 ⇒ 方向 A 否决，改选 A′
 - [x] 修订本文档选型表、风险清单与步骤
 
-### Step N2 — TcpClient WEB 后端 + 最小链路探测 ⚠️ go/no-go 门（核心验证）
+### Step N2 — TcpClient WEB 后端 + 最小链路探测 ✅ 完成（2026-08-24，go/no-go 门通过）
 - [x] 代码侧完成（2026-08-24，`__EMSCRIPTEN__` 后端已并入，细节见下方「N2 实现纪要」）
-- [ ] 用户实测：桌面开服（端口取 CONFIG.network.port=6666）；`websockify 8081 127.0.0.1:6666`；
-      网页点「超级玛丽 Client（测试）」按钮（临时直连 `ws://127.0.0.1:8081` 写死）
-- [ ] 首验 R6 子协议匹配（websocket.h 已显式声明 `binary` 子协议）
-- **通过标准**：网页端能看到桌面端玩家生成、双向位置同步
-- **失败预案**：子协议问题调桥参数；仍不通 → 停下重新立项，不硬扛
+- [x] 用户实测通过：桌面开服（CONFIG.network.port=6666）+ `websockify 8081 127.0.0.1:6666`
+      + 网页点「超级玛丽 Client（测试）」按钮，联机正常
+- [x] R6 子协议匹配确认（websocket.h 声明 `binary`，桥零参数直通）
+- **通过标准已达成**：网页端联机正常 ⇔ 方向 A′ 整体成立，后续步骤按计划推进
 - **改动文件**：`src/Network/TcpClient.h`、`src/Network/NetworkManager.h/.cpp`、
   `src/Scene/MenuScene.cpp`、`CMakeLists.txt`
 - **原子性保证**：桌面/服务端构建不进任何新增 ifdef 分支，行为零变化
