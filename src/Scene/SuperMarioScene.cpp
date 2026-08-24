@@ -23,6 +23,10 @@ void SuperMarioScene::init() {
     Scene::init();
     this->setNetworkManager(&(this->simple_network));
     simple_network.setCurrentScene(this);
+    // N4：每次进场景复位断线提示（is_init 守卫只护重资源，标志须逐次刷新，
+    // 否则上一局的断线残留会在重连后的新对局里立刻弹出提示层）
+    show_disconnect_screen = false;
+    simple_network.clearConnectionLost();
     if (is_init) return;
     is_init = true;
     collisionSystem = std::make_unique<CollisionSystem>();
@@ -158,6 +162,9 @@ void SuperMarioScene::render(eng::Renderer& _renderer) {
     if (show_death_screen) {
         showDeathScreen(_renderer);
     }
+    if (show_disconnect_screen) {
+        showDisconnectScreen(_renderer);
+    }
 }
 #endif
 
@@ -167,6 +174,10 @@ void SuperMarioScene::update(eng::Time deltaTime) {
         this->collisionSystem->checkCollisions();
     }
     simple_network.update(deltaTime);
+    // N4：断线一次即定格提示层，直到 ESC 回菜单（重进场景时复位）
+    if (simple_network.wasConnectionLost()) {
+        show_disconnect_screen = true;
+    }
 }
 
 void SuperMarioScene::addObject(const std::shared_ptr<GameObject>& obj) {
@@ -243,6 +254,32 @@ void SuperMarioScene::showDeathScreen(eng::Renderer& renderer) {
 
     const eng::Vec2f hintSize = renderer.measureText(font, "Press R to Respawn    Press Esc to Quit", 24);
     renderer.drawText(font, "Press R to Respawn    Press Esc to Quit",
+                      eng::Vec2f(w / 2.f - hintSize.x / 2.f, h * 0.55f),
+                      24, eng::Color::White);
+
+    renderer.setCamera(oldCamera);
+}
+
+void SuperMarioScene::showDisconnectScreen(eng::Renderer& renderer) {
+    const eng::Vec2u win = renderer.getSize();
+    const float w = static_cast<float>(win.x);
+    const float h = static_cast<float>(win.y);
+
+    // 与死亡屏同构：屏幕坐标系遮罩，画完恢复相机（远端玩家已冻结、本地仍可移动，
+    // 遮罩半透明保留视野，玩家明确知道该做什么：ESC 回菜单重连）
+    const eng::Renderer::CameraState oldCamera = renderer.getCamera();
+    renderer.resetCamera();
+
+    renderer.drawRect(eng::FloatRect(0.f, 0.f, w, h), eng::Color(0, 0, 0, 180));
+
+    const eng::FontHandle font = AssetManager::getInstance().getFontHandle();
+    const eng::Vec2f lostSize = renderer.measureText(font, "CONNECTION LOST", 64);
+    renderer.drawText(font, "CONNECTION LOST",
+                      eng::Vec2f(w / 2.f - lostSize.x / 2.f, h * 0.3f - lostSize.y / 2.f),
+                      64, eng::Color::Red);
+
+    const eng::Vec2f hintSize = renderer.measureText(font, "Press Esc to return to Menu", 24);
+    renderer.drawText(font, "Press Esc to return to Menu",
                       eng::Vec2f(w / 2.f - hintSize.x / 2.f, h * 0.55f),
                       24, eng::Color::White);
 

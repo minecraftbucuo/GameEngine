@@ -116,8 +116,10 @@ uint32 大端长度前缀分帧与 `m_recvBuf` 拆帧状态机**原样复用**�
       `python -m http.server 8000` 复测不再刷新。**教训**：调试 WEB 版一律用
       `python -m http.server`（或任何不注入热重载脚本的静态服务器），勿用 Live Server。
       已撤 -sASSERTIONS=2（取证专用），保留 shell.html 的 onAbort（免费且有益）
-- [ ] Disconnected/Error 时玩家侧明确反馈（LOG + 场景内提示或退回菜单），杜绝静默假死
-      （当前行为：静默转 None，本地玩家可继续单机式游玩，远端玩家冻结）
+- [x] Disconnected/Error 时玩家侧明确反馈（2026-08-24，桌面/WEB 共用）：NetworkManager
+      增 connectionLost 一次性标志（主动断开 + WEB 验证被拒两处置位），SuperMarioScene
+      每帧轮询定格提示层——「CONNECTION LOST / Press Esc to return to Menu」与死亡屏
+      同构（半透明遮罩、屏幕坐标系、恢复相机）；重进场景时复位标志，防上局残留弹层
 - [ ] 记录操作延迟体感基线；若明显劣化再议输入预测（不在本期承诺）
 - **改动文件**：`src/Scene/SuperMarioScene.cpp`（或 NetworkManager 回调）
 

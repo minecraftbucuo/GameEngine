@@ -68,6 +68,11 @@ public:
 
     bool isClient() const;
 
+    // N4 断线反馈：Client→None 转变瞬间置位（仅客户端路径；Server 端逐客户端
+    // 断开属正常事件，Local 永不断线，均不触发）。场景每帧轮询驱动提示层
+    bool wasConnectionLost() const { return connectionLost; }
+    void clearConnectionLost() { connectionLost = false; }
+
     TcpClient& getClientSocket();
 
 private:
@@ -87,5 +92,6 @@ private:
     // WEB 联机 N2：connect() 异步化后验证应答后置 —— true 表示首条 bool+string
     // 应答尚未被 clientUpdate 消费（桌面同步路径不使用此标志）
     bool verifyPending = false;
+    bool connectionLost = false;   // N4：断线一次性标志，场景重进时 clear
     Scene* current_scene{};
 };

@@ -345,6 +345,7 @@ void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
     TcpClient::Status status = clientSocket.receive(packet);
     if (status == TcpClient::Status::Error || status == TcpClient::Status::Disconnected) {
         verifyPending = false;   // WEB：验证未完成即断线，清标志防跨连接残留
+        connectionLost = true;   // N4：驱动场景断线提示层（一次性，场景重进时 clear）
         network_type = NetworkType::None;
         LOG_WARN("Server disconnected");
         return;
@@ -362,6 +363,7 @@ void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
         if (!success) {
             LOG_WARN_FMT("Verification failed: {}", message);
             clientSocket.disconnect();
+            connectionLost = true;   // N4：被拒同样属于断线类事件，玩家需感知
             network_type = NetworkType::None;
             return;
         }

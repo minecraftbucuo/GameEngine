@@ -63,6 +63,9 @@ public:
 
 #ifndef SERVER_BUILD
     static void showDeathScreen(eng::Renderer& renderer);
+
+    // N4 断线反馈：与死亡屏同构的提示层（半透明遮罩 + ESC 回菜单），桌面/WEB 共用
+    static void showDisconnectScreen(eng::Renderer& renderer);
 #endif
 
 private:
@@ -75,4 +78,5 @@ private:
 #endif
     bool is_initDynamicObjects = false;
     bool show_death_screen = false;
+    bool show_disconnect_screen = false;   // N4：simple_network 断线标志驱动，重进场景复位
 };
