@@ -37,6 +37,7 @@ if (EMSCRIPTEN)
     add_compile_options(-fexceptions)
     add_link_options(
             -fexceptions
+            "-sASSERTIONS=2"                      # 断线取证（N4）：abort 时输出详细原因与栈
             "-sALLOW_MEMORY_GROWTH=1"             # 资源全量预解码进内存，按需扩容
             "-sFORCE_FILESYSTEM=1"                # preload 虚拟文件系统
             "-sMAX_WEBGL_VERSION=2"

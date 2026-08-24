@@ -84,18 +84,34 @@ public:
 
     // ── 连接 ───────────────────────────────────────────────
 #ifdef __EMSCRIPTEN__
-    // timeoutSeconds 无意义（异步握手无同步等待点），保留形参只为契约一致
+    // timeoutSeconds 无意义（异步握手无同步等待点），保留形参只为契约一致。
+    // 非 const：重连前需清 TcpClient 级缓冲（桌面分支不动）
     [[nodiscard]] Status connect(const std::string& address, const unsigned short port,
-                                 const float timeoutSeconds = 0) const {
+                                 const float timeoutSeconds = 0) {
         (void)timeoutSeconds;
 
-        // 允许直接传完整 ws:// / wss:// URL（N3 可配置化后 wss 部署用）
+        // 允许直接传完整 ws:// / wss:// URL（wss 部署用）
         std::string url;
         if (address.rfind("ws://", 0) == 0 || address.rfind("wss://", 0) == 0) {
             url = address;
         } else {
             url = "ws://" + address + ":" + std::to_string(port);
         }
+
+        // 断线重连复位（同一 TcpClient 会随场景缓存复用）：旧句柄不删会泄漏，
+        // 且其迟到事件会污染新连接的状态位；旧流的半帧混入新流会造成拆帧错位
+        // （长度前缀读到垃圾 → 越界读崩溃）
+        if (m_holder->sock) {
+            emscripten_websocket_delete(m_holder->sock);   // 关闭旧 WS 并注销其全部回调
+            m_holder->sock = 0;
+        }
+        m_holder->open = false;
+        m_holder->closed = false;
+        m_holder->errored = false;
+        m_holder->staged.clear();
+        m_recvBuf.clear();     // 旧连接的半帧绝不流入新流
+        m_sendBuf.clear();     // 旧连接的待发帧不重发到新连接
+        m_outgoing.clear();
 
         EmscriptenWebSocketCreateAttributes attrs{};
         attrs.url = url.c_str();

@@ -29,6 +29,7 @@
     "network": {
         "serverIp": "127.0.0.1",
         "port": 6666,
+        "webBridgePort": 8081,
         "tickRate": 128,
         "timeout": 5.0
     },

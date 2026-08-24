@@ -66,6 +66,7 @@ void ConfigManager::parseAssets(const json& j) {
 void ConfigManager::parseNetwork(const json& j) {
     network.serverIp = j.value("serverIp", network.serverIp);
     network.port = j.value("port", network.port);
+    network.webBridgePort = j.value("webBridgePort", network.webBridgePort);
     network.tickRate = j.value("tickRate", network.tickRate);
     network.timeout = j.value("timeout", network.timeout);
 }
@@ -106,6 +107,7 @@ bool ConfigManager::save() {
         // Network
         config["network"]["serverIp"] = network.serverIp;
         config["network"]["port"] = network.port;
+        config["network"]["webBridgePort"] = network.webBridgePort;
         config["network"]["tickRate"] = network.tickRate;
         config["network"]["timeout"] = network.timeout;
 

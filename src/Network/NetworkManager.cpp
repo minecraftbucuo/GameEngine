@@ -344,6 +344,7 @@ void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
     eng::Packet packet;
     TcpClient::Status status = clientSocket.receive(packet);
     if (status == TcpClient::Status::Error || status == TcpClient::Status::Disconnected) {
+        verifyPending = false;   // WEB：验证未完成即断线，清标志防跨连接残留
         network_type = NetworkType::None;
         LOG_WARN("Server disconnected");
         return;

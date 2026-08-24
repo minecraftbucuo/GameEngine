@@ -94,15 +94,29 @@ uint32 大端长度前缀分帧与 `m_recvBuf` 拆帧状态机**原样复用**�
 - NetworkManager 析构的 NET_Quit 在 WEB 下防护（未 Init 严禁 Quit）
 - MenuScene 新增 WEB 专属「超级玛丽 Client（测试）」按钮（写死桥地址，N3 转正式可配置）
 
-### Step N3 — 正式入口改造
-- [ ] MenuScene WEB 下恢复「超级玛丽 Client」按钮（与「超级玛丽（单机）」并列双入口）
-- [ ] NetworkManager WEB 下解除 `connectToServer` 一票否决（改为放行并校验地址非空）
-- [ ] 连接地址走 `CONFIG.network.serverIp:port`（config.json 里配桥地址端口；Step 8 已决策设置不持久，手工编辑 config 即可）
-- **验证**：网页经桥联机完整对局；桌面版三按钮布局不变
-- **改动文件**：`src/Scene/MenuScene.cpp`、`src/Network/NetworkManager.cpp`
+### Step N3 — 正式入口改造 ✅ 代码完成（2026-08-24，待用户回归）
+- [x] MenuScene WEB 下「超级玛丽 Client」按钮正式化（与「超级玛丽（单机）」并列双入口）
+- [x] NetworkManager WEB 下 `connectToServer` 放行（N2 已随异步化一并解除一票否决）
+- [x] 连接地址走 config.json：`serverIp` 支持完整 `ws(s)://` URL 直连，否则按
+      「ws://serverIp:webBridgePort」拼桥地址；新增 `webBridgePort` 键（默认 8081），
+      `port` 键语义不变（桌面 TCP 直连用）；Step 8 已决策设置不持久，手工编辑 config 重打包即可
+- [x] 顺带修复断线重连三处隐患（WEB）：connect 前复位 holder 状态位/删除旧句柄注销旧回调/
+      清空三层缓冲（staged + m_recvBuf 半帧 + m_sendBuf/m_outgoing 待发帧）——否则二次
+      连接因 closed 残留立即被判 Disconnected，且旧流半帧混入新流会拆帧错位越界读
+- [x] 断线时清 verifyPending（防验证中途断线的标志跨连接残留）
+- **验证**：网页经桥联机完整对局；桌面版三按钮布局不变；关服→重开服→网页重连成功
+- **改动文件**：`src/Scene/MenuScene.cpp`、`src/Network/NetworkManager.cpp`、
+  `src/Network/TcpClient.h`、`src/Manager/ConfigManager.h/.cpp`、`src/Asset/config.json`
 
-### Step N4 — 断线与体验打磨
+### Step N4 — 断线与体验打磨（进行中）
+- [ ] **待查证**：用户报告「关闭服务端后网页客户端像刷新一样自动重启」——代码层全栈
+      排查（shell.html / 引擎 / SDL web 后端 / Emscripten JS 胶水）均无 reload 调用；
+      主流怀疑：WASM 未捕获异常 → 进程 abort → 浏览器崩溃恢复自动重载标签页。
+      **下一步取证**：F12 Console 开着复现，抓异常栈（CppException/abort 字样）；
+      同时确认看到的是「GAME ENGINE 加载进度条重现」（真页面刷新）还是「直接回菜单」
+      （场景切换）——二者根因完全不同
 - [ ] Disconnected/Error 时玩家侧明确反馈（LOG + 场景内提示或退回菜单），杜绝静默假死
+      （当前行为：静默转 None，本地玩家可继续单机式游玩，远端玩家冻结）
 - [ ] 记录操作延迟体感基线；若明显劣化再议输入预测（不在本期承诺）
 - **改动文件**：`src/Scene/SuperMarioScene.cpp`（或 NetworkManager 回调）
 

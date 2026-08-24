@@ -88,6 +88,14 @@
         }],
         print: function (text) { console.log(text); },
         printErr: function (text) { console.warn(text); },
+        // 断线取证（N4）：WASM abort（未捕获异常等）时把原因钉在屏幕上——
+        // 页面若随后被浏览器按崩溃页自动重载，至少 Console 的 Preserve log 里留了现场
+        onAbort: function (reason) {
+            console.error('[GameEngine] WASM ABORT:', reason);
+            statusElement.textContent = 'WASM 异常中止：' + (reason || '未知原因');
+            statusElement.style.color = '#ff7b72';
+            loadingElement.classList.remove('done');
+        },
         // 官方模板同款解析："Downloading data... (123/456)" 节流刷新进度条
         setStatus: function (text) {
             if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };

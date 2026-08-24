@@ -44,6 +44,7 @@ public:
     struct NetworkConfig {
         std::string serverIp = "127.0.0.1";
         int port = 6666;
+        int webBridgePort = 8081;   // WEB 联机：websockify 桥端口（port 键仍归桌面 TCP 直连）
         int tickRate = 128;
         float timeout = 5.0f;
     } network{};
