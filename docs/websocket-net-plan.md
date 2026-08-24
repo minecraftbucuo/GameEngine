@@ -109,12 +109,13 @@ uint32 大端长度前缀分帧与 `m_recvBuf` 拆帧状态机**原样复用**�
   `src/Network/TcpClient.h`、`src/Manager/ConfigManager.h/.cpp`、`src/Asset/config.json`
 
 ### Step N4 — 断线与体验打磨（进行中）
-- [ ] **待查证**：用户报告「关闭服务端后网页客户端像刷新一样自动重启」——代码层全栈
-      排查（shell.html / 引擎 / SDL web 后端 / Emscripten JS 胶水）均无 reload 调用；
-      主流怀疑：WASM 未捕获异常 → 进程 abort → 浏览器崩溃恢复自动重载标签页。
-      **下一步取证**：F12 Console 开着复现，抓异常栈（CppException/abort 字样）；
-      同时确认看到的是「GAME ENGINE 加载进度条重现」（真页面刷新）还是「直接回菜单」
-      （场景切换）——二者根因完全不同
+- [x] **已结案（2026-08-24 用户验证坐实）**：「关服后网页整页刷新」= **VS Code Live
+      Server 的自动重载**，与游戏代码无关。取证链：断线后页面静默存活 100s + 零 abort
+      + 端口 5500（Live Server 专属）→ Live Server 监视工作区文件变化注入
+      location.reload()，服务端日志落盘 build\bin\log.txt 触发之；用户换
+      `python -m http.server 8000` 复测不再刷新。**教训**：调试 WEB 版一律用
+      `python -m http.server`（或任何不注入热重载脚本的静态服务器），勿用 Live Server。
+      已撤 -sASSERTIONS=2（取证专用），保留 shell.html 的 onAbort（免费且有益）
 - [ ] Disconnected/Error 时玩家侧明确反馈（LOG + 场景内提示或退回菜单），杜绝静默假死
       （当前行为：静默转 None，本地玩家可继续单机式游玩，远端玩家冻结）
 - [ ] 记录操作延迟体感基线；若明显劣化再议输入预测（不在本期承诺）
