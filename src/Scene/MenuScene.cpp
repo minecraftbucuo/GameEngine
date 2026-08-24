@@ -9,8 +9,26 @@
 #include "Button.h"
 #include "Render/Renderer.h"
 #include "SceneManager.h"
+#include "Logger.h"
 #include <algorithm>
 #include <random>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <cstdlib>
+
+// N5 自动寻址：页面 http(s) 来源 → ws(s)://host:port。
+// 用于「页面与桥同端口」拓扑（start_bridge.ps1 / S2 nginx）：构建一次的 WEB 包
+// 在任意开服者机器上零配置可用，无需按开服者 IP 重打 config。
+// stringToNewUTF8 内部走 malloc，返回值必须 free（emscripten EM_ASM 文档约定）
+static std::string pageWebSocketOrigin() {
+    char* s = static_cast<char*>(EM_ASM_PTR(
+        { return stringToNewUTF8((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host); }));
+    if (!s) return {};
+    std::string out(s);
+    std::free(s);
+    return out;
+}
+#endif
 
 MenuScene::MenuScene(eng::Renderer* _renderer) : Scene(_renderer, "MenuScene") {
     font = AssetManager::getInstance().getFontHandle();
@@ -53,8 +71,14 @@ void MenuScene::initScene() {
 
     makeButton("超级玛丽 Client", btnIndex++, [&]() -> void {
         std::string addr = CONFIG.network.serverIp;
-        if (addr.rfind("ws://", 0) != 0 && addr.rfind("wss://", 0) != 0)
+        if (addr == "auto") {
+            // N5：自动模式（页面与桥同源时用；本机三件套开发流页面:8000/桥:8081
+            // 不同端口，请继续用默认 127.0.0.1）
+            addr = pageWebSocketOrigin();
+            if (addr.empty()) LOG_WARN("serverIp=auto but page origin unavailable");
+        } else if (addr.rfind("ws://", 0) != 0 && addr.rfind("wss://", 0) != 0) {
             addr = "ws://" + addr + ":" + std::to_string(CONFIG.network.webBridgePort);
+        }
         getSceneManager()->loadScene("SuperMarioScene");
         std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->connectToServer(addr);
     });

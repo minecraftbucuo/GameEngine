@@ -130,10 +130,16 @@ uint32 大端长度前缀分帧与 `m_recvBuf` 拆帧状态机**原样复用**�
 - [ ] 记录操作延迟体感基线；若明显劣化再议输入预测（不在本期承诺）
 - **改动文件**：`src/Scene/SuperMarioScene.cpp`（或 NetworkManager 回调）
 
-### Step N5 — 部署拓扑文档化
-- [ ] S1 手册：朋友开服 = 启动服务端 exe + 一键脚本拉起 websockify（写 .ps1/.bat）
-- [ ] S2 拓扑：VPS 上 `nginx(wss 终结) → websockify → GameEngineServer(systemd)` 配置样例
-- **产出**：`docs/web-multiplayer-deploy.md`（或本文附录）
+### Step N5 — 部署拓扑文档化 ✅ 完成（2026-08-24）
+- [x] S1 手册：朋友开服 = 启动服务端 exe + `scripts/start_bridge.ps1` 一键拉桥
+      （websockify `--web` 单端口同时服务页面与桥）；防火墙 netsh 命令一并入册
+- [x] `serverIp="auto"` 自动寻址：客户端连页面自身来源（EM_ASM 读 location，https
+      自动折算 wss）——WEB 包构建一次即可在任意开服者机器零配置，无需按 IP 重打包；
+      仅限「页面与桥同端口」拓扑，本机三件套开发流仍用默认 127.0.0.1
+- [x] S2 拓扑：VPS 上 `nginx(wss 终结) → websockify → GameEngineServer(systemd)`
+      配置样例（含证书、Upgrade 头透传、长连接超时）；现状备注：服务端仅验证过
+      Windows 构建，Linux 适配属后续工作
+- **产出**：`docs/web-multiplayer-deploy.md`（含端口/配置速查与故障排查表）
 
 ## 六、运营决策（2026-08-24 已全部拍板）
 
