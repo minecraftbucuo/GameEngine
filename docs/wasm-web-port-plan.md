@@ -246,10 +246,10 @@ MEMFS 写入不持久。方案：`ConfigManager::save` 在 `__EMSCRIPTEN__` 下�
 - **后续如需启用**：优先 localStorage 方案（ConfigManager `__EMSCRIPTEN__` 分支同步存取 JSON，
   约 5MB 额度对配置文件绰绰有余），IDBFS 异步 syncfs 复杂度不值得
 
-#### Step 9 — 体积与性能基线 ✅ 基线入档（2026-08-24，帧率待用户确认）
+#### Step 9 — 体积与性能基线 ✅ 全部完成（2026-08-24 收官）
 - [x] Release（emscripten 工具链映射 `-O3`）下产物基线见下表
 - [x] 大文件评估完成，优化建议按收益排序列出（**不强行优化**，仅登记）
-- [ ] 帧率实测：60Hz rAF 下 SuperMario 场景稳定满帧（用户游玩体感确认即可）
+- [x] 帧率实测：用户确认 60Hz 下游玩流畅无掉帧（2026-08-24）
 
 ##### 体积基线（build-web/web/）
 
