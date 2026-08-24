@@ -1,0 +1,3 @@
+# bash 脚本必须保持 LF：Windows 上提交/检出若被 autocrlf 转成 CRLF，
+# 拷到 Linux 会以 \r 结尾导致 bash 直接语法报错
+*.sh text eol=lf

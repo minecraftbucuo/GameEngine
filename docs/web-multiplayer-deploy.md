@@ -81,6 +81,23 @@
 
 ## S2 公网 VPS 拓扑
 
+### 快速起步（Linux 一键脚本，推荐先跑通这个）
+
+```bash
+./scripts/build.sh          # 交互：默认构建服务器版；再问是否连 Web 版一起构
+                            # （免交互写法：./scripts/build.sh server web）
+./scripts/start_server.sh   # 一键开服：起无头服务端 + websockify 桥（顺带发网页）
+```
+
+两个脚本各自干了啥：
+
+- **`build.sh`**：选目标（默认服务器）→ `cmake -B build-server -DBUILD_FOR_SERVER=ON` 配置编译出无头 `GameEngineServer`（自动开服、无菜单无渲染）；**额外把 `src/Asset` 拷到 exe 同级**——CMake 只给客户端拷 Asset，服务端运行期要读 `config.json`（端口、tickRate），脚本补上这一刀。选了 Web 版则再走 `emcmake` 产出 `build-web/web/` 四件套（找不到 emsdk 会明确报错并给出安装命令）
+- **`start_server.sh`**：自检（服务端二进制/websockify 缺哪个直接报错并告知怎么补）→ 后台启动服务端（日志 `logs/server.log`，端口读 config.json）→ 前台启动 websockify 桥（8081→6666，有 Web 产物就加 `--web` 顺带发页面）。**Ctrl+C 一键停全家**（trap 保证后台服务端不被遗留）
+
+首次在 Linux 上运行前：`chmod +x scripts/*.sh`（从 Windows 检出的脚本丢了执行位）；首次构建首次跑同 Windows 一样要网络（FetchContent 拉依赖）。
+
+快速起步跑通后（公网/长期挂机），再按下面的 nginx + systemd 升级为正式部署：TLS 证书 + 域名 + 开机自启 + 崩溃自动拉起。
+
 ```
 浏览器 ──https──► nginx（TLS 终结 + 静态页面）
               └──wss://域名/ws──► proxy_pass ──► websockify(:8081) ──TCP──► GameEngineServer(:6666)
@@ -162,8 +179,9 @@ WantedBy=multi-user.target
 
 改完单元文件先 `systemctl daemon-reload`（让 systemd 重新读配置）再启用：`systemctl enable --now mario-server mario-bridge`（`enable` = 开机自启，`--now` = 现在立刻启动，等价于再执行一遍 `start`）。看状态/日志：`systemctl status mario-server`、`journalctl -u mario-bridge -f`。
 
-> **现状备注**：服务端当前仅验证过 Windows 构建（路径解析走 Win32 API）。Linux VPS
-> 部署前需先完成 Linux 构建适配（`getExeDir` 的 `/proc/self/exe` 分支已就绪，但未实测）；
+> **现状备注**：服务端当前仅验证过 Windows 构建（路径解析走 Win32 API）。Linux 侧
+> `getExeDir` 的 `/proc/self/exe` 分支已就绪但未实测——上面的快速起步脚本（`build.sh`
+> + `start_server.sh`）就是为首次验证准备的，在 Linux 上跑一遍即可知道还差什么；
 > Windows VPS 等价方案：NSSM 或任务计划程序把两个进程注册为服务，拓扑不变。
 
 ## 端口与配置速查
