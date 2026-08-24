@@ -120,7 +120,8 @@ FetchContent_Declare(
 # SDL_net 3 移除了 1.x 默认开启的 TCP_NODELAY，且未提供任何公开 API/property
 # 可设置（源码零引用、流接口不暴露句柄）——广域网上小于 MSS 的状态帧会被
 # Nagle+延迟ACK 扣到上一包的 ACK 到达才发，客户端表现为按 RTT 成簇的卡顿。
-# 补丁在 NET_CreateClient / NET_AcceptClient 建流处恢复 NODELAY。
+# 补丁经幂等脚本应用：换工具链/清缓存会让 populate 重跑，直接 git apply 会在
+# 已打过补丁的树上因上下文不符报 "patch does not apply"，脚本先查标记再决定。
 find_package(Git REQUIRED)   # 仅作用于 _deps 第三方克隆（FetchContent 克隆本身也依赖 git）
 FetchContent_Declare(
     SDL_net
@@ -128,8 +129,11 @@ FetchContent_Declare(
     GIT_TAG 4dd9d8418e9781d10481fd6177e3a1064ca201fe   # main 2026-06-17
     # 不加 GIT_SHALLOW：tag 为 commit hash 时浅克隆不保证成功（CMake 文档警示），
     # 且本库仅 17MB 无利可图
-    PATCH_COMMAND "${GIT_EXECUTABLE}" apply --ignore-whitespace --whitespace=nowarn
-                  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl_net_tcp_nodelay.patch"
+    PATCH_COMMAND "${CMAKE_COMMAND}"
+                  -DSRC_DIR=${CMAKE_BINARY_DIR}/_deps/sdl_net-src
+                  -DPATCH_FILE=${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl_net_tcp_nodelay.patch
+                  -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+                  -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl_net_apply_patch.cmake
     EXCLUDE_FROM_ALL
     SYSTEM
 )
