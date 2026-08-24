@@ -28,17 +28,18 @@ bool NetworkManager::startServer() {
 
     // SDL 核心初始化（服务端构建无渲染器路径，SDL_net 的线程/原子依赖它）
     if (!SDL_Init(0)) {
-        LOG_WARN("Failed to init SDL for networking");
+        LOG_WARN_FMT("Failed to init SDL for networking: {}", SDL_GetError());
         return false;
     }
     if (!NET_Init()) {
-        LOG_WARN("Failed to init SDL_net");
+        LOG_WARN_FMT("Failed to init SDL_net: {}", SDL_GetError());
         return false;
     }
 
     listener = NET_CreateServer(nullptr, static_cast<Uint16>(port), 0);   // nullptr = 监听全部接口
     if (!listener) {
-        LOG_WARN("Failed to start server");
+        // 失败原因全在底层错误串里：Address already in use / Address family not supported 等
+        LOG_WARN_FMT("Failed to start server (create listener on port {}): {}", port, SDL_GetError());
         return false;
     }
 
