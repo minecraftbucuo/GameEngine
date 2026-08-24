@@ -7,3 +7,4 @@ build/
 .direnv/
 .envrc
 SFML-2.6.1-linux/
+build-web/

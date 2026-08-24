@@ -115,8 +115,7 @@ ConfigManager/json、filesystem 迭代、Packet 反序列化都有 try/catch。�
 
 ### 7. 网络：第一阶段整体禁用
 
-- WEB 构建：FetchContent 不声明 SDL_net、不链 `SDL3_net::SDL3_net`；`Network/` 目录源码仍参与编译但仅类定义（SuperMarioScene 持有 NetworkManager 成员，直接剔除会伤筋动骨）。
-  - 更稳妥做法：照 `BUILD_FOR_SERVER` 先例，`NetworkManager::startServer/connectToServer` 在 `__EMSCRIPTEN__` 下直接返回 false 并 LOG_WARN。
+- WEB 构建分两步走：**Step 1 先保留 SDL_net 参与编译**（emscripten 提供全套 socket 头文件，能编过；运行期无裸 socket 自然不可用）；**Step 5 再加条件编译护栏后从构建移除**——照 `BUILD_FOR_SERVER` 先例，`NetworkManager::startServer/connectToServer` 在 `__EMSCRIPTEN__` 下直接返回 false 并 LOG_WARN，菜单裁剪两个联网按钮。
 - [MenuScene.cpp](../src/Scene/MenuScene.cpp#L44-L53)：`__EMSCRIPTEN__` 下不注册两个联网按钮（后续按钮序号顺延或置灰显示"网页版暂不支持"）。
 - 后续可选方向（届时另立文档）：
   - A. 服务端架 websockify 之类的 TCP↔WebSocket 桥 + Emscripten `-sPROXY_POSIX_SOCKETS`，SDL_net 代码几乎不动；
@@ -151,25 +150,26 @@ MEMFS 写入不持久。方案：`ConfigManager::save` 在 `__EMSCRIPTEN__` 下�
 
 ### 阶段〇：环境准备（本地一次性）
 
-#### Step 0 — 安装 emsdk 并冒烟测试
-- [ ] 安装 emsdk 最新稳定版并 `source emsdk_env`
-- [ ] 用任一 hello-world 验证 `emcc` / `emcmake` 可用
-- **验证**：`emcc --version` 正常输出
-- **说明**：纯环境步骤，不入库；Windows 推荐 PowerShell 安装
+#### Step 0 — 安装 emsdk 并冒烟测试 ✅（2026-08-24）
+- [x] emsdk 已就绪：`E:\Project\GitHub\emsdk`（build_web.ps1 默认指向该路径，可用 `-EmsdkEnv` 参数覆盖）
+- [x] `emcc` / `emcmake` 可用性由 Step 1 首次构建冒烟验证
+- **验证**：`scripts/build_web.ps1` 全流程跑通即视为通过
 
 ---
 
 ### 阶段一：最小闭环（浏览器里跑出菜单窗口）
 
 #### Step 1 — CMake 平台分支与 WEB 构建产出
-- [ ] `CMakeLists.txt` 增加 `if(EMSCRIPTEN)` 分支：
-  - [ ] 不声明/不链 SDL_net（联网入口同步裁剪，见 Step 5 前先保证能编过）
-  - [ ] 目标产物输出到 `build-web/web/`（html + js + wasm + data）
-  - [ ] 链接选项：`-sALLOW_MEMORY_GROWTH=1 -sFORCE_FILESYSTEM=1 -fexceptions --preload-file ${SRC_DIR}/Asset@/Asset`
-- [ ] 新增 `scripts/build_web.ps1`（configure + build + 归集）
-- **验证**：`scripts/build_web.ps1` 全流程通过，产物四件套齐全
+> **2026-08-24 调整**：SDL_net 本步**暂保留参与编译**——彻底移除需要先给
+> Network / TcpClient / SuperMarioScene / MarioController 加条件编译护栏（即 Step 5 的活），
+> 提前拆会破坏原子性。浏览器无裸 socket，运行期联网本就不可用，编译期能过即可。
+- [x] `CMakeLists.txt` 增加 `if(EMSCRIPTEN)` 分支（代码已就位，待构建验证）：
+  - [x] 目标产物输出到 `build-web/web/`，`CMAKE_EXECUTABLE_SUFFIX=.html` 直接产出入口页（html + js + wasm + data 四件套）
+  - [x] 链接选项：`-sALLOW_MEMORY_GROWTH=1`、`-sFORCE_FILESYSTEM=1`、`-fexceptions`、`--preload-file src/Asset@/Asset`、`-sMAX_WEBGL_VERSION=2`（SDL3 GLES2 后端需 WebGL2）
+- [x] 新增 `scripts/build_web.ps1`（激活 emsdk → emcmake 配置 → 编译）
+- [ ] **验证（由用户执行）**：脚本全流程通过、产物四件套齐全；此时打开页面**预期卡死**属正常现象——阻塞式主循环要到 Step 3 才改造
 - **改动文件**：`CMakeLists.txt`、新增 `scripts/build_web.ps1`
-- **原子性保证**：非 EMSCRIPTEN 分支零改动，桌面构建不受影响
+- **原子性保证**：非 EMSCRIPTEN 分支零改动，桌面/服务端构建不受影响
 
 #### Step 2 — 入口路径适配
 - [ ] [getExeDir()](../src/GameEngine.cpp#L22-L30) 增加 `__EMSCRIPTEN__` 分支返回 `"/"`
@@ -275,6 +275,7 @@ MEMFS 写入不持久。方案：`ConfigManager::save` 在 `__EMSCRIPTEN__` 下�
 7. **`simulate_infinite_loop=1` 语义**：`main` 返回控制权给浏览器事件循环，此后不得再访问栈上对象——engine 实例必须静态/堆分配存活（现 main.cpp 栈对象需改为 static 或 new，Step 3 一并处理）。
 8. **窗口尺寸语义变化**：`setSize`（设置场景用）在浏览器里是调整 canvas 内部分辨率而非窗口，行为可接受但要实测确认不崩。
 9. **资源更新后的 .data 缓存**：发布迭代时浏览器可能缓存旧 .data，发布脚本里对产物文件名附加 hash（或提示强刷）留待 Step 9 评估。
+10. **SDL_net 在 emscripten 下编译失败的风险（低）**：emscripten 提供全套 BSD socket 头，预期能编过；若 Step 1 首次构建在 SDL_net 处报错，则把 Step 5 的条件编译护栏提前实施（单独 commit）。
 
 ## 七、执行顺序与依赖图
 

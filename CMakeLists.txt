@@ -21,6 +21,29 @@ else ()
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 endif ()
 
+# ── WEB 构建（Emscripten / WASM）：仅 emcmake 配置时生效，桌面/服务端构建零影响 ──
+# 用法见 docs/wasm-web-port-plan.md 与 scripts/build_web.ps1
+#   · 产物在 web/ 下（html/js/wasm/data 四件套），Asset 经 --preload-file 打进虚拟盘
+#     /Asset，与 getExeDir() 的 "/" 约定配套（迁移计划决策 3）
+#   · -fexceptions 必须开：json/filesystem/Packet 大量 try/catch，
+#     Emscripten 默认禁异常捕获，抛出即 abort（决策 5）；声明先于 FetchContent 使依赖同吃此选项
+#   · MAX_WEBGL_VERSION=2：SDL3 的 GLES2 渲染后端需要 WebGL2 画布上下文
+#   · 不开 pthread：避免部署端强制 COOP/COEP 头，GitHub Pages 开箱即用（决策 6）
+#   · SDL_net 本步暂保留参与编译（emscripten 头文件齐全能编过；运行期无裸 socket
+#     自然不可用），源码级裁剪与移除统一放到 Step 5（决策 7 分阶段）
+if (EMSCRIPTEN)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/web)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")          # 链接器直接产出可打开的 html 入口页
+    add_compile_options(-fexceptions)
+    add_link_options(
+            -fexceptions
+            "-sALLOW_MEMORY_GROWTH=1"             # 资源全量预解码进内存，按需扩容
+            "-sFORCE_FILESYSTEM=1"                # preload 虚拟文件系统
+            "-sMAX_WEBGL_VERSION=2"
+            "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/src/Asset@/Asset"
+    )
+endif ()
+
 # 静态/动态统一驱动：控制所有依赖库的构建方式与 exe 链接方式
 # （CACHE FORCE 保证在同一 build 目录里切换时子项目旧缓存不残留）
 if (BUILD_STATIC)
@@ -217,8 +240,8 @@ else ()
 endif ()
 target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 
-# 客户端：资源目录随构建拷到 exe 旁
-if (NOT BUILD_FOR_SERVER)
+# 客户端：资源目录随构建拷到 exe 旁（WEB 版资源已打进 .data 包，跳过）
+if (NOT BUILD_FOR_SERVER AND NOT EMSCRIPTEN)
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${SRC_DIR}/Asset/
