@@ -171,10 +171,13 @@ MEMFS 写入不持久。方案：`ConfigManager::save` 在 `__EMSCRIPTEN__` 下�
 - **改动文件**：`CMakeLists.txt`、新增 `scripts/build_web.ps1`
 - **原子性保证**：非 EMSCRIPTEN 分支零改动，桌面/服务端构建不受影响
 
-#### Step 2 — 入口路径适配
-- [ ] [getExeDir()](../src/GameEngine.cpp#L22-L30) 增加 `__EMSCRIPTEN__` 分支返回 `"/"`
-- [ ] `Logger::setLogFile("log.txt")` 保持不变（写 MEMFS 合法）
-- **验证**：WEB 构建 configure/build 通过；桌面版行为不变
+#### Step 2 — 入口路径适配 ✅ 代码就位（2026-08-24，待构建验证）
+- [x] [getExeDir()](../src/GameEngine.cpp#L22-L34) 增加 `__EMSCRIPTEN__` 分支返回 `"/"`
+- [x] `Logger::setLogFile("log.txt")` 保持不变（写 MEMFS 合法）
+- **验证（由用户执行）**：重建后浏览器控制台不再出现 `CppException`，应看到引擎日志
+  （`Program directory: /` → `GAME START!` → 资源加载），随后**页面无异常但冻结**——阻塞式主循环属 Step 3 范围
+- **实测佐证（2026-08-24）**：Step 1 构建后页面抛 `Uncaught CppException`，与预判耦合点 A3 吻合：
+  非 Windows 平台走 `/proc/self/exe` 探测，MEMFS 无 /proc，`canonical()` 抛 filesystem_error 逃出 main
 - **改动文件**：`src/GameEngine.cpp`
 - **原子性保证**：单一 ifdef 分支，不影响既有两平台
 

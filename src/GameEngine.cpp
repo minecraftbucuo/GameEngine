@@ -20,7 +20,11 @@
 #include "Core/Types.h"
 
 static std::filesystem::path getExeDir() {
-#ifdef _WIN32
+#if defined(__EMSCRIPTEN__)
+    // WEB 构建：无 exe 概念，Asset 已由 --preload-file 挂载到 MEMFS 根（/Asset），
+    // 工作目录固定为 "/" 即可让 "./Asset/..." 相对路径照常解析
+    return std::filesystem::path("/");
+#elif defined(_WIN32)
     wchar_t path[MAX_PATH];
     GetModuleFileNameW(nullptr, path, MAX_PATH);
     return std::filesystem::canonical(path).parent_path();
