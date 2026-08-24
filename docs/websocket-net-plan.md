@@ -120,6 +120,13 @@ uint32 大端长度前缀分帧与 `m_recvBuf` 拆帧状态机**原样复用**�
       增 connectionLost 一次性标志（主动断开 + WEB 验证被拒两处置位），SuperMarioScene
       每帧轮询定格提示层——「CONNECTION LOST / Press Esc to return to Menu」与死亡屏
       同构（半透明遮罩、屏幕坐标系、恢复相机）；重进场景时复位标志，防上局残留弹层
+- [x] 修复「断线后 ESC 再进单机出现双马里奥」（2026-08-24）：根因 = Scene::exit 为空 +
+      场景实例常驻缓存 + is_init 只护首次初始化——上一局（Client 模式下服务端推送生成的）
+      马里奥残留在 game_objects 带进新局，单机路径又生成一个。修复 = 重进场景时
+      resetSession() 全量重置：NetworkManager 侧断开旧连接（桌面客户端 ESC 此前悬连接/
+      服务端销毁旧 listener 重建）、清同步表与标志；SuperMarioScene 侧清对象表/碰撞体、
+      重建静态场景、is_initDynamicObjects 复位。顺带覆盖单机→单机（旧对象跨局残留）与
+      Client 重连（旧对象 + 服务端 Spawn 流重复）两条同根因路径
 - [ ] 记录操作延迟体感基线；若明显劣化再议输入预测（不在本期承诺）
 - **改动文件**：`src/Scene/SuperMarioScene.cpp`（或 NetworkManager 回调）
 

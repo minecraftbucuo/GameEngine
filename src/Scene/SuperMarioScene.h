@@ -57,6 +57,10 @@ public:
 
     void connectToServer(const std::string& address);
 
+    // N4 修复：重进场景时清上一局会话——Scene::exit 为空且场景实例常驻缓存，
+    // 不重置则上一局的马里奥/网络状态跨局残留（Client→单机出现双马里奥的根因）
+    void resetSession();
+
     NetworkManager::NetworkType getNetworkType() const override {
         return simple_network.getNetworkType();
     }

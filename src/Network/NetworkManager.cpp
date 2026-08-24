@@ -120,6 +120,33 @@ bool NetworkManager::connectToServer(const std::string& address) {
 #endif
 }
 
+void NetworkManager::resetSession() {
+    // 服务端：断开全部客户端并销毁监听（桌面重开服拿到全新 listener）
+    if (network_type == NetworkType::Server) {
+        for (const auto& client : clients) {
+            client->disconnect();
+        }
+#ifndef __EMSCRIPTEN__
+        if (listener) {
+            NET_DestroyServer(listener);
+            listener = nullptr;
+        }
+#endif
+    } else if (network_type == NetworkType::Client) {
+        // 桌面客户端 ESC 离场此前不disconnect，连接悬到进程结束；WEB 下
+        // 已被服务端关闭，此处 delete 释放句柄并注销迟到回调
+        clientSocket.disconnect();
+    }
+    clients.clear();
+    unverified.clear();
+    players.clear();
+    game_objects.clear();
+    tick_accum_us = 0;
+    verifyPending = false;
+    connectionLost = false;
+    network_type = NetworkType::None;   // 由随后的 startServer/connectToServer 重新置位
+}
+
 void NetworkManager::update(const eng::Time& deltaTime) {
     if (network_type == NetworkType::None || network_type == NetworkType::Local) return;
     if (network_type == NetworkType::Server) {

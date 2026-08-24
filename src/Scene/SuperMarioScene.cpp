@@ -23,11 +23,11 @@ void SuperMarioScene::init() {
     Scene::init();
     this->setNetworkManager(&(this->simple_network));
     simple_network.setCurrentScene(this);
-    // N4：每次进场景复位断线提示（is_init 守卫只护重资源，标志须逐次刷新，
-    // 否则上一局的断线残留会在重连后的新对局里立刻弹出提示层）
-    show_disconnect_screen = false;
-    simple_network.clearConnectionLost();
-    if (is_init) return;
+    if (is_init) {
+        // 重进场景：清上一局会话（对象/碰撞/网络状态/提示标志）
+        resetSession();
+        return;
+    }
     is_init = true;
     collisionSystem = std::make_unique<CollisionSystem>();
 #ifndef SERVER_BUILD
@@ -228,6 +228,20 @@ void SuperMarioScene::startServer() {
     if (simple_network.startServer()) {
         initDynamicObjects();
     }
+}
+
+void SuperMarioScene::resetSession() {
+    // 网络会话（连接断开/同步表/标志；Local 与 None 无连接资源，仅清表）
+    simple_network.resetSession();
+    // 对象全清（含上一局的马里奥与静态场景），随后重建静态场景
+    game_objects.clear();
+    game_objects_map.clear();
+    collisionSystem = std::make_unique<CollisionSystem>();   // 顺带清空碰撞体引用
+    initStaticObjects();
+    // 动态对象守卫复位：单机/服务端路径据此重新生成马里奥
+    is_initDynamicObjects = false;
+    show_death_screen = false;
+    show_disconnect_screen = false;
 }
 
 void SuperMarioScene::connectToServer(const std::string& address) {

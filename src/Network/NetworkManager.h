@@ -48,6 +48,10 @@ public:
 
     void update(const eng::Time& deltaTime);
 
+    // N4 修复：场景重进时清空上一局会话（连接/同步表/标志）。
+    // NetworkManager 随场景实例常驻缓存，不重置则旧连接与同步表跨局残留
+    void resetSession();
+
     void handleEvent(const eng::EngineEvent& event);
 
     void serverUpdate(const eng::Time& deltaTime);
