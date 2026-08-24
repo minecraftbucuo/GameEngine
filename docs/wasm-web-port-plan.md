@@ -199,19 +199,26 @@ MEMFS 写入不持久。方案：`ConfigManager::save` 在 `__EMSCRIPTEN__` 下�
 
 ### 阶段二：资源与音频专项验证
 
-#### Step 4 — 目录扫描兼容性验证
-- [ ] WEB 版启动观察 `loadTexture` / `loadSoundBuffer` 是否枚举到文件
-- [ ] 若失败：[AssetManager.cpp](../src/Manager/AssetManager.cpp) 两处扫描替换为 `SDL_GlobDirectory`（布局模式递归）
-- **验证**：Demo / 物理测试 / SuperMario 场景贴图齐全无 "Path does not exist"
-- **改动文件**：视结果而定（可能零改动）
-- **原子性保证**：SDL_GlobDirectory 替换为等价枚举语义，桌面版同样编译验证
+#### Step 4 — 目录扫描兼容性验证 ✅（2026-08-24，实测通过，零改动）
+- [x] Step 2/3 的构建验证中已顺带确认：MEMFS 下 `recursive_directory_iterator` 枚举正常，
+  `Loading SuperMarioScene resources...` 走完、各场景贴图齐全——**无需切换 SDL_GlobDirectory**
+- **结论**：新版 Emscripten 对 MEMFS 的 dirent 支持已覆盖项目用法，风险项 1 解除
 
-#### Step 5 — 联网入口裁剪
-- [ ] [MenuScene::initScene](../src/Scene/MenuScene.cpp#L29) `__EMSCRIPTEN__` 下跳过两个联网按钮注册（其余序号顺延）
-- [ ] [NetworkManager::startServer/connectToServer](../src/Network/NetworkManager.cpp) `__EMSCRIPTEN__` 下返回 false + LOG_WARN（双保险）
-- **验证**：菜单无联网按钮；其余四个入口功能正常
-- **改动文件**：`src/Scene/MenuScene.cpp`、`src/Network/NetworkManager.cpp`
-- **原子性保证**：纯裁剪，不新增行为；桌面版按钮不受影响
+#### Step 5 — 联网入口裁剪 ✅ 代码就位（2026-08-24，待构建验证）
+> **2026-08-24 方案升级**：原计划"WEB 隐藏两个联网按钮"，实施时改为**新增 Local 本地单机模式**——
+> 调研发现场景逻辑与网络完全解耦（`NetworkType::None` 时 update 空转），唯一门槛是
+> `initDynamicObjects()` 锁在服务器启动成功之后。Local 模式复用服务端全部玩法逻辑、仅去掉 socket，
+> 马里奥网页版可直接单机游玩（含 R 键重生），比藏按钮体验好得多且改动同样收敛在 `__EMSCRIPTEN__` 内。
+- [x] [NetworkManager](../src/Network/NetworkManager.h) 枚举新增 `NetworkType::Local`
+- [x] [startServer()](../src/Network/NetworkManager.cpp#L14-L29) WEB 下跳过 SDL/NET 初始化与监听创建，直接置 Local 返回 true
+- [x] [connectToServer()](../src/Network/NetworkManager.cpp#L57-L61) WEB 下 LOG_WARN 直接拒绝（双保险）
+- [x] update()/handleEvent() 对 Local 零网络操作；WindowClose 断连清理收窄为 Server/Client 才走
+- [x] [SuperMarioScene 重生判定](../src/Scene/SuperMarioScene.cpp#L201-L208)放行 Local（单机死亡后 R 重生可用）
+- [x] [MenuScene](../src/Scene/MenuScene.cpp#L44-L56) WEB 下两个联机按钮收敛为「超级玛丽（单机）」，按钮序号改计数器自动顺延，桌面版两按钮不变
+- **验证（由用户执行）**：网页菜单出现「超级玛丽（单机）」，进入后马里奥可操作、可死亡、R 可重生；
+  桌面版回归确认两个联机按钮照旧
+- **改动文件**：`src/Network/NetworkManager.h/.cpp`、`src/Scene/SuperMarioScene.cpp`、`src/Scene/MenuScene.cpp`
+- **原子性保证**：除枚举新增与条件收窄（对既有类型行为等价）外，新逻辑全在 `__EMSCRIPTEN__` 内
 
 #### Step 6 — 音频手势解锁验证
 - [ ] 验证 SDL3 Emscripten 音频后端的自动恢复：首键/首击后 BGM 与音效正常

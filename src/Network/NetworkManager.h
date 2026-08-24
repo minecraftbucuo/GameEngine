@@ -22,7 +22,8 @@ public:
     enum class NetworkType : uint8_t {
         None,
         Server,
-        Client
+        Client,
+        Local   // WASM 移植 Step 5：WEB 无裸 socket，本地单机=服务端逻辑+零同步
     };
     NetworkManager() = default;
     ~NetworkManager() {

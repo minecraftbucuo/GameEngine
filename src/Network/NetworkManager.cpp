@@ -17,6 +17,13 @@ bool NetworkManager::startServer() {
         LOG_INFO("Cannot start server while already running as a client!");
         return false;
     }
+#ifdef __EMSCRIPTEN__
+    // WASM 移植 Step 5：浏览器无裸 socket，不创建监听，直接进本地单机模式
+    //（游戏逻辑与 Server 一致，仅无网络同步）
+    LOG_INFO("WEB build: entering local offline mode (no sockets)");
+    network_type = NetworkType::Local;
+    return true;
+#endif
     LOG_INFO_FMT("Starting server on port {} ...", port);
 
     // SDL 核心初始化（服务端构建无渲染器路径，SDL_net 的线程/原子依赖它）
@@ -46,6 +53,11 @@ bool NetworkManager::connectToServer(const std::string& address) {
         LOG_WARN("Cannot connect to server while already running as a server!");
         return false;
     }
+#ifdef __EMSCRIPTEN__
+    // WASM 移植 Step 5：浏览器无裸 TCP，连接入口直接拒绝（Web 联机为后续可选阶段）
+    LOG_WARN("WEB build has no raw TCP support; connect unavailable");
+    return false;
+#endif
     LOG_INFO_FMT("Connecting to server at {}:{}", address, port);
 
     // SDL 核心初始化（客户端通常已由渲染器初始化，SDL_Init 幂等无害）
@@ -97,7 +109,7 @@ bool NetworkManager::connectToServer(const std::string& address) {
 }
 
 void NetworkManager::update(const eng::Time& deltaTime) {
-    if (network_type == NetworkType::None) return;
+    if (network_type == NetworkType::None || network_type == NetworkType::Local) return;
     if (network_type == NetworkType::Server) {
         serverUpdate(deltaTime);
         // 将收集到的要发送的数据一次性发出去
@@ -112,7 +124,9 @@ void NetworkManager::update(const eng::Time& deltaTime) {
 }
 
 void NetworkManager::handleEvent(const eng::EngineEvent& event) {
-    if (network_type != NetworkType::None && event.type == eng::EventType::WindowClose) {
+    // Local 模式无连接资源，跳过断连清理（与 None 同为纯本地状态）
+    if ((network_type == NetworkType::Server || network_type == NetworkType::Client)
+        && event.type == eng::EventType::WindowClose) {
         if (network_type == NetworkType::Server) {
             for (const auto& client : clients) {
                 client->disconnect();

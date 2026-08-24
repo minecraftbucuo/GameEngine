@@ -200,7 +200,10 @@ void SuperMarioScene::handleEvent(const eng::EngineEvent& event) {
             getSceneManager()->loadScene("MenuScene");
         } else if (event.key == eng::Key::R && show_death_screen) {
             show_death_screen = false;
-            if (simple_network.getNetworkType() == NetworkManager::NetworkType::Server) {
+            // WASM 移植 Step 5：Local（网页单机）与 Server 同为本地权威，允许直接重生
+            const auto net_type = simple_network.getNetworkType();
+            if (net_type == NetworkManager::NetworkType::Server
+                || net_type == NetworkManager::NetworkType::Local) {
                 std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
                 this->addObjectWithNetwork(mario);
                 LOG_DEBUG("Respawn mario");

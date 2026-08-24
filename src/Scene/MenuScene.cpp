@@ -41,30 +41,39 @@ void MenuScene::initScene() {
         this->addObject(btn);
     };
 
-    makeButton("超级玛丽 Client", 0, [&]() -> void {
+    // WASM 移植 Step 5：WEB 无裸 socket，联机入口收敛为本地单机（NetworkManager Local 模式）
+    int btnIndex = 0;
+#ifdef __EMSCRIPTEN__
+    makeButton("超级玛丽（单机）", btnIndex++, [&]() -> void {
+        getSceneManager()->loadScene("SuperMarioScene");
+        std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->startServer();
+    });
+#else
+    makeButton("超级玛丽 Client", btnIndex++, [&]() -> void {
         getSceneManager()->loadScene("SuperMarioScene");
         std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->connectToServer(
             CONFIG.network.serverIp);
     });
 
-    makeButton("超级玛丽 Server", 1, [&]() -> void {
+    makeButton("超级玛丽 Server", btnIndex++, [&]() -> void {
         getSceneManager()->loadScene("SuperMarioScene");
         std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->startServer();
     });
+#endif
 
-    makeButton("3D 渲染", 2, [&]() -> void {
+    makeButton("3D 渲染", btnIndex++, [&]() -> void {
         getSceneManager()->loadScene("GameScene3D");
     });
 
-    makeButton("Demo", 3, [&]() -> void {
+    makeButton("Demo", btnIndex++, [&]() -> void {
         getSceneManager()->loadScene("GameScene");
     });
 
-    makeButton("设置", 4, [&]() -> void {
+    makeButton("设置", btnIndex++, [&]() -> void {
         getSceneManager()->loadScene("SettingsScene");
     });
 
-    makeButton("物理测试", 5, [&]() -> void {
+    makeButton("物理测试", btnIndex++, [&]() -> void {
         getSceneManager()->loadScene("PhysicsTestScene");
     });
 
