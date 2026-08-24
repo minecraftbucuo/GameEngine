@@ -597,6 +597,11 @@ void Renderer::clear(const Color c) {
 void Renderer::present() {
     if (!g.renderer) return;
     SDL_RenderPresent(g.renderer);
+#ifdef __EMSCRIPTEN__
+    // WASM 移植 Step 3：rAF 已按刷新率调度；SDL_DelayNS 忙等会冻结浏览器主线程，
+    // 即便设置场景运行时改了帧率也不允许走这条路
+    return;
+#endif
     if (g.fpsLimit == 0) return;
     const Uint64 freq = SDL_GetPerformanceFrequency();
     const Uint64 target = freq / g.fpsLimit;   // 每帧节拍（计数器单位）

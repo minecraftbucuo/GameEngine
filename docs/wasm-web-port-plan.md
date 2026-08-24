@@ -181,14 +181,14 @@ MEMFS 写入不持久。方案：`ConfigManager::save` 在 `__EMSCRIPTEN__` 下�
 - **改动文件**：`src/GameEngine.cpp`
 - **原子性保证**：单一 ifdef 分支，不影响既有两平台
 
-#### Step 3 — 主循环回调化（核心改造）
-- [ ] [GameEngine](../src/GameEngine.h) 增加私有 `bool frameStep()`，提取现 while 循环体
-- [ ] 桌面版 `start()` 改为 `while (frameStep()) {}`
-- [ ] WEB 版用 `emscripten_set_main_loop_arg(..., fps=0, simulate_infinite_loop=1)`
-- [ ] WindowClose 分支：WEB 版追加 `emscripten_cancel_main_loop()`
-- [ ] deltaTime 上限钳制（≤50ms，两平台共同生效，修切后台瞬移隐患）
-- [ ] [Renderer::present](../src/Render/RendererSDL3.cpp#L597-L614) 限帧段加 `#ifndef __EMSCRIPTEN__`；`setFramerateLimit` WEB 下强制归零
-- **验证**：浏览器打开 `index.html` 出现菜单场景（粒子背景 + 按钮）；点击按钮能进出场景；Esc 行为正常；桌面版回归测试通过
+#### Step 3 — 主循环回调化（核心改造）✅ 代码就位（2026-08-24，待构建验证）
+- [x] [GameEngine](../src/GameEngine.h) 增加私有 `bool frameStep()`，提取现 while 循环体
+- [x] 桌面版 `start()` 改为 `while (frameStep()) {}`
+- [x] WEB 版用 `emscripten_set_main_loop_arg(..., fps=0, simulate_infinite_loop=1)`，返回 false 时 `emscripten_cancel_main_loop()`
+- [x] deltaTime 上限钳制（≤50ms，两平台共同生效，修切后台瞬移隐患）
+- [x] [Renderer::present](../src/Render/RendererSDL3.cpp#L597-L608) WEB 下提前返回隔离 `SDL_DelayNS` 忙等；`setFramerateLimit(0)` 绕开限帧
+- [x] main.cpp WEB 下引擎对象改堆分配常驻（simulate_infinite_loop 中断 main 后栈对象生命周期不可靠）
+- **验证（由用户执行）**：浏览器出现菜单场景（粒子背景 + 按钮），可点击进出各场景、Esc 正常；桌面版回归测试通过
 - **改动文件**：`src/GameEngine.h`、`src/GameEngine.cpp`、`src/Render/RendererSDL3.cpp`
 - **合并原因**：frameStep 提取与回调注册必须同一 commit 才能编译通过
 - **风险预案**：若 SDL_DelayNS 在 Emscripten 报未实现/忙等，靠 setFramerateLimit(0) 已绕开；若 pollEvent 在回调外轮询异常，检查 SDL 事件循环与 rAF 的配合（SDL3 官方 emscripten 后端已适配）

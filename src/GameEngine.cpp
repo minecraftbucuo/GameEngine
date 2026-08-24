@@ -8,6 +8,10 @@
 #include "ConfigManager.h"
 #include <chrono>
 #include <thread>
+#include <algorithm>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 #ifndef SERVER_BUILD
 #include "GameScene.h"
 #include "GameScene3D.h"
@@ -81,28 +85,49 @@ void GameEngine::init() {
 
 #ifndef SERVER_BUILD
 void GameEngine::start() {
-    renderer.setFramerateLimit(CONFIG.window.fps);
-    // SDL3 迁移 Step 10：计时 std::chrono + 自研 eng::Time（sfml-system 依赖解除）
-    auto last = std::chrono::steady_clock::now();
-    while (renderer.isWindowOpen()) {
-        const auto now = std::chrono::steady_clock::now();
-        const eng::Time deltaTime = eng::Time::seconds(
-            std::chrono::duration<float>(now - last).count());
-        last = now;
-        eng::EngineEvent event{};
-        while (renderer.pollEvent(event)) {
-            if (event.type == eng::EventType::WindowClose) {
-                renderer.closeWindow();
-                break;
+    lastFrameTime = std::chrono::steady_clock::now();
+#ifdef __EMSCRIPTEN__
+    // WASM 移植 Step 3：rAF 天然按刷新率调度，内部限帧必须关闭
+    renderer.setFramerateLimit(0);
+    // fps=0 → requestAnimationFrame；simulate_infinite_loop 使 main 交还控制权后不再返回，
+    // frameStep 返回 false（关窗）时由 cancel 停掉回调
+    emscripten_set_main_loop_arg(
+        [](void* arg) {
+            if (!static_cast<GameEngine*>(arg)->frameStep()) {
+                emscripten_cancel_main_loop();
             }
-            scene_manager->handleEvent(event);
+        },
+        this, /*fps=0→rAF*/ 0, /*simulate_infinite_loop*/ 1);
+#else
+    // SDL3 迁移 Step 10：计时 std::chrono + 自研 eng::Time（sfml-system 依赖解除）
+    renderer.setFramerateLimit(CONFIG.window.fps);
+    while (frameStep()) {}
+#endif
+}
+
+bool GameEngine::frameStep() {
+    const auto now = std::chrono::steady_clock::now();
+    // dt 上限钳制 50ms：切后台/切标签页回来会产生巨帧导致瞬移穿墙（两平台共同防护）
+    const float dtSec = std::min(
+        std::chrono::duration<float>(now - lastFrameTime).count(), 0.05f);
+    lastFrameTime = now;
+    const eng::Time deltaTime = eng::Time::seconds(dtSec);
+
+    eng::EngineEvent event{};
+    while (renderer.pollEvent(event)) {
+        if (event.type == eng::EventType::WindowClose) {
+            renderer.closeWindow();
+            return false;
         }
-        if (!renderer.isWindowOpen()) break;
-        scene_manager->update(deltaTime);
-        renderer.clear();
-        scene_manager->render(renderer);
-        renderer.present();
+        scene_manager->handleEvent(event);
     }
+    if (!renderer.isWindowOpen()) return false;
+
+    scene_manager->update(deltaTime);
+    renderer.clear();
+    scene_manager->render(renderer);
+    renderer.present();
+    return true;
 }
 #else
 [[noreturn]] void GameEngine::start() {
