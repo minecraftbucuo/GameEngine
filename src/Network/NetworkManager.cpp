@@ -53,18 +53,17 @@ bool NetworkManager::connectToServer(const std::string& address) {
         LOG_WARN("Cannot connect to server while already running as a server!");
         return false;
     }
-#ifdef __EMSCRIPTEN__
-    // WASM 移植 Step 5：浏览器无裸 TCP，连接入口直接拒绝（Web 联机为后续可选阶段）
-    LOG_WARN("WEB build has no raw TCP support; connect unavailable");
-    return false;
-#endif
     LOG_INFO_FMT("Connecting to server at {}:{}", address, port);
 
-    // SDL 核心初始化（客户端通常已由渲染器初始化，SDL_Init 幂等无害）
+#ifndef __EMSCRIPTEN__
+    // SDL 核心初始化（客户端通常已由渲染器初始化，SDL_Init 幂等无害）。
+    // WEB 下必须整体跳过：NET_Init 无条件起解析线程，无 pthread 环境必崩
+    //（见 docs/websocket-net-plan.md N1 结论）；客户端传输层由 TcpClient 的 WS 后端自理
     if (!SDL_Init(0) || !NET_Init()) {
         LOG_WARN("Failed to init SDL_net");
         return false;
     }
+#endif
 
     if (clientSocket.connect(address, port, CONFIG.network.timeout) != TcpClient::Status::Done) {
         LOG_WARN("Failed to connect to server!");
@@ -76,6 +75,18 @@ bool NetworkManager::connectToServer(const std::string& address) {
     verifyPacket << CLIENT_TOKEN;
     clientSocket.sendImmediate(verifyPacket);
 
+#ifdef __EMSCRIPTEN__
+    // WEB：握手与收发全异步，无同步等待点 —— 下面那段阻塞轮询（sleep 5ms 循环）
+    // 会卡死浏览器事件循环，WS 握手永远完不成。改为乐观置位 Client 后立即返回：
+    // - 验证帧此时暂存在发送缓冲，update() 每帧的 send() 在握手 OPEN 后自动冲刷
+    // - 验证应答（首条 bool+string）由 clientUpdate 每帧收口（verifyPending）
+    // - 桥不通/服务端拒绝时 onclose/onerror 折算为 Disconnected/Error，
+    //   clientUpdate 复位 None，与桌面同步路径的 return false 等价
+    verifyPending = true;
+    network_type = NetworkType::Client;
+    LOG_INFO("WEB: WebSocket handshake initiated, verification pending");
+    return true;
+#else
     // 等待服务端返回验证结果（SDL_net 全异步：轮询等待至超时；
     // SFML 时代此处靠阻塞 socket 天然等待，语义等价）
     eng::Packet resultPacket;
@@ -106,6 +117,7 @@ bool NetworkManager::connectToServer(const std::string& address) {
     network_type = NetworkType::Client;
     LOG_INFO("Connected to server successfully!");
     return true;
+#endif
 }
 
 void NetworkManager::update(const eng::Time& deltaTime) {
@@ -336,6 +348,27 @@ void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
         LOG_WARN("Server disconnected");
         return;
     }
+#ifdef __EMSCRIPTEN__
+    // WEB 异步验证收口：connect() 乐观返回后首条应答是验证结果（bool+string），
+    // 必须先于 NetworkMsg 消息流消费（服务端先 sendImmediate 应答、下一 tick 才
+    // 发 Spawn 流，线序可靠）；失败则复位 None，与桌面同步路径失败等价
+    if (verifyPending) {
+        if (status != TcpClient::Status::Done) return;   // 应答未到，下一帧再收
+        verifyPending = false;
+        bool success;
+        std::string message;
+        packet >> success >> message;
+        if (!success) {
+            LOG_WARN_FMT("Verification failed: {}", message);
+            clientSocket.disconnect();
+            network_type = NetworkType::None;
+            return;
+        }
+        LOG_INFO_FMT("Verification succeeded: {}", message);
+        LOG_INFO("Connected to server successfully!");
+        status = clientSocket.receive(packet);           // 紧随其后的 Spawn 流走通用循环
+    }
+#endif
     while (status == TcpClient::Status::Done) {
         NetworkMsg type;
         while (packet >> type) {

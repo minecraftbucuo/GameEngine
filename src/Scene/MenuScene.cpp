@@ -42,11 +42,19 @@ void MenuScene::initScene() {
     };
 
     // WASM 移植 Step 5：WEB 无裸 socket，联机入口收敛为本地单机（NetworkManager Local 模式）
+    // 联机 N2：经 websockify 桥恢复 Client 入口（写死本机桥地址，N3 做正式可配置入口；
+    // 完整 ws:// URL 会被 TcpClient 识别并直连，CONFIG.network.port 仅对桌面路径生效）
     int btnIndex = 0;
 #ifdef __EMSCRIPTEN__
     makeButton("超级玛丽（单机）", btnIndex++, [&]() -> void {
         getSceneManager()->loadScene("SuperMarioScene");
         std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->startServer();
+    });
+
+    makeButton("超级玛丽 Client（测试）", btnIndex++, [&]() -> void {
+        getSceneManager()->loadScene("SuperMarioScene");
+        std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->connectToServer(
+            "ws://127.0.0.1:8081");
     });
 #else
     makeButton("超级玛丽 Client", btnIndex++, [&]() -> void {

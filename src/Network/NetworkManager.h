@@ -27,8 +27,12 @@ public:
     };
     NetworkManager() = default;
     ~NetworkManager() {
+#ifndef __EMSCRIPTEN__
+        // WEB 下从未 NET_Init/NET_CreateServer（NET_Init 起线程必崩，见 N1 结论），
+        // 无可清理资源；NET_Quit 严禁在未 Init 状态下调用
         if (listener) NET_DestroyServer(listener);
         NET_Quit();   // 与 startServer/connectToServer 的 NET_Init 配对
+#endif
     }
 
     NetworkType getNetworkType() const {
@@ -80,5 +84,8 @@ private:
     // 需要同步的游戏对象
     std::vector<std::weak_ptr<ISerializable>> game_objects;
     std::int64_t tick_accum_us = 0;   // 广播节拍微秒累加器（毫秒截断会把 128Hz 实际跑成 ~83Hz）
+    // WEB 联机 N2：connect() 异步化后验证应答后置 —— true 表示首条 bool+string
+    // 应答尚未被 clientUpdate 消费（桌面同步路径不使用此标志）
+    bool verifyPending = false;
     Scene* current_scene{};
 };

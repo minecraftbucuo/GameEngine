@@ -60,8 +60,8 @@ uint32 大端长度前缀分帧与 `m_recvBuf` 拆帧状态机**原样复用**�
 
 ## 五、分步计划（延续原子性纪律：每步独立构建验证）
 
-### Step N0 — 环境准备（用户执行）
-- [ ] `pip install websockify`（或等价 npm 版）；确认 `python -m http.server` 可用
+### Step N0 — 环境准备（用户执行）✅ 完成（2026-08-24，Python 3.12.5 + websockify 已装）
+- [x] `pip install websockify`；`python -m http.server` 可用
 - **产出**：桥工具就绪
 
 ### Step N1 — 静态审计 ✅ 完成（2026-08-24，结论见第二节引用块）
@@ -69,13 +69,31 @@ uint32 大端长度前缀分帧与 `m_recvBuf` 拆帧状态机**原样复用**�
 - [x] 修订本文档选型表、风险清单与步骤
 
 ### Step N2 — TcpClient WEB 后端 + 最小链路探测 ⚠️ go/no-go 门（核心验证）
-- [ ] `TcpClient` 增加 `__EMSCRIPTEN__` 实现：`<emscripten/websocket.h>` 的 connect（readyState 轮询对齐四态）/send/recv，复用现有分帧与拆帧状态机；CMake WEB 分支追加 `-lwebsocket.js`
-- [ ] 桌面开服（端口取 CONFIG.network.port）；`websockify 8081 127.0.0.1:<游戏端口>`；网页 Client 连 `ws://127.0.0.1:8081`（临时直连地址写死即可）
-- [ ] 首验 R6 子协议匹配（websocket.h 需显式声明 `binary` 子协议）
+- [x] 代码侧完成（2026-08-24，`__EMSCRIPTEN__` 后端已并入，细节见下方「N2 实现纪要」）
+- [ ] 用户实测：桌面开服（端口取 CONFIG.network.port=6666）；`websockify 8081 127.0.0.1:6666`；
+      网页点「超级玛丽 Client（测试）」按钮（临时直连 `ws://127.0.0.1:8081` 写死）
+- [ ] 首验 R6 子协议匹配（websocket.h 已显式声明 `binary` 子协议）
 - **通过标准**：网页端能看到桌面端玩家生成、双向位置同步
 - **失败预案**：子协议问题调桥参数；仍不通 → 停下重新立项，不硬扛
-- **改动文件**：`src/Network/TcpClient.h`（或拆 .cpp）、`CMakeLists.txt`
-- **原子性保证**：桌面/服务端构建不进 ifdef，行为零变化
+- **改动文件**：`src/Network/TcpClient.h`、`src/Network/NetworkManager.h/.cpp`、
+  `src/Scene/MenuScene.cpp`、`CMakeLists.txt`
+- **原子性保证**：桌面/服务端构建不进任何新增 ifdef 分支，行为零变化
+
+**N2 实现纪要（2026-08-24）**
+- `TcpClient::SocketHolder`（WEB 形态）：WS 句柄 + connecting/open/closed/errored 四个
+  状态位 + `staged` 暂存缓冲；onmessage 回调只搬字节，回调内严禁发送（websocket.h 约束）
+- connect：构造 `ws://addr:port`（或透传完整 ws/wss URL），声明 `binary` 子协议；
+  本版 emsdk 的 `emscripten_websocket_new` **创建即连接**（无独立 connect 函数，
+  句柄类型为宏 `EMSCRIPTEN_WEBSOCKET_T`＝int，成功值 >0），new 后注册回调
+  （事件走 JS 事件循环，同步块内无竞态），乐观返回 Done，真实结果走事件回调
+- 四态折算：receive() 先并 staged → 拆帧状态机（WS 消息边界差异天然免疫，R2′ 兑现）；
+  有帧交 Done；errored→Error；closed→Disconnected；否则 NotReady。
+  tryFlush 在 OPEN 前返回 false 并保留整帧 —— 验证包「先入队、握手完成后自动冲刷」
+- NetworkManager 两处异步化：①客户端路径跳过 SDL_Init/NET_Init（N1 结论）；
+  ②`connectToServer` 的阻塞验证轮询在 WEB 下换成乐观返回 + `verifyPending` 标志，
+  首条 bool+string 应答由 `clientUpdate` 每帧收口（阻塞轮询会卡死浏览器事件循环）
+- NetworkManager 析构的 NET_Quit 在 WEB 下防护（未 Init 严禁 Quit）
+- MenuScene 新增 WEB 专属「超级玛丽 Client（测试）」按钮（写死桥地址，N3 转正式可配置）
 
 ### Step N3 — 正式入口改造
 - [ ] MenuScene WEB 下恢复「超级玛丽 Client」按钮（与「超级玛丽（单机）」并列双入口）
