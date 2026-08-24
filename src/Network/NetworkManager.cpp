@@ -296,10 +296,11 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
         }
     }
 
-    // 向客户端同步数据
-    past_time += deltaTime.asMilliseconds();
-    if (past_time < 1000 / CONFIG.network.tickRate) return;
-    past_time = 0;
+    // 向客户端同步数据（微秒累加并保留余量，消除节拍漂移）
+    tick_accum_us += deltaTime.asMicroseconds();
+    const auto tick_interval_us = static_cast<std::int64_t>(1000000) / CONFIG.network.tickRate;
+    if (tick_accum_us < tick_interval_us) return;
+    tick_accum_us -= tick_interval_us;
     LOG_TRACE("Sending update packets to clients");
     for (const auto& client : clients) {
         for (const auto& obj : game_objects) {

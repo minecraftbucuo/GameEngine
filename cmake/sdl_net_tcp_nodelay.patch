@@ -1,0 +1,42 @@
+--- a/src/SDL_net.c
++++ b/src/SDL_net.c
+@@ -1596,7 +1596,20 @@
+     int pending_output_len;
+     int pending_output_allocation;
+     int percent_loss;
+     Uint64 simulated_failure_until;
+ };
++
++// --- GameEngine patch: restore SDL_net 1.x behavior of setting TCP_NODELAY ---
++#if !defined(_WIN32)
++#include <netinet/tcp.h>
++#endif
++
++static void SetStreamNoDelay(Socket handle)
++{
++#ifdef TCP_NODELAY
++    const int one = 1;
++    setsockopt(handle, IPPROTO_TCP, TCP_NODELAY, (const char *) &one, sizeof (one));
++#endif
++}
+
+ NET_StreamSocket *NET_CreateClient(NET_Address *addr, Uint16 port, SDL_PropertiesID props)
+@@ -1637,9 +1650,10 @@
+     if (MakeSocketNonblocking(sock->handle) < 0) {
+         CloseSocketHandle(sock->handle);
+         freeaddrinfo(addrwithport);
+         SDL_free(sock);
+         SDL_SetError("Failed to make new socket non-blocking");
+         return NULL;
+     }
+
++    SetStreamNoDelay(sock->handle);
+     const int rc = connect(sock->handle, addrwithport->ai_addr, (SockLen) addrwithport->ai_addrlen);
+@@ -1828,6 +1842,7 @@
+         if (MakeSocketNonblocking(handle) < 0) {
+             CloseSocketHandle(handle);
+             return SDL_SetError("Failed to make incoming socket non-blocking");
+         }
+
++        SetStreamNoDelay(handle);
+         char portbuf[16];

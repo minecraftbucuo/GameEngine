@@ -4,6 +4,7 @@
 
 #pragma once
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include "ISerializable.h"
 #include <string>
@@ -77,6 +78,6 @@ private:
     std::unordered_map<TcpClient*, std::weak_ptr<ISerializable>> players;
     // 需要同步的游戏对象
     std::vector<std::weak_ptr<ISerializable>> game_objects;
-    int past_time = 0;
+    std::int64_t tick_accum_us = 0;   // 广播节拍微秒累加器（毫秒截断会把 128Hz 实际跑成 ~83Hz）
     Scene* current_scene{};
 };
