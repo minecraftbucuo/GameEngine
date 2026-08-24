@@ -1,5 +1,4 @@
-# 3.28 门槛：FetchContent 的 EXCLUDE_FROM_ALL 参数要求（老版本会报 unknown argument）
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.26)
 
 # ══════════ 用户开关（仅此两个，命令行可用 -D 覆盖）══════════════
 # 客户端(OFF)：窗口/渲染/输入/音频/网络全量
