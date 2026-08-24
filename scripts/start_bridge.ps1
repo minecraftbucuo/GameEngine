@@ -17,6 +17,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# 自动定位仓库根（与 .sh 的 cd "$(dirname "$0")/.." 等价）：任意目录均可调用本脚本
+Set-Location (Split-Path $PSScriptRoot -Parent)
+
 if (-not (Get-Command websockify -ErrorAction SilentlyContinue)) {
     throw "未找到 websockify，请先执行：pip install websockify"
 }
