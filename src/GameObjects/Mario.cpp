@@ -290,6 +290,11 @@ void Mario::deserialize(eng::Packet& packet) {
 // 只用于客户端自己的玩家。
 // 本地玩家已经根据输入预测移动，这里只负责用服务端快照纠偏，避免旧快照反复拉扯角色。
 void Mario::reconcileLocalPlayer(const eng::Vec2f& serverPosition, const eng::Vec2f& serverSpeed, const bool isJump) {
+    // 死亡动画是本地权威流程（MarioDeadState 计时后 destroy），
+    // 服务端尚未判死的旧快照会把死亡状态顶回 MarioJumpState，
+    // 导致死亡计时器孤儿化、碰撞体永久关闭，玩家变成无法重生的“僵尸”。
+    if (this->getComponent<HealthBar>()->isDead()) return;
+
     const auto& move_component = this->getComponent<MoveComponent>();
     if (!move_component) return;
 
@@ -312,6 +317,9 @@ void Mario::reconcileLocalPlayer(const eng::Vec2f& serverPosition, const eng::Ve
 // 无平滑地应用服务端权威位置和速度。
 // 本地的远端玩家直接同步服务端状态。
 void Mario::setAuthoritativeState(const eng::Vec2f& serverPosition, const eng::Vec2f& serverSpeed, const bool isJump) {
+    // 与 reconcileLocalPlayer 同理：死亡后不再接受服务端快照，防止死亡流程被同步打断。
+    if (this->getComponent<HealthBar>()->isDead()) return;
+
     const auto& move_component = this->getComponent<MoveComponent>();
     if (!move_component) return;
 
