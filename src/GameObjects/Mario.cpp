@@ -205,6 +205,15 @@ bool Mario::getIsPlayer() const {
 }
 
 void Mario::destroy() {
+    // 客户端本地玩家死亡是本地预测结果，服务端此刻可能仍认为玩家存活。
+    // 必须上报 ClientDeath 让服务端移除权威对象，否则服务端会残留“幽灵”马里奥，
+    // 重生后出现同一玩家的两个对象，且旧对象会一直被模拟和广播。
+    auto* nm = getScene() ? getScene()->getNetworkManager() : nullptr;
+    if (this->isPlayer && nm && nm->isClient()) {
+        eng::Packet packet;
+        packet << NetworkMsg::ClientDeath;
+        nm->getClientSocket().append(packet);
+    }
     NetworkGameObject::destroy();
     if (this->isPlayer) {
         EventBus::getInstance().publish("PlayerDied", true);
@@ -228,10 +237,11 @@ void Mario::serialize(eng::Packet& packet, const NetworkMsg type) {
     } else if (type == NetworkMsg::UpdateObject) {  // 交给自己处理
         packet << type << this->getId();   // 给 NetworkManager 判断是哪种操作和定位对象的 ID
 
-        // 通知客户端同步对象   ID   同步对象(这是在deserialize用来判断的)   对象类型   x   y   s_x   s_y   is_jump
+        // 通知客户端同步对象   ID   同步对象(这是在deserialize用来判断的)   对象类型   x   y   s_x   s_y   is_jump   health
         const bool is_jump = this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState";
+        const int health = this->getComponent<HealthBar>()->getHealth();
         packet << type << this->getPosition().x << this->getPosition().y << this->getSpeed().x << this->getSpeed().y <<
-            is_jump;
+            is_jump << health;
     } else if (type == NetworkMsg::SpawnPlayer) {  // 交给Scene处理
         packet << type << this->getId();   // 给 NetworkManager 判断是哪种操作和定位对象的 ID
 
@@ -254,14 +264,25 @@ void Mario::deserialize(eng::Packet& packet) {
     if (msg_type == NetworkMsg::UpdateObject) {
         float x, y, s_x, s_y;
         bool is_jump;
-        packet >> x >> y >> s_x >> s_y >> is_jump;
+        int health;
+        packet >> x >> y >> s_x >> s_y >> is_jump >> health;
         const eng::Vec2f serverPosition{x, y};
         const eng::Vec2f serverSpeed{s_x, s_y};
+        const auto& health_bar = this->getComponent<HealthBar>();
         const auto* nm = getScene()->getNetworkManager();
+        // 权威死亡兜底：服务端判死而本地尚未预测到（无敌帧/命中判定分歧），
+        // 强制走本地死亡流程（MarioDeadState -> destroy -> PlayerDied -> 死亡画面）。
+        if (health <= 0 && !health_bar->isDead()) {
+            health_bar->syncHealth(0);
+            this->getComponent<StateMachine>()->setState("MarioDeadState");
+            return;
+        }
         if (isPlayer && nm && nm->isClient()) {
             // 本地玩家：保留客户端预测手感，只用服务端状态做温和纠偏。
             reconcileLocalPlayer(serverPosition, serverSpeed, is_jump);
         } else if (!isPlayer && nm && nm->isClient()) {
+            // 远端玩家：血量以服务端为准，命中分歧时纠正本地血条。
+            health_bar->syncHealth(health);
             setAuthoritativeState(serverPosition, serverSpeed, is_jump);
         }
     } else if (msg_type == NetworkMsg::ClientInput) {

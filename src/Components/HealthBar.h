@@ -27,6 +27,12 @@ public:
         this->health = _health;
     }
 
+    // 服务端权威血量同步：归零时一并置死亡标志（用于服务端判死、客户端尚未预测到的兜底）
+    void syncHealth(const int _health) {
+        this->health = _health;
+        if (_health <= 0) this->dead = true;
+    }
+
     [[nodiscard]] bool isDead() const;
 
 private:

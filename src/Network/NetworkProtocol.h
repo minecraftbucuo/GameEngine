@@ -15,7 +15,8 @@ enum class NetworkMsg : uint8_t {
     RemoveObject = 3,
     ClientInput = 4,
     SpawnFireBall = 5,
-    ClientRespawn = 6
+    ClientRespawn = 6,
+    ClientDeath = 7    // 客户端本地判死上报：伤害判定为客户端预测，服务端据此移除权威对象
 };
 
 enum class ObjectType : uint8_t {

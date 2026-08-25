@@ -326,6 +326,15 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
                 if (msg_type == NetworkMsg::ClientRespawn) {
                     LOG_INFO("client request to respawn");
                     respawnPlayer(client);
+                } else if (msg_type == NetworkMsg::ClientDeath) {
+                    // 客户端本地判死上报（伤害判定为客户端预测，服务端可能未判死）：
+                    // 移除权威对象并广播 RemoveObject，防止残留“幽灵”玩家
+                    if (player) {
+                        LOG_INFO("client reported local death");
+                        removeIdsMap[player->getNetworkId()] = true;
+                        players.erase(client.get());
+                        player->disconnect();
+                    }
                 } else if (msg_type == NetworkMsg::ClientInput) {
                     if (player) {
                         player->deserialize(packet);
@@ -428,8 +437,14 @@ void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
                 LOG_TRACE("Received packet, type: RemoveObject");
                 unsigned int id;
                 packet >> id;
-                current_scene->findGameObjectById(id)->destroy();
-                current_scene->removeObjectById(id);
+                // 远端玩家死亡是客户端本地模拟的，收到移除消息时对象可能已被本地销毁，
+                // 直接解引用会空指针崩溃；本地已无此对象则跳过
+                if (const auto& obj = current_scene->findGameObjectById(id)) {
+                    obj->destroy();
+                    current_scene->removeObjectById(id);
+                } else {
+                    LOG_TRACE_FMT("RemoveObject: object with ID {} not found locally, skip", id);
+                }
             }
             else if (type == NetworkMsg::SpawnFireBall) {
                 LOG_TRACE("Received packet, type: SpawnFireBall");
