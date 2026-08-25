@@ -5,7 +5,7 @@
 #   ./scripts/build.sh desktop    免交互：只构建桌面版（需图形开发包，服务器上一般没有）
 #   ./scripts/build.sh server web 免交互：服务器版 + Web 版（Web 需已安装 emsdk）
 # 产物：
-#   服务器 build-server/server/GameEngineServer（Asset 已拷至同级，含 config.json）
+#   服务器 build-server/server/GameEngineServer（config.json 已拷至同级 Asset/）
 #   桌面   build/bin/GameEngine（Asset 由 CMake 自动拷贝）
 #   Web    build-web/web/GameEngine.html 四件套
 set -euo pipefail
@@ -35,11 +35,11 @@ build_server() {
     echo "==> 构建服务器版 -> build-server/"
     cmake -S . -B build-server -DBUILD_FOR_SERVER=ON -DCMAKE_BUILD_TYPE=Release
     cmake --build build-server --parallel "$(nproc)"
-    # CMake 只给客户端拷 Asset；服务端运行期要读 config.json（端口/tickRate），
-    # 脚本补拷一份到 exe 同级（getExeDir 约定）
-    rm -rf build-server/server/Asset
-    cp -r src/Asset build-server/server/Asset
-    echo "==> 服务器版完成：build-server/server/GameEngineServer（Asset 已就位）"
+    # CMake 只给客户端拷 Asset；服务端无渲染/音频，运行期只读 config.json
+    # （端口/tickRate 等），脚本只补拷这一个文件到 exe 同级（getExeDir 约定）
+    mkdir -p build-server/server/Asset
+    cp src/Asset/config.json build-server/server/Asset/
+    echo "==> 服务器版完成：build-server/server/GameEngineServer（config.json 已就位）"
 }
 
 build_desktop() {
