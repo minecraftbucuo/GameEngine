@@ -1,21 +1,56 @@
 cmake_minimum_required(VERSION 3.26)
 
-# ══════════ 用户开关（仅此两个，命令行可用 -D 覆盖）══════════════
-# 客户端(OFF)：窗口/渲染/输入/音频/网络全量
-# 服务端(ON) ：纯网络+物理，无渲染无音频（SERVER_BUILD 宏生效）
+# ══════════ 用户开关 ═════════════════════════════════════════════
+# option() 的坑：旧 build 目录的缓存值会一直压过文件里改的默认值，
+# 表现为“改了不生效”。这里改用 set(... CACHE ... FORCE) 每次配置强制回写，
+# 文件里改值立即生效；命令行 -D 依旧可用（与上次回写值不同即视为用户指定，
+# 值相同时结果本就相同，无需区分）。
+#   客户端(OFF)：窗口/渲染/输入/音频/网络全量
+#   服务端(ON) ：纯网络+物理，无渲染无音频（SERVER_BUILD 宏生效）
 #   例：cmake -S . -B build-server -DBUILD_FOR_SERVER=ON
-option(BUILD_FOR_SERVER "Build headless server (no renderer/audio)" OFF)
+function(resolve_switch var default)
+    if (DEFINED ${var} AND NOT "${${var}}" STREQUAL "${_LAST_${var}}")
+        set(${var} "${${var}}" CACHE BOOL "" FORCE)
+        set(_LAST_${var} "${${var}}" CACHE INTERNAL "" FORCE)
+    else ()
+        set(${var} "${default}" CACHE BOOL "" FORCE)
+        set(_LAST_${var} "${default}" CACHE INTERNAL "" FORCE)
+    endif ()
+endfunction()
+
+# 客户端/服务端切换（默认 OFF = 客户端）
+resolve_switch(BUILD_FOR_SERVER OFF)
 # ON ：全部依赖静态链入 exe（单文件发布，编译慢体积大）
 # OFF：动态链接（exe 小、编译快，运行需 SDL3.dll 等陪同）
-option(BUILD_STATIC "Statically link all dependencies into the exe" ON)
+resolve_switch(BUILD_STATIC ON)
 # ═══════════════════════════════════════════════════════════════
 
+# 默认 Release：未显式指定构建类型时启用（多配置生成器如 VS 不适用，由 IDE 选择）
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif ()
+
+# 配置摘要：一眼确认三个关键设定是否如预期（沿用原 message() 风格）
+if (CMAKE_CONFIGURATION_TYPES)
+    message("Build type: <多配置生成器，由 IDE/--config 选择>")
+else ()
+    message("Build type: ${CMAKE_BUILD_TYPE}")
+endif ()
 if (BUILD_FOR_SERVER)
-    message("Build for Server")
+    message("BUILD_FOR_SERVER = ${BUILD_FOR_SERVER}  (server)")
+else ()
+    message("BUILD_FOR_SERVER = ${BUILD_FOR_SERVER}  (client)")
+endif ()
+if (BUILD_STATIC)
+    message("BUILD_STATIC = ${BUILD_STATIC}  (static)")
+else ()
+    message("BUILD_STATIC = ${BUILD_STATIC}  (dynamic)")
+endif ()
+
+if (BUILD_FOR_SERVER)
     project(GameEngineServer LANGUAGES CXX)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/server)
 else ()
-    message("Build for Client")
     project(GameEngine LANGUAGES CXX)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 endif ()
@@ -49,7 +84,6 @@ endif ()
 # 静态/动态统一驱动：控制所有依赖库的构建方式与 exe 链接方式
 # （CACHE FORCE 保证在同一 build 目录里切换时子项目旧缓存不残留）
 if (BUILD_STATIC)
-    message("Build for Static")
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)   # Box2D / SDL_net 走此标准开关
     set(SDL_STATIC ON CACHE BOOL "" FORCE)
     set(SDL_SHARED OFF CACHE BOOL "" FORCE)
@@ -57,7 +91,6 @@ if (BUILD_STATIC)
         set(CMAKE_EXE_LINKER_FLAGS "-static")   # MinGW 全静态 exe
     endif ()
 else ()
-    message("Build for Dynamic")
     set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
     set(SDL_STATIC OFF CACHE BOOL "" FORCE)
     set(SDL_SHARED ON CACHE BOOL "" FORCE)
