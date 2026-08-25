@@ -28,6 +28,28 @@ static std::string pageWebSocketOrigin() {
     std::free(s);
     return out;
 }
+
+// 页面的主机名（不含端口）：判断页面是从本机还是远程服务器打开的
+static std::string pageHostName() {
+    char* s = static_cast<char*>(EM_ASM_PTR(
+        { return stringToNewUTF8(location.hostname); }));
+    if (!s) return {};
+    std::string out(s);
+    std::free(s);
+    return out;
+}
+
+// 自动寻址决策：页面从本机打开（本机开发流，页面与桥常分端口）→ 连本机桥端口；
+// 页面从远程打开（部署拓扑，桥的 --web 顺带发页面，同端口）→ 连页面自身来源。
+// 这样 config.json 的 serverIp 保持 127.0.0.1 不用改：本机连本机桥，
+// 部署后别人打开页面自动连到开服者，无需按 IP 重打 WEB 包。
+static std::string resolveWebServerAddr() {
+    const std::string host = pageHostName();
+    if (host.empty() || host == "127.0.0.1" || host == "localhost" || host == "[::1]") {
+        return "ws://127.0.0.1:" + std::to_string(CONFIG.network.webBridgePort);
+    }
+    return pageWebSocketOrigin();
+}
 #endif
 
 MenuScene::MenuScene(eng::Renderer* _renderer) : Scene(_renderer, "MenuScene") {
@@ -71,11 +93,12 @@ void MenuScene::initScene() {
 
     makeButton("超级玛丽 Client", btnIndex++, [&]() -> void {
         std::string addr = CONFIG.network.serverIp;
-        if (addr == "auto") {
-            // N5：自动模式（页面与桥同源时用；本机三件套开发流页面:8000/桥:8081
-            // 不同端口，请继续用默认 127.0.0.1）
-            addr = pageWebSocketOrigin();
-            if (addr.empty()) LOG_WARN("serverIp=auto but page origin unavailable");
+        // auto / 127.0.0.1 / localhost：自动寻址——本机打开的页面连本机桥，
+        // 远程打开的页面连页面来源（详见 resolveWebServerAddr 注释）。
+        // config.json 因此可以永远保持 127.0.0.1，部署不用重打 WEB 包。
+        if (addr == "auto" || addr == "127.0.0.1" || addr == "localhost") {
+            addr = resolveWebServerAddr();
+            if (addr.empty()) LOG_WARN("auto address resolved to empty, page origin unavailable");
         } else if (addr.rfind("ws://", 0) != 0 && addr.rfind("wss://", 0) != 0) {
             addr = "ws://" + addr + ":" + std::to_string(CONFIG.network.webBridgePort);
         }

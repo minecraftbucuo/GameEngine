@@ -67,12 +67,12 @@
 
 ### 发布 WEB 包（构建者做一次）
 
-`config.json` 的 `serverIp` 改为 `"auto"` 后执行 `.\scripts\build_web.ps1`——此后该构建包
-在**任何**开服者机器上都零配置（客户端自动连页面自身来源）。注意：
+直接 `.\scripts\build_web.ps1` 即可，`config.json` **保持默认 `127.0.0.1` 不用改**——
+WEB 版里 `auto`/`127.0.0.1`/`localhost` 同为自动寻址：本机打开的页面连本机桥（开发流），
+远程打开的页面连页面自身来源（部署流，页面与桥同端口拓扑）。注意：
 
-- `auto` 仅适用于「页面与桥同端口」拓扑（`start_bridge.ps1` 即是）
-- 本机开发三件套（页面 `:8000` / 桥 `:8081` 分离）请保持默认 `127.0.0.1`
-- 桌面版不受 `auto` 影响（桌面分支不读该值的特殊语义）
+- nginx TLS 反代拓扑（页面与桥不同端口/路径）仍需 `serverIp` 填完整 `wss://域名/ws`
+- 桌面版不受影响（桌面分支不读该值的特殊语义）
 
 ### 加入者
 
@@ -190,7 +190,7 @@ WantedBy=multi-user.target
 |---|---|---|---|
 | 游戏服务端 | 6666 | `network.port` | 桌面直连 & 桥的目标端口 |
 | websockify 桥 | 8081 | `network.webBridgePort` | 仅网页客户端使用 |
-| 网页客户端地址 | `127.0.0.1` | `network.serverIp` | 三种形态：`auto`（同源自动）/ 完整 `ws(s)://` URL / `IP`（拼桥端口） |
+| 网页客户端地址 | `127.0.0.1` | `network.serverIp` | 三种形态：`auto`/`127.0.0.1`/`localhost`（自动寻址）/ 完整 `ws(s)://` URL / 其他 `IP`（拼桥端口） |
 | 桌面客户端地址 | `127.0.0.1` | `network.serverIp` | `IP`（TCP 直连 `network.port`），不支持 auto/URL 语义 |
 
 ## 故障排查
