@@ -13,7 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [![▶ B 站演示视频](https://img.shields.io/badge/%E2%96%B6-B%E7%AB%99%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91-00A1D6?logo=bilibili&logoColor=white)](https://www.bilibili.com/video/BV1MBAezKEai/?spm_id_from=333.1387.homepage.video_card.click&vd_source=3a4ba49672dbd243312160a0bd307621)
-[![项目详细文档](https://img.shields.io/badge/%F0%9F%93%96-%E9%A1%B9%E7%9B%AE%E8%AF%A6%E7%BB%86%E6%96%87%E6%A1%A3-8A2BE2)](https://minecraftbucuo.github.io/website/%E6%8A%80%E6%9C%AF%E7%9B%B8%E5%85%B3/%E4%B8%8D%E7%9F%A5%E5%8F%AB%E4%BB%80%E4%B9%88/GameEngine%E9%A1%B9%E7%9B%AE%E6%96%87%E6%A1%A3.html)
+[![项目详细文档](https://img.shields.io/badge/%F0%9F%93%96-%E9%A1%B9%E7%9B%AE%E8%AF%A6%E7%BB%86%E6%96%87%E6%A1%A3-8A2BE2)](https://minecraftbucuo.github.io/website/%E6%8A%80%E6%9C%AF%E7%9B%B8%E5%85%B3/%E4%B8%8D%E7%9F%A5%E5%8F%AB%E4%BB%80%E4%B9%88/GameEngine%E9%A1%B9%E7%9B%AE%E6%96%87%E6%A1%A3%E6%96%B0%E7%89%88.html)
 
 项目介绍、架构说明、设计决策见上方**详细文档**；本 README 只讲**构建、运行、部署**。
 
