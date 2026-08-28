@@ -29,6 +29,13 @@
 #include <SDL3_net/SDL_net.h>    // WEB 下仅 acceptFrom 等签名引用头文件，运行期不触碰 SDL_net
 
 #include "Packet.h"
+#include "Logger.h"
+
+// 假死连接判定阈值：待发数据积压超过该值即强制断开。
+// m_outgoing 按帧聚合、send() 里 tryFlush 失败时不清空，对端停止读取
+// （网页标签页切后台/半开连接）会随 tick 无限累积，长跑服务端最终
+// std::bad_alloc 崩溃。32MB ≈ 正常对局流量下数十分钟无读取的积压量。
+inline constexpr std::size_t MAX_PENDING_OUTGOING_BYTES = 32u * 1024u * 1024u;
 
 class TcpClient {
 public:
@@ -165,7 +172,19 @@ public:
 
     // 帧末统一发送；底层不可写时暂存，下次调用继续冲刷
     Status send() {
-        if (!tryFlush()) return Status::NotReady;
+        if (!tryFlush()) {
+            // 持续不可写 = 对端停止读取（假死连接）：m_outgoing 无限累积会吃光内存，
+            // 超阈值强制断开。receive() 随后返回 Disconnected，落入上层既有的
+            // 断线清理路径（服务端移除 client/广播 RemoveObject），无需额外收尸
+            if (m_outgoing.getDataSize() > MAX_PENDING_OUTGOING_BYTES) {
+                LOG_ERROR_FMT("TcpClient stalled: {} bytes pending, force disconnect",
+                              m_outgoing.getDataSize());
+                disconnect();
+                m_outgoing.clear();
+                return Status::Error;
+            }
+            return Status::NotReady;
+        }
         if (m_outgoing.getDataSize() == 0) return Status::Done;
         frame(m_outgoing);
         m_outgoing.clear();
