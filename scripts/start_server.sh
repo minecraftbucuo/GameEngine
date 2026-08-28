@@ -27,8 +27,11 @@ else
 fi
 
 mkdir -p logs
-echo "==> 启动服务端（监听 $GAME_PORT，端口读 config.json），日志 logs/server.log"
-"$SERVER_BIN" >logs/server.log 2>&1 &
+echo "==> 启动服务端（监听 $GAME_PORT，端口读 config.json），日志 logs/server.log（同时输出到本终端）"
+# 进程替换 + tee：终端与 logs/server.log 同时收到输出。
+# SERVER_PID 仍是服务端本体（tee 是独立进程，EOF 后自行退出），
+# cleanup 里 kill 它即可；用管道 "cmd | tee &" 的话 $! 会变成 tee 的 PID
+"$SERVER_BIN" > >(tee -a logs/server.log) 2>&1 &
 SERVER_PID=$!
 cleanup() { kill "$SERVER_PID" 2>/dev/null || true; }
 trap cleanup EXIT INT TERM
