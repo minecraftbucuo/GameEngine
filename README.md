@@ -6,7 +6,7 @@
 
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C?logo=cplusplus\&logoColor=white)](https://en.cppreference.com/)
 [![SDL3](https://img.shields.io/badge/SDL-3-2F74B5)](https://wiki.libsdl.org/SDL3)
-[![Box2D](https://img.shields.io/badge/Box2D-3.x-E85D26)](https://box2d.org/)
+[![Box2D](https://img.shields.io/badge/Box2D-2.4.1-E85D26)](https://box2d.org/)
 [![CMake](https://img.shields.io/badge/CMake-3.26%2B-064F8C?logo=cmake\&logoColor=white)](https://cmake.org/)
 
 ![Platform](https://img.shields.io/badge/平台-Windows%20%7C%20Linux%20%7C%20Web-blue)
