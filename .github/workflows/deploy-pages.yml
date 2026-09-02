@@ -1,11 +1,11 @@
 # GitHub Pages 自动部署 Web 版（WASM）
-# 触发条件：push 到 main，或手动触发（Actions 页面 -> Run workflow）
+# 触发条件：push 到 master，或手动触发（Actions 页面 -> Run workflow）
 # 首次使用前需在仓库 Settings -> Pages -> Source 选择 "GitHub Actions"（一次性设置）
 name: Deploy Web to Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
