@@ -44,6 +44,11 @@ jobs:
       - name: Build
         run: cmake --build build-web --parallel $(nproc)
 
+      - name: Provide index.html
+        # Pages 根路径需要 index.html；复制一份 GameEngine.html 即可
+        # （HTML 内部引用的是 GameEngine.js/.wasm，与自身文件名无关，重命名安全）
+        run: cp build-web/web/GameEngine.html build-web/web/index.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
