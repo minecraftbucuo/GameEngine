@@ -17,7 +17,8 @@
         "animations": {
             "mario": "./Asset/SuperMario/source/data/player/mario.json",
             "box": "./Asset/SuperMario/source/data/player/box.json",
-            "fireball": "./Asset/SuperMario/source/data/player/fireball.json"
+            "fireball": "./Asset/SuperMario/source/data/player/fireball.json",
+            "goomba": "./Asset/SuperMario/source/data/enemy/goomba.json"
         },
         "models": {
             "penguin": "./Asset/penguin.obj",

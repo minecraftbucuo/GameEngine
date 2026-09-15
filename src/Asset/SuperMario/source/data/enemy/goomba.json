@@ -1,0 +1,67 @@
+{
+    "frames": [
+        {
+            "frame_name": "goomba_walk_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 0,
+                        "rectTop": 4,
+                        "rectWidth": 16,
+                        "rectHeight": 16
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 30,
+                        "rectTop": 4,
+                        "rectWidth": 16,
+                        "rectHeight": 16
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                }
+            ]
+        },
+        {
+            "frame_name": "goomba_squash_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 60,
+                        "rectTop": 8,
+                        "rectWidth": 16,
+                        "rectHeight": 8
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 100
+                }
+            ]
+        }
+    ]
+}

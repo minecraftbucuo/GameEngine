@@ -22,6 +22,7 @@
 #include "MarioJumpState.h"
 #include "EventBus.h"
 #include "FireBall.h"
+#include "Goomba.h"
 #include "Core/Types.h"
 
 namespace {
@@ -139,6 +140,28 @@ void Mario::handleCollision(const CollisionEvent& event) {
             fireball && fireball->getOwnerId() != this_->getId()) {
             const auto& health_bar = getComponent<HealthBar>();
             health_bar->takeDamage(1);
+            if (health_bar->isDead()) {
+                this->getComponent<StateMachine>()->setState("MarioDeadState");
+                return;
+            }
+        }
+    }
+
+    if (other->getClassName() == "Goomba") {
+        if (const auto goomba = std::dynamic_pointer_cast<Goomba>(other)) {
+            // 马里奥中心在板栗仔中心上方 → 踩踏：踩扁敌人并向上反弹
+            if (event.a_position.y + this_->getSize().y * 0.5f <
+                event.b_position.y + other->getSize().y * 0.5f) {
+                goomba->setSquashed();
+                if (const auto move = getComponent<MoveComponent>())
+                    move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
+                return;
+            }
+            // 侧面接触：受伤并让板栗仔掉头
+            const auto& health_bar = getComponent<HealthBar>();
+            health_bar->takeDamage(1);
+            if (const auto goomba_move = other->getComponent<MoveComponent>())
+                goomba_move->setSpeedX(-goomba->getSpeed().x);
             if (health_bar->isDead()) {
                 this->getComponent<StateMachine>()->setState("MarioDeadState");
                 return;

@@ -13,6 +13,7 @@
 #include "SceneManager.h"
 #include "MoveComponent.h"
 #include "FireBall.h"
+#include "Goomba.h"
 #include "Collision.h"
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
@@ -145,6 +146,14 @@ void SuperMarioScene::initDynamicObjects() {
     std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
     this->addObjectWithNetwork(mario);
     LOG_DEBUG("Create mario");
+
+    // 生成板栗仔敌人：地面顶部 y=857，板栗仔高 64 → y=793
+    const float goomba_y = 857.f - CONFIG.game.defaultBlockSize;
+    this->addObject(std::make_shared<Goomba>(1800.f, goomba_y));
+    this->addObject(std::make_shared<Goomba>(2800.f, goomba_y, 120.f));
+    this->addObject(std::make_shared<Goomba>(5200.f, goomba_y));
+    this->addObject(std::make_shared<Goomba>(8800.f, goomba_y, 120.f));
+    this->addObject(std::make_shared<Goomba>(11500.f, goomba_y));
 #endif
 }
 

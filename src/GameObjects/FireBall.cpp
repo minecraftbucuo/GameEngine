@@ -98,6 +98,14 @@ void FireBall::handleCollision(const CollisionEvent& event) {
     auto& other = event.b;
 
     if (owner_id == other->getId()) return;
+    // 已爆炸：碰撞组件仍活跃到销毁为止，期间不再响应（防止 setExploded 重复偏移）
+    if (is_exploded) return;
+
+    // 击中敌人：炮弹直接爆炸（敌人死亡由敌人侧的 handleCollision 处理）
+    if (other->getClassName() == "Goomba") {
+        setExploded();
+        return;
+    }
 
     // std::cout << this_->getTag() << ' ' << other->getTag() << std::endl;
 
