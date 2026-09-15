@@ -67,6 +67,7 @@ void Camera::addPosition(const eng::Vec2i& pos) {
 }
 
 void Camera::handleEvent(const eng::EngineEvent& event) {
+    return;
     if (event.type == eng::EventType::KeyPress) {
         if (event.key == eng::Key::Up) {
             this->floatRect.top -= 20;

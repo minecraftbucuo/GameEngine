@@ -531,8 +531,8 @@ bool Renderer::pollEvent(EngineEvent& out) {
                 ev.type = EventType::KeyPress;
                 ev.key = fromScancode(e.key.scancode);
                 // SFML 会把退格同时作为 TextEntered(8) 投递；SDL 文本事件只含可打印字符，
-                // 在此补发（跳过按住 repeat，SFML 的 repeat 同样不产生新 TextEntered）
-                if (e.key.scancode == SDL_SCANCODE_BACKSPACE && !e.key.repeat) {
+                // 在此补发（含 repeat：按住退格需要连续删除效果）
+                if (e.key.scancode == SDL_SCANCODE_BACKSPACE) {
                     EngineEvent bs{};
                     bs.type = EventType::TextEntered;
                     bs.codepoint = 8;

@@ -29,6 +29,29 @@ public:
 private:
     bool isMouseOver() const;
 
+    // ── UTF-8 工具函数 ──
+    static size_t utf8PrevByteOffset(const std::string& s, size_t bytePos);
+    static size_t utf8NextByteOffset(const std::string& s, size_t bytePos);
+
+    void moveCursorLeft();
+    void moveCursorRight();
+    void moveCursorToStart();
+    void moveCursorToEnd();
+
+    void selectAll();
+    void deleteSelection();
+    [[nodiscard]] bool hasSelection() const;
+    void clearSelection();
+    std::string getSelectedText() const;
+
+    // 插入字符/字符串到光标处
+    void insertAtCursor(char32_t cp);
+    void insertStringAtCursor(const std::string& str);
+
+    // 删除光标前/后的一个 codepoint
+    void backspaceAtCursor();
+    void deleteAtCursor();
+
     eng::Vec2f position;
     eng::Vec2f size;
     float cornerRadius = 8.f;
@@ -41,10 +64,18 @@ private:
 
     bool focused = false;
 
-    // 光标
+    // 光标（字节偏移）
+    size_t cursorPos = 0;
+    size_t selectionStart = 0;
+
+    // 光标闪烁
     float cursorBlinkTimer = 0.f;
     bool cursorVisible = true;
     static constexpr float BLINK_INTERVAL = 0.5f;
+
+    // 修饰键状态
+    bool ctrlDown = false;
+    bool shiftDown = false;
 
     // 颜色
     eng::Color bgColor = {40, 44, 52};
@@ -53,6 +84,7 @@ private:
     eng::Color focusedOutlineColor = {137, 180, 255};
     eng::Color textColor = {205, 214, 244};
     eng::Color placeholderColor = {100, 108, 128};
+    eng::Color selectionColor = {68, 120, 210, 160};
 
     // 回调
     std::function<void(const std::string&)> onConfirm;
