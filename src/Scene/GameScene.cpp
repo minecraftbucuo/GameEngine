@@ -80,7 +80,8 @@ void GameScene::handleEvent(const eng::EngineEvent& event) {
             if (obj->getTag().substr(0, 6) == "ground") {
                 // obj->setSize(size.x, size.y);
                 const std::shared_ptr<Ground> obj_ground = std::dynamic_pointer_cast<Ground>(obj);
-                obj_ground->setPosition(0.f, renderer->getSize().y - 20.f);
+                // 固定世界视口：地面钉在世界逻辑尺寸底部，与窗口解耦
+                obj_ground->setPosition(0.f, static_cast<float>(getWindowSize().y) - 20.f);
                 break;
             }
         }

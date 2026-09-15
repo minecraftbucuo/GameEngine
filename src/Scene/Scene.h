@@ -96,8 +96,14 @@ public:
 #endif
 
 #ifndef SERVER_BUILD
+    // 世界逻辑尺寸：固定视口模式下即相机视口（设计尺寸），与窗口大小解耦；
+    // 物理地板/掉出屏幕判定/UI 布局均应使用它，而非真实窗口尺寸
     [[nodiscard]] eng::Vec2u getWindowSize() const {
-        return renderer->getSize();
+        if (camera) {
+            const eng::Vec2f view = camera->getViewSize();
+            return {static_cast<unsigned>(view.x), static_cast<unsigned>(view.y)};
+        }
+        return {CONFIG.window.width, CONFIG.window.height};
     }
 #else
     static eng::Vec2u getWindowSize() {

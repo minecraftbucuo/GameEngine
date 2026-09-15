@@ -5,6 +5,7 @@
 #ifndef SERVER_BUILD
 #include "Camera.h"
 #include "Core/Input.h"
+#include "Manager/ConfigManager.h"
 
 Camera::Camera(eng::Renderer* renderer) {
     init(renderer);
@@ -12,10 +13,11 @@ Camera::Camera(eng::Renderer* renderer) {
 
 void Camera::init(eng::Renderer* _renderer) {
     this->renderer = _renderer;
-    const eng::Vec2u size = renderer->getSize();
+    // 固定世界视口：视口恒为设计尺寸，窗口缩放由渲染层按 camScale 自动拉伸适配，
+    // 世界坐标/碰撞/UI 布局与窗口大小解耦（缩放不再引起错位）
     this->floatRect = eng::FloatRect(0, 0,
-                    static_cast<float>(size.x),
-                    static_cast<float>(size.y));
+                    static_cast<float>(CONFIG.window.width),
+                    static_cast<float>(CONFIG.window.height));
     updateView();
 }
 
@@ -24,9 +26,9 @@ void Camera::init() {
 }
 
 void Camera::resize() {
-    const eng::Vec2u size = renderer->getSize();
-    this->floatRect.width = static_cast<float>(size.x);
-    this->floatRect.height = static_cast<float>(size.y);
+    // 固定世界视口：窗口变化不影响视口，此处仅重设为设计尺寸兜底
+    this->floatRect.width = static_cast<float>(CONFIG.window.width);
+    this->floatRect.height = static_cast<float>(CONFIG.window.height);
     updateView();
 }
 

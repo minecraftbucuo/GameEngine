@@ -55,8 +55,9 @@ static std::string resolveWebServerAddr() {
 MenuScene::MenuScene(eng::Renderer* _renderer) : Scene(_renderer, "MenuScene") {
     font = AssetManager::getInstance().getFontHandle();
     const eng::Vec2f titleSize = _renderer->measureText(font, titleText, TITLE_FONT_SIZE);
-    titlePos = eng::Vec2f(_renderer->getSize().x * 0.5f - titleSize.x * 0.5f,
-                          static_cast<float>(_renderer->getSize().y) * 0.18f);
+    // 固定世界视口：标题/按钮布局基于设计尺寸，窗口缩放由渲染层自动拉伸
+    titlePos = eng::Vec2f(CONFIG.window.width * 0.5f - titleSize.x * 0.5f,
+                          static_cast<float>(CONFIG.window.height) * 0.18f);
 }
 
 void MenuScene::init() {
@@ -67,8 +68,9 @@ void MenuScene::init() {
 }
 
 void MenuScene::initScene() {
-    const float winW = static_cast<float>(renderer->getSize().x);
-    const float winH = static_cast<float>(renderer->getSize().y);
+    // 固定世界视口：布局基于设计视口，与当前窗口大小解耦
+    const float winW = static_cast<float>(getWindowSize().x);
+    const float winH = static_cast<float>(getWindowSize().y);
     const float btnW = 280.f;
     const float btnH = 55.f;
     const float startY = winH * 0.45f;
@@ -157,8 +159,9 @@ void MenuScene::initScene() {
 void MenuScene::update(eng::Time deltaTime) {
     Scene::update(deltaTime);
 
-    const float winW = static_cast<float>(renderer->getSize().x);
-    const float winH = static_cast<float>(renderer->getSize().y);
+    // 粒子边界用世界逻辑尺寸（固定视口），与渲染缩放解耦
+    const float winW = static_cast<float>(getWindowSize().x);
+    const float winH = static_cast<float>(getWindowSize().y);
     const float dt = deltaTime.asSeconds();
 
     for (auto& p : particles) {

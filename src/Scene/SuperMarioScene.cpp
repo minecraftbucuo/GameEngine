@@ -32,10 +32,11 @@ void SuperMarioScene::init() {
     is_init = true;
     collisionSystem = std::make_unique<CollisionSystem>();
 #ifndef SERVER_BUILD
-    // SDL3 迁移 6c：背景数据化——按窗口高度等比缩放铺满（原 sf::Sprite setScale 逻辑）
+    // SDL3 迁移 6c：背景数据化——按世界视口高度等比缩放铺满（固定视口，
+    // 与窗口解耦：重进场景/窗口缩放后背景与 y=857 物理地面始终对齐）
     bg_texture = AssetManager::getInstance().getTextureHandle("level_1");
     const eng::Vec2u tex_size = AssetManager::getInstance().getTextureSize(bg_texture);
-    const eng::Vec2u win_size = renderer->getSize();
+    const eng::Vec2u win_size = getWindowSize();
     const float bg_scale = static_cast<float>(win_size.y) / static_cast<float>(tex_size.y);
     bg_dst = eng::FloatRect(0.f, 0.f,
                             static_cast<float>(tex_size.x) * bg_scale,
@@ -210,6 +211,12 @@ void SuperMarioScene::handleEvent(const eng::EngineEvent& event) {
     for (int i = 0; i < game_objects.size(); ++i) {
         const auto& obj = game_objects[i];
         obj->handleEvent(event);
+    }
+
+    // 与基类 Scene::handleEvent 保持一致：窗口变化时同步相机
+    // （固定视口下为兜底重设；不调基类版本以免事件被二次转发给对象）
+    if (camera && event.type == eng::EventType::WindowResize) {
+        camera->resize();
     }
 
     if (event.type == eng::EventType::MouseButtonPress) {

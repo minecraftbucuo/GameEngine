@@ -17,7 +17,8 @@ SettingsScene::SettingsScene(eng::Renderer* _renderer) : Scene(_renderer, "Setti
     font = AssetManager::getInstance().getFontHandle();
     title = {"设置", {}, 48, eng::Color::White};
     const eng::Vec2f titleSize = _renderer->measureText(font, title.text, title.size);
-    title.pos = eng::Vec2f(_renderer->getSize().x * 0.5f - titleSize.x * 0.5f, 50.f);
+    // 固定世界视口：布局基于设计尺寸，窗口缩放由渲染层自动拉伸
+    title.pos = eng::Vec2f(CONFIG.window.width * 0.5f - titleSize.x * 0.5f, 50.f);
 }
 
 void SettingsScene::init() {
@@ -28,7 +29,8 @@ void SettingsScene::init() {
 }
 
 void SettingsScene::initScene() {
-    const float winW = static_cast<float>(renderer->getSize().x);
+    // 固定世界视口：布局基于设计视口，与当前窗口大小解耦
+    const float winW = static_cast<float>(getWindowSize().x);
     const float labelX = winW * 0.25f;
     const float inputX = winW * 0.5f;
     const float inputW = 250.f;

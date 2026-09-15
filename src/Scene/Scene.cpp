@@ -122,11 +122,9 @@ physics::PhysicsWorld* Scene::getPhysicsWorld() const {
 #ifndef SERVER_BUILD
 eng::Vec2i Scene::getMousePosition() const {
     if (!renderer || !camera) return {};
-    const eng::Vec2f camera_center = camera->getCenter();
-    const eng::Vec2u window_size = renderer->getSize();
-    eng::Vec2i mouse_position = eng::Input::getMousePosition();
-    mouse_position.x += static_cast<int>(camera_center.x - window_size.x * 0.5f);
-    mouse_position.y += static_cast<int>(camera_center.y - window_size.y * 0.5f);
-    return mouse_position;
+    // 屏幕坐标 → 世界坐标：由渲染器统一换算（含相机缩放/平移，相机未激活时 1:1）；
+    // 旧实现为纯平移，假设视口=窗口，固定视口缩放下会失准
+    const eng::Vec2f world = renderer->screenToWorld(eng::Input::getMousePosition());
+    return eng::Vec2i(static_cast<int>(world.x), static_cast<int>(world.y));
 }
 #endif
