@@ -12,7 +12,11 @@
 #include "Logger.h"
 #include "MoveComponent.h"
 #include "Scene.h"
+#include "AssetManager.h"
 #include "Core/Types.h"
+#ifndef SERVER_BUILD
+#include <SDL3_mixer/SDL_mixer.h>
+#endif
 
 Goomba::Goomba(const float x, const float y, const float speed_x) {
     this->position = eng::Vec2f(x, y);
@@ -36,6 +40,10 @@ Goomba::Goomba(const float x, const float y, const float speed_x) {
 Goomba::~Goomba() {
     LOG_TRACE_FMT("The object tagged {} is destroyed", this->getTag());
     EventBus::getInstance().removeSubscribe("onCollision" + this->tag);
+#ifndef SERVER_BUILD
+    if (stomp_track) MIX_DestroyTrack(stomp_track);
+    if (kick_track) MIX_DestroyTrack(kick_track);
+#endif
 }
 
 void Goomba::start() {
@@ -46,6 +54,15 @@ void Goomba::start() {
             handleCollision(collisionEvent);
         }
     );
+
+#ifndef SERVER_BUILD
+    // 常驻 track 绑定预解码音频，播放时 restart（一次性音效）
+    auto& am = AssetManager::getInstance();
+    stomp_track = MIX_CreateTrack(am.getMixer());
+    if (stomp_track) MIX_SetTrackAudio(stomp_track, am.getSoundBuffer("stomp"));
+    kick_track = MIX_CreateTrack(am.getMixer());
+    if (kick_track) MIX_SetTrackAudio(kick_track, am.getSoundBuffer("kick"));
+#endif
 }
 
 #ifndef SERVER_BUILD
@@ -147,6 +164,10 @@ void Goomba::setSquashed() {
     if (is_squashed) return;
     is_squashed = true;
 
+#ifndef SERVER_BUILD
+    if (stomp_track) { MIX_StopTrack(stomp_track, 0); MIX_PlayTrack(stomp_track, 0); }
+#endif
+
     // 停止一切运动
     if (const auto gravity = getComponent<GravityComponent>()) gravity->setActive(false);
     if (const auto move = getComponent<MoveComponent>()) {
@@ -168,6 +189,10 @@ void Goomba::setKilledByFireball(const float blast_dir_x) {
     if (is_squashed) return;
     is_squashed = true;
     killed_by_fireball = true;
+
+#ifndef SERVER_BUILD
+    if (kick_track) { MIX_StopTrack(kick_track, 0); MIX_PlayTrack(kick_track, 0); }
+#endif
 
     // 只关闭碰撞（并清零碰撞盒尺寸，马里奥的地面几何探测不看 active 标志）；
     // 重力保留 → 被炸飞后坠落穿出场景，掉出底部由 update 销毁

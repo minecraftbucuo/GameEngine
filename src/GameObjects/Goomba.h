@@ -9,6 +9,10 @@
 #include "Timer.h"
 #include "Core/Types.h"
 
+#ifndef SERVER_BUILD
+struct MIX_Track;   // SDL_mixer track 前置声明（头文件不引 SDL 头）
+#endif
+
 class Goomba : public GameObject {
 public:
     Goomba(float x, float y, float speed_x = -100.f);
@@ -40,6 +44,8 @@ private:
 #ifndef SERVER_BUILD
     Animation walkAnimation;
     Animation squashAnimation;
+    MIX_Track* stomp_track = nullptr;   // 踩扁音效
+    MIX_Track* kick_track = nullptr;    // 被炸飞音效
 #endif
     Timer squash_timer;
 };
