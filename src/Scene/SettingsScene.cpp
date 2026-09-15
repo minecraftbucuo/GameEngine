@@ -75,10 +75,9 @@ void SettingsScene::initScene() {
     labels.push_back(makeGroupTitle("网络设置", labelX, y));
     y += 50.f;
 
-    labels.push_back(makeLabel("服务器 IP", labelX, y + 8.f));
+    labels.push_back(makeLabel("服务器地址", labelX, y + 8.f));
     ipInput = std::make_shared<TextInput>(inputX, y, inputW, inputH, "127.0.0.1");
     ipInput->setString(CONFIG.network.serverIp);
-    ipInput->setAllowedChars("0123456789.");
     addObject(ipInput);
     y += rowH;
 

@@ -105,7 +105,9 @@ void TextInput::handleEvent(const eng::EngineEvent& event) {
                 focused = false;
             }
         }
-    } else if (event.type == eng::EventType::TextEntered && focused) {
+    }
+    if (!focused) return;
+    if (event.type == eng::EventType::TextEntered) {
         const char32_t codePoint = event.codepoint;
 
         // 过滤控制字符（除了退格）
@@ -133,7 +135,7 @@ void TextInput::handleEvent(const eng::EngineEvent& event) {
             cursorBlinkTimer = 0.f;
             cursorVisible = true;
         }
-    } else if (event.type == eng::EventType::KeyPress && focused) {
+    } else if (event.type == eng::EventType::KeyPress) {
         if (event.key == eng::Key::Enter) {
             if (onConfirm) {
                 onConfirm(text);
