@@ -1,37 +1,32 @@
 //
-// Created by MINEC on 2026/6/2.
+// Created by MINEC on 2026/9/16.
 //
+// 马里奥单机场景实现：无 NetworkManager。
+// 行为与原 SuperMarioScene 的 Local（网页单机）路径完全一致——
+// 进场景即生成玩家与敌人，死亡后 R 直接本地重生。
 
-#include "SuperMarioScene.h"
+#include "SuperMarioSceneSingle.h"
+#ifndef SERVER_BUILD
 #include "AssetManager.h"
 #include "EventBus.h"
 #include "Mario.h"
-#include "HealthBar.h"
 #include "Ground.h"
 #include "Box.h"
 #include "Brick.h"
 #include "SceneManager.h"
-#include "MoveComponent.h"
-#include "FireBall.h"
 #include "Goomba.h"
 #include "Collision.h"
-#include "Core/Types.h"
-#ifndef SERVER_BUILD
 #include "Render/Renderer.h"
-#endif
 
-void SuperMarioScene::init() {
+void SuperMarioSceneSingle::init() {
     Scene::init();
-    this->setNetworkManager(&(this->simple_network));
-    simple_network.setCurrentScene(this);
     if (is_init) {
-        // 重进场景：清上一局会话（对象/碰撞/网络状态/提示标志）
+        // 重进场景：清上一局会话（对象/碰撞/提示标志）
         resetSession();
         return;
     }
     is_init = true;
     collisionSystem = std::make_unique<CollisionSystem>();
-#ifndef SERVER_BUILD
     // SDL3 迁移 6c：背景数据化——按世界视口高度等比缩放铺满（固定视口，
     // 与窗口解耦：重进场景/窗口缩放后背景与 y=857 物理地面始终对齐）
     bg_texture = AssetManager::getInstance().getTextureHandle("level_1");
@@ -48,66 +43,16 @@ void SuperMarioScene::init() {
             this->show_death_screen = flag;
         }
     );
-#endif
     initStaticObjects();
-
-#ifdef SERVER_BUILD
-    startServer();
-#endif
+    // 本地权威：进场景即生成玩家与敌人（原 WEB Local 路径 startServer 后的生成时机）
+    initDynamicObjects();
 }
 
-void SuperMarioScene::exit() {
+void SuperMarioSceneSingle::exit() {
     Scene::exit();
-    this->setNetworkManager(nullptr);
 }
 
-std::shared_ptr<GameObject> SuperMarioScene::spawnEntity() {
-    auto obj = std::make_shared<Mario>(100.f, 100.f, false);
-    this->addObjectWithMap(obj);
-    LOG_DEBUG_FMT("Create mario with id:{}", obj->getId());
-    return obj;
-}
-
-std::shared_ptr<GameObject> SuperMarioScene::spawnEntityWithNetwork() {
-    auto obj = std::make_shared<Mario>(100.f, 100.f, false);
-    this->addObjectWithNetwork(obj);
-    LOG_DEBUG_FMT("Create mario with id:{}", obj->getId());
-    return obj;
-}
-
-std::shared_ptr<GameObject> SuperMarioScene::spawnEntityWithNetwork(eng::Packet& packet) {
-    unsigned int id;
-    ObjectType obj_type;
-    packet >> id >> obj_type;
-    if (obj_type == ObjectType::MarioPlayer || obj_type == ObjectType::Mario) {
-        float x, y, s_x, s_y;
-        bool is_jump;
-        int health;
-        packet >> x >> y >> s_x >> s_y >> is_jump >> health;
-        const auto player = std::make_shared<Mario>(x, y, obj_type == ObjectType::MarioPlayer);
-        player->setId(id);
-        LOG_DEBUG_FMT("Create mario, id:{}, x:{}, y:{}, s_x:{}, s_y:{}, is_jump:{}, health:{}", id, x, y, s_x, s_y, is_jump, health);
-        const auto& move_component = player->getComponent<MoveComponent>();
-        move_component->setSpeed(s_x, s_y);
-        player->getComponent<HealthBar>()->setHealth(health);
-        this->addObjectWithNetwork(player);
-        return player;
-    }
-    if (obj_type == ObjectType::FireBall) {
-        unsigned int owner_id;
-        float x, y, s_x, s_y;
-        packet >> owner_id >> x >> y >> s_x >> s_y;
-        const auto fire_ball = std::make_shared<FireBall>(owner_id, x, y);
-        fire_ball->setId(id);
-        fire_ball->getComponent<MoveComponent>()->setSpeed(eng::Vec2f(s_x, s_y));
-        this->addObjectWithNetwork(fire_ball);
-        return fire_ball;
-    }
-    LOG_ERROR("Invalid object type");
-    return nullptr;
-}
-
-void SuperMarioScene::initStaticObjects() {
+void SuperMarioSceneSingle::initStaticObjects() {
     // 左墙
     std::shared_ptr<Ground> wall1 = std::make_shared<Ground>(0, 0, 10, CONFIG.window.height, "wall1");
     this->addObject(wall1);
@@ -140,12 +85,11 @@ void SuperMarioScene::initStaticObjects() {
     }
 }
 
-void SuperMarioScene::initDynamicObjects() {
+void SuperMarioSceneSingle::initDynamicObjects() {
     if (is_initDynamicObjects) return;
     is_initDynamicObjects = true;
-#ifndef SERVER_BUILD
     std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
-    this->addObjectWithNetwork(mario);
+    this->addObjectWithMap(mario);
     LOG_DEBUG("Create mario");
 
     // 生成板栗仔敌人：地面顶部 y=857，板栗仔高 64 → y=793
@@ -155,11 +99,9 @@ void SuperMarioScene::initDynamicObjects() {
     this->addObject(std::make_shared<Goomba>(5200.f, goomba_y));
     this->addObject(std::make_shared<Goomba>(8800.f, goomba_y, 120.f));
     this->addObject(std::make_shared<Goomba>(11500.f, goomba_y));
-#endif
 }
 
-#ifndef SERVER_BUILD
-void SuperMarioScene::render(eng::Renderer& _renderer) {
+void SuperMarioSceneSingle::render(eng::Renderer& _renderer) {
     if (bg_texture.isValid()) {
         const eng::Vec2u tex = AssetManager::getInstance().getTextureSize(bg_texture);
         _renderer.drawTexture(bg_texture,
@@ -172,40 +114,23 @@ void SuperMarioScene::render(eng::Renderer& _renderer) {
     if (show_death_screen) {
         showDeathScreen(_renderer);
     }
-    if (show_disconnect_screen) {
-        showDisconnectScreen(_renderer);
-    }
 }
-#endif
 
-void SuperMarioScene::update(eng::Time deltaTime) {
+void SuperMarioSceneSingle::update(eng::Time deltaTime) {
     Scene::update(deltaTime);
     if (this->collisionSystem) {
         this->collisionSystem->checkCollisions();
     }
-    simple_network.update(deltaTime);
-    // N4：断线一次即定格提示层，直到 ESC 回菜单（重进场景时复位）
-    if (simple_network.wasConnectionLost()) {
-        show_disconnect_screen = true;
-    }
 }
 
-void SuperMarioScene::addObject(const std::shared_ptr<GameObject>& obj) {
+void SuperMarioSceneSingle::addObject(const std::shared_ptr<GameObject>& obj) {
     Scene::addObject(obj);
     if (this->collisionSystem && obj->getComponent<Collision>()) {
         this->collisionSystem->addObject(obj);
     }
 }
 
-void SuperMarioScene::addObjectWithNetwork(const std::shared_ptr<GameObject>& obj) {
-    addObjectWithMap(obj);
-    simple_network.addGameObjectAndSync(obj);
-}
-
-#ifndef SERVER_BUILD
-void SuperMarioScene::handleEvent(const eng::EngineEvent& event) {
-    simple_network.handleEvent(event);
-
+void SuperMarioSceneSingle::handleEvent(const eng::EngineEvent& event) {
     if (camera) camera->handleEvent(event);
     // 必须用这种 for 循环，因为 game_objects 可能会改变，扩容导致迭代器失效
     for (int i = 0; i < game_objects.size(); ++i) {
@@ -227,45 +152,26 @@ void SuperMarioScene::handleEvent(const eng::EngineEvent& event) {
             getSceneManager()->loadScene("MenuScene");
         } else if (event.key == eng::Key::R && show_death_screen) {
             show_death_screen = false;
-            // WASM 移植 Step 5：Local（网页单机）与 Server 同为本地权威，允许直接重生
-            const auto net_type = simple_network.getNetworkType();
-            if (net_type == NetworkManager::NetworkType::Server
-                || net_type == NetworkManager::NetworkType::Local) {
-                std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
-                this->addObjectWithNetwork(mario);
-                LOG_DEBUG("Respawn mario");
-            }
+            // 本地权威：死亡后 R 直接重生（与原 Server/Local 分支等价，网络同步为空操作）
+            std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
+            this->addObjectWithMap(mario);
+            LOG_DEBUG("Respawn mario");
         }
     }
 }
-#endif
 
-void SuperMarioScene::startServer() {
-    if (simple_network.startServer()) {
-        initDynamicObjects();
-    }
-}
-
-void SuperMarioScene::resetSession() {
-    // 网络会话（连接断开/同步表/标志；Local 与 None 无连接资源，仅清表）
-    simple_network.resetSession();
+void SuperMarioSceneSingle::resetSession() {
     // 对象全清（含上一局的马里奥与静态场景），随后重建静态场景
     game_objects.clear();
     game_objects_map.clear();
     collisionSystem = std::make_unique<CollisionSystem>();   // 顺带清空碰撞体引用
     initStaticObjects();
-    // 动态对象守卫复位：单机/服务端路径据此重新生成马里奥
+    // 动态对象守卫复位：据此重新生成马里奥
     is_initDynamicObjects = false;
     show_death_screen = false;
-    show_disconnect_screen = false;
 }
 
-void SuperMarioScene::connectToServer(const std::string& address) {
-    simple_network.connectToServer(address);
-}
-
-#ifndef SERVER_BUILD
-void SuperMarioScene::showDeathScreen(eng::Renderer& renderer) {
+void SuperMarioSceneSingle::showDeathScreen(eng::Renderer& renderer) {
     const eng::Vec2u win = renderer.getSize();
     const float w = static_cast<float>(win.x);
     const float h = static_cast<float>(win.y);
@@ -284,32 +190,6 @@ void SuperMarioScene::showDeathScreen(eng::Renderer& renderer) {
 
     const eng::Vec2f hintSize = renderer.measureText(font, "Press R to Respawn    Press Esc to Quit", 24);
     renderer.drawText(font, "Press R to Respawn    Press Esc to Quit",
-                      eng::Vec2f(w / 2.f - hintSize.x / 2.f, h * 0.55f),
-                      24, eng::Color::White);
-
-    renderer.setCamera(oldCamera);
-}
-
-void SuperMarioScene::showDisconnectScreen(eng::Renderer& renderer) {
-    const eng::Vec2u win = renderer.getSize();
-    const float w = static_cast<float>(win.x);
-    const float h = static_cast<float>(win.y);
-
-    // 与死亡屏同构：屏幕坐标系遮罩，画完恢复相机（远端玩家已冻结、本地仍可移动，
-    // 遮罩半透明保留视野，玩家明确知道该做什么：ESC 回菜单重连）
-    const eng::Renderer::CameraState oldCamera = renderer.getCamera();
-    renderer.resetCamera();
-
-    renderer.drawRect(eng::FloatRect(0.f, 0.f, w, h), eng::Color(0, 0, 0, 180));
-
-    const eng::FontHandle font = AssetManager::getInstance().getFontHandle();
-    const eng::Vec2f lostSize = renderer.measureText(font, "CONNECTION LOST", 64);
-    renderer.drawText(font, "CONNECTION LOST",
-                      eng::Vec2f(w / 2.f - lostSize.x / 2.f, h * 0.3f - lostSize.y / 2.f),
-                      64, eng::Color::Red);
-
-    const eng::Vec2f hintSize = renderer.measureText(font, "Press Esc to return to Menu", 24);
-    renderer.drawText(font, "Press Esc to return to Menu",
                       eng::Vec2f(w / 2.f - hintSize.x / 2.f, h * 0.55f),
                       24, eng::Color::White);
 

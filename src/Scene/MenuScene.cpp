@@ -5,7 +5,8 @@
 #ifndef SERVER_BUILD
 #include "MenuScene.h"
 #include "AssetManager.h"
-#include "SuperMarioScene.h"
+#include "SuperMarioSceneSingle.h"
+#include "SuperMarioSceneMultiplayer.h"
 #include "Button.h"
 #include "Render/Renderer.h"
 #include "SceneManager.h"
@@ -74,7 +75,7 @@ void MenuScene::initScene() {
     const float winH = static_cast<float>(getWindowSize().y);
     const float btnW = 280.f;
     const float btnH = 55.f;
-    const float startY = winH * 0.45f;
+    const float startY = winH * 0.5f;
     const float spacing = 35.f;
 
     auto makeButton = [&](const std::string& label, int index, auto&& callback) {
@@ -85,17 +86,17 @@ void MenuScene::initScene() {
         this->buttons.push_back(btn);   // 存成员以便窗口 resize 后重排
     };
 
-    // WASM 移植 Step 5：WEB 无裸 socket，单机入口走 NetworkManager Local 模式
-    // 联机 N3：Client 入口正式化——地址读 config.json（serverIp 支持完整 ws(s)://
+    // 菜单只保留游戏功能入口：引擎演示/测试场景（GameScene3D、Demo=GameScene、
+    // PhysicsTestScene）已移出主菜单——场景仍在 GameEngine.cpp 注册，调试需要时临时加回。
+    // 联机 N3：地址读 config.json（serverIp 支持完整 ws(s)://
     // URL 直连；否则按「ws://serverIp:webBridgePort」拼桥地址，port 键归桌面直连）
     int btnIndex = 0;
-#ifdef __EMSCRIPTEN__
     makeButton("超级玛丽（单机）", btnIndex++, [&]() -> void {
-        getSceneManager()->loadScene("SuperMarioScene");
-        std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->startServer();
+        getSceneManager()->loadScene("SuperMarioSceneSingle");
     });
 
-    makeButton("超级玛丽 Client", btnIndex++, [&]() -> void {
+#ifdef __EMSCRIPTEN__
+    makeButton("超级玛丽（加入房间）", btnIndex++, [&]() -> void {
         std::string addr = CONFIG.network.serverIp;
         // auto / 127.0.0.1 / localhost：自动寻址——本机打开的页面连本机桥，
         // 远程打开的页面连页面来源（详见 resolveWebServerAddr 注释）。
@@ -106,36 +107,25 @@ void MenuScene::initScene() {
         } else if (addr.rfind("ws://", 0) != 0 && addr.rfind("wss://", 0) != 0) {
             addr = "ws://" + addr + ":" + std::to_string(CONFIG.network.webBridgePort);
         }
-        getSceneManager()->loadScene("SuperMarioScene");
-        std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->connectToServer(addr);
+        getSceneManager()->loadScene("SuperMarioSceneMultiplayer");
+        std::dynamic_pointer_cast<SuperMarioSceneMultiplayer>(getSceneManager()->getCurrentScene())->connectToServer(addr);
     });
 #else
-    makeButton("超级玛丽 Client", btnIndex++, [&]() -> void {
-        getSceneManager()->loadScene("SuperMarioScene");
-        std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->connectToServer(
-            CONFIG.network.serverIp);
+    // WEB 端无服务端能力：创建房间仅桌面端提供
+    makeButton("超级玛丽（创建房间）", btnIndex++, [&]() -> void {
+        getSceneManager()->loadScene("SuperMarioSceneMultiplayer");
+        std::dynamic_pointer_cast<SuperMarioSceneMultiplayer>(getSceneManager()->getCurrentScene())->startServer();
     });
 
-    makeButton("超级玛丽 Server", btnIndex++, [&]() -> void {
-        getSceneManager()->loadScene("SuperMarioScene");
-        std::dynamic_pointer_cast<SuperMarioScene>(getSceneManager()->getCurrentScene())->startServer();
+    makeButton("超级玛丽（加入房间）", btnIndex++, [&]() -> void {
+        getSceneManager()->loadScene("SuperMarioSceneMultiplayer");
+        std::dynamic_pointer_cast<SuperMarioSceneMultiplayer>(getSceneManager()->getCurrentScene())->connectToServer(
+            CONFIG.network.serverIp);
     });
 #endif
 
-    makeButton("3D 渲染", btnIndex++, [&]() -> void {
-        getSceneManager()->loadScene("GameScene3D");
-    });
-
-    makeButton("Demo", btnIndex++, [&]() -> void {
-        getSceneManager()->loadScene("GameScene");
-    });
-
     makeButton("设置", btnIndex++, [&]() -> void {
         getSceneManager()->loadScene("SettingsScene");
-    });
-
-    makeButton("物理测试", btnIndex++, [&]() -> void {
-        getSceneManager()->loadScene("PhysicsTestScene");
     });
 
     // 初始化背景粒子
@@ -175,7 +165,7 @@ void MenuScene::relayout() {
     constexpr float btnW = 280.f;
     constexpr float btnH = 55.f;
     constexpr float spacing = 35.f;
-    const float startY = static_cast<float>(getWindowSize().y) * 0.45f;
+    const float startY = static_cast<float>(getWindowSize().y) * 0.5f;
     for (size_t i = 0; i < buttons.size(); ++i) {
         buttons[i]->setToRectCenter(0, startY + static_cast<float>(i) * (btnH + spacing), winW, btnH);
     }

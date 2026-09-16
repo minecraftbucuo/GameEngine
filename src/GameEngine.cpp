@@ -18,8 +18,9 @@
 #include "MenuScene.h"
 #include "SettingsScene.h"
 #include "PhysicsTestScene.h"
+#include "SuperMarioSceneSingle.h"
 #endif
-#include "SuperMarioScene.h"
+#include "SuperMarioSceneMultiplayer.h"
 #include "FrameManager.h"
 #include "Core/Types.h"
 
@@ -72,14 +73,15 @@ void GameEngine::init() {
     // SDL3 迁移 Step 6a：场景统一持有 Renderer
     scene_manager->addScene<GameScene>(&renderer);
     scene_manager->addScene<GameScene3D>(&renderer);
-    scene_manager->addScene<SuperMarioScene>(&renderer);
+    scene_manager->addScene<SuperMarioSceneSingle>(&renderer);
+    scene_manager->addScene<SuperMarioSceneMultiplayer>(&renderer);
     scene_manager->addScene<MenuScene>(&renderer);
     scene_manager->addScene<SettingsScene>(&renderer);
     scene_manager->addScene<PhysicsTestScene>(&renderer);
     scene_manager->loadScene("MenuScene");
 #else
-    scene_manager->addScene<SuperMarioScene>();
-    scene_manager->loadScene("SuperMarioScene");
+    scene_manager->addScene<SuperMarioSceneMultiplayer>();
+    scene_manager->loadScene("SuperMarioSceneMultiplayer");
 #endif
 }
 

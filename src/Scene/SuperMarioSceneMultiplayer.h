@@ -1,6 +1,9 @@
 //
-// Created by MINEC on 2026/1/29.
+// Created by MINEC on 2026/6/2.
 //
+// 马里奥联机场景：Server（权威主机）/ Client / WEB Local 全部网络路径所在。
+// 单机玩法见 SuperMarioSceneSingle（无网络层）。
+// 注意：联机版不生成敌人——Goomba 同步未实现，敌人玩法为单机版专属。
 
 #pragma once
 #include "Scene.h"
@@ -12,16 +15,16 @@
 #endif
 
 
-class SuperMarioScene : public Scene {
+class SuperMarioSceneMultiplayer : public Scene {
 public:
 #ifndef SERVER_BUILD
-    explicit SuperMarioScene(eng::Renderer* _renderer) : Scene(_renderer, "SuperMarioScene") {
+    explicit SuperMarioSceneMultiplayer(eng::Renderer* _renderer) : Scene(_renderer, "SuperMarioSceneMultiplayer") {
     }
 #else
-    explicit SuperMarioScene() : Scene("SuperMarioScene") { }
+    explicit SuperMarioSceneMultiplayer() : Scene("SuperMarioSceneMultiplayer") { }
 #endif
 
-    ~SuperMarioScene() override = default;
+    ~SuperMarioSceneMultiplayer() override = default;
 
     void init() override;
 
