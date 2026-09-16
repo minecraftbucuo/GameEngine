@@ -87,7 +87,7 @@ void MenuScene::initScene() {
     };
 
     // 菜单只保留游戏功能入口：引擎演示/测试场景（GameScene3D、Demo=GameScene、
-    // PhysicsTestScene）已移出主菜单——场景仍在 GameEngine.cpp 注册，调试需要时临时加回。
+    // PhysicsTestScene）及其专属对象/组件已彻底删除（需要时可从 git 历史找回）。
     // 联机 N3：地址读 config.json（serverIp 支持完整 ws(s)://
     // URL 直连；否则按「ws://serverIp:webBridgePort」拼桥地址，port 键归桌面直连）
     int btnIndex = 0;

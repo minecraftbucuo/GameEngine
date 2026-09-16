@@ -19,12 +19,6 @@
             "box": "./Asset/SuperMario/source/data/player/box.json",
             "fireball": "./Asset/SuperMario/source/data/player/fireball.json",
             "goomba": "./Asset/SuperMario/source/data/enemy/goomba.json"
-        },
-        "models": {
-            "penguin": "./Asset/penguin.obj",
-            "human": "./Asset/human.obj",
-            "cube": "./Asset/cube.obj",
-            "newModel": "./Asset/new_model.obj"
         }
     },
     "network": {

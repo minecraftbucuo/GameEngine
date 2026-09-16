@@ -36,7 +36,6 @@ public:
         std::unordered_map<std::string, std::string> textures;
         std::unordered_map<std::string, std::string> sounds;
         std::unordered_map<std::string, std::string> frames;
-        std::unordered_map<std::string, std::string> models;
         std::string font = "./Asset/Font/Minecraft_AE.ttf";
     } assets;
 
@@ -74,11 +73,6 @@ public:
     std::string getSoundPath(const std::string& name) const {
         const auto it = assets.sounds.find(name);
         return it != assets.sounds.end() ? it->second : "";
-    }
-
-    std::string getModelPath(const std::string& name) const {
-        const auto it = assets.models.find(name);
-        return it != assets.models.end() ? it->second : "";
     }
 
 private:

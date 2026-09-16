@@ -55,11 +55,6 @@ void ConfigManager::parseAssets(const json& j) {
             assets.frames[key] = value.get<std::string>();
         }
     }
-    if (j.contains("models")) {
-        for (auto& [key, value] : j["models"].items()) {
-            assets.models[key] = value.get<std::string>();
-        }
-    }
     assets.font = j.value("font", assets.font);
 }
 

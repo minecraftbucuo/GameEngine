@@ -13,11 +13,8 @@
 #include <emscripten.h>
 #endif
 #ifndef SERVER_BUILD
-#include "GameScene.h"
-#include "GameScene3D.h"
 #include "MenuScene.h"
 #include "SettingsScene.h"
-#include "PhysicsTestScene.h"
 #include "SuperMarioSceneSingle.h"
 #endif
 #include "SuperMarioSceneMultiplayer.h"
@@ -71,13 +68,10 @@ void GameEngine::init() {
     scene_manager = std::make_shared<SceneManager>();
 #ifndef SERVER_BUILD
     // SDL3 迁移 Step 6a：场景统一持有 Renderer
-    scene_manager->addScene<GameScene>(&renderer);
-    scene_manager->addScene<GameScene3D>(&renderer);
     scene_manager->addScene<SuperMarioSceneSingle>(&renderer);
     scene_manager->addScene<SuperMarioSceneMultiplayer>(&renderer);
     scene_manager->addScene<MenuScene>(&renderer);
     scene_manager->addScene<SettingsScene>(&renderer);
-    scene_manager->addScene<PhysicsTestScene>(&renderer);
     scene_manager->loadScene("MenuScene");
 #else
     scene_manager->addScene<SuperMarioSceneMultiplayer>();

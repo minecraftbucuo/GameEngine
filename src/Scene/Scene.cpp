@@ -53,11 +53,10 @@ void Scene::update(eng::Time deltaTime) {
 
 #ifndef SERVER_BUILD
 // 渲染签名（SDL3 迁移 6e：旧 sf::RenderWindow 签名已删除）。
-// 基类默认 = 对象循环；场景级 override（Menu/Settings/SuperMario/PhysicsTest）
+// 基类默认 = 对象循环；场景级 override（Menu/Settings/SuperMario）
 // 各自绘制自有内容并按需调用 renderObjects
 void Scene::render(eng::Renderer& _renderer) {
     renderObjects(_renderer);
-    // Box2D 调试绘制已随 SDL3 迁移 6b 移入 PhysicsTestScene::render(eng::Renderer&)
 }
 
 // 对象循环：遍历活跃对象调 render(eng::Renderer&)

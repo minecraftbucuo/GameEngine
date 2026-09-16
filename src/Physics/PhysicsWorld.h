@@ -38,7 +38,7 @@ public:
     const b2World* getWorld() const;
 
 #ifndef SERVER_BUILD
-    // 调试绘制：绘制所有 body 形状/质心/接触点（CONFIG.game.debug 时由 PhysicsTestScene::render 调用）
+    // 调试绘制：绘制所有 body 形状/质心/接触点（CONFIG.game.debug 开启时由场景调用）
     void renderDebug(eng::Renderer* renderer);
 #endif
 
