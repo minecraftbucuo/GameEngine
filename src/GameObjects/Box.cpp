@@ -38,10 +38,6 @@ Box::Box(const float x, const float y, const std::string& tag) : BoxGameObject(x
     className = "Box";
 }
 
-Box::~Box() {
-    EventBus::getInstance().removeSubscribe("onCollision" + this->tag);
-}
-
 void Box::start() {
     GameObject::start();
     EventBus::getInstance().subscribe<CollisionEvent>("onCollision" + this->tag,

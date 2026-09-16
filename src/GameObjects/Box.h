@@ -11,8 +11,6 @@ class Box : public BoxGameObject {
 public:
     Box(float x, float y, const std::string& tag = "box");
 
-    ~Box() override;
-
     void start() override;
 
     void update(eng::Time deltaTime) override;
