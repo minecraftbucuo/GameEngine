@@ -13,12 +13,9 @@ Camera::Camera(eng::Renderer* renderer) {
 
 void Camera::init(eng::Renderer* _renderer) {
     this->renderer = _renderer;
-    // 固定世界视口：视口恒为设计尺寸，窗口缩放由渲染层按 camScale 自动拉伸适配，
-    // 世界坐标/碰撞/UI 布局与窗口大小解耦（缩放不再引起错位）
-    this->floatRect = eng::FloatRect(0, 0,
-                    static_cast<float>(CONFIG.window.width),
-                    static_cast<float>(CONFIG.window.height));
-    updateView();
+    // 等比无黑边（Expand）：视口高度恒为设计高度，宽度按窗口宽高比自适应，
+    // 视口比例恒等于窗口比例 ⇒ 渲染层 x/y 缩放系数一致，画面等比铺满、无黑边无变形
+    resize();
 }
 
 void Camera::init() {
@@ -26,8 +23,18 @@ void Camera::init() {
 }
 
 void Camera::resize() {
-    // 固定世界视口：窗口变化不影响视口，此处仅重设为设计尺寸兜底
-    this->floatRect.width = static_cast<float>(CONFIG.window.width);
+    // 视口高度恒为设计高度，宽度按当前窗口宽高比自适应（Expand 方案核心）；
+    // 窗口尺寸不可用时兜底 CONFIG 设计值（winH 至少为设计高，不会除零）
+    float winW = static_cast<float>(CONFIG.window.width);
+    float winH = static_cast<float>(CONFIG.window.height);
+    if (renderer) {
+        const eng::Vec2u size = renderer->getSize();
+        if (size.x > 0 && size.y > 0) {
+            winW = static_cast<float>(size.x);
+            winH = static_cast<float>(size.y);
+        }
+    }
+    this->floatRect.width = static_cast<float>(CONFIG.window.height) * (winW / winH);
     this->floatRect.height = static_cast<float>(CONFIG.window.height);
     updateView();
 }

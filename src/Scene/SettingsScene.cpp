@@ -132,7 +132,7 @@ void SettingsScene::initScene() {
     const float btnH = 50.f;
     const float btnSpacing = 40.f;
 
-    auto saveBtn = std::make_shared<Button>(
+    saveBtn = std::make_shared<Button>(
         winW * 0.5f - btnW - btnSpacing * 0.5f, y, btnW, btnH, "保存");
     saveBtn->setOnClick([this]() {
         // 读取输入值写入 CONFIG
@@ -165,12 +165,50 @@ void SettingsScene::initScene() {
     });
     addObject(saveBtn);
 
-    auto backBtn = std::make_shared<Button>(
+    backBtn = std::make_shared<Button>(
         winW * 0.5f + btnSpacing * 0.5f, y, btnW, btnH, "返回");
     backBtn->setOnClick([this]() {
         getSceneManager()->loadScene("MenuScene");
     });
     addObject(backBtn);
+}
+
+void SettingsScene::handleEvent(const eng::EngineEvent& event) {
+    Scene::handleEvent(event);
+    if (event.type == eng::EventType::WindowResize) {
+        // 基类已按新窗口同步相机视口（宽度自适应），此处按新视口重排 UI
+        relayout();
+    }
+}
+
+void SettingsScene::relayout() {
+    const float winW = static_cast<float>(getWindowSize().x);
+    const float labelX = winW * 0.25f;
+    const float inputX = winW * 0.5f;
+
+    // 标题与标签按新视口宽重新定位（行距与视口高绑定，y 恒定不变）
+    if (renderer) {
+        title.pos.x = winW * 0.5f - renderer->measureText(font, title.text, title.size).x * 0.5f;
+    }
+    for (auto& label : labels) {
+        label.pos.x = labelX;
+    }
+
+    widthInput->setPosition(inputX, widthInput->getPosition().y);
+    heightInput->setPosition(inputX, heightInput->getPosition().y);
+    fpsInput->setPosition(inputX, fpsInput->getPosition().y);
+    ipInput->setPosition(inputX, ipInput->getPosition().y);
+    portInput->setPosition(inputX, portInput->getPosition().y);
+    tickRateInput->setPosition(inputX, tickRateInput->getPosition().y);
+    gravityInput->setPosition(inputX, gravityInput->getPosition().y);
+    playerSpeedInput->setPosition(inputX, playerSpeedInput->getPosition().y);
+    jumpForceInput->setPosition(inputX, jumpForceInput->getPosition().y);
+    debugToggle->setPosition(inputX, debugToggle->getPosition().y);
+
+    constexpr float btnW = 150.f;
+    constexpr float btnSpacing = 40.f;
+    saveBtn->setPosition(winW * 0.5f - btnW - btnSpacing * 0.5f, saveBtn->getPosition().y);
+    backBtn->setPosition(winW * 0.5f + btnSpacing * 0.5f, backBtn->getPosition().y);
 }
 
 void SettingsScene::update(eng::Time deltaTime) {

@@ -12,6 +12,7 @@
 
 class TextInput;
 class Toggle;
+class Button;
 
 class SettingsScene : public Scene {
 public:
@@ -21,6 +22,8 @@ public:
     void init() override;
 
     void initScene();
+
+    void handleEvent(const eng::EngineEvent& event) override;
 
     void update(eng::Time deltaTime) override;
 
@@ -50,5 +53,11 @@ private:
     std::shared_ptr<TextInput> playerSpeedInput;
     std::shared_ptr<TextInput> jumpForceInput;
     std::shared_ptr<Toggle> debugToggle;
+
+    // 按钮引用：自适应视口宽度变化后需按新视口重新定位
+    std::shared_ptr<Button> saveBtn;
+    std::shared_ptr<Button> backBtn;
+
+    void relayout();
 };
 #endif

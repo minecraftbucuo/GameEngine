@@ -10,6 +10,8 @@
 #include "Scene.h"
 #include "Render/Handles.h"
 
+class Button;
+
 class MenuScene : public Scene {
 public:
     explicit MenuScene(eng::Renderer* _renderer);
@@ -18,6 +20,8 @@ public:
     void init() override;
 
     void initScene();
+
+    void handleEvent(const eng::EngineEvent& event) override;
 
     void update(eng::Time deltaTime) override;
 
@@ -39,5 +43,10 @@ private:
         float alphaSpeed;
     };
     std::vector<Particle> particles;
+
+    // 按钮引用：自适应视口宽度变化后需按新视口重新居中
+    std::vector<std::shared_ptr<Button>> buttons;
+
+    void relayout();
 };
 #endif

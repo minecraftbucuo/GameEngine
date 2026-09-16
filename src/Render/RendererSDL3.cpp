@@ -92,16 +92,20 @@ Vec2f camEffectiveSize() {
 Vec2f camScale() {
     if (!g.cameraActive) return {1.f, 1.f};
     const Vec2f s = camEffectiveSize();
-    return { windowWidth() / s.x, windowHeight() / s.y };
+    // 等比缩放：x/y 统一取「窗口高 ÷ 视口高」；配合 Camera 视口比例=窗口比例，
+    // 画面等比铺满无黑边；即使视口比例短暂失配也不会拉伸变形
+    const float scale = windowHeight() / s.y;
+    return { scale, scale };
 }
 
 // 世界 → 屏幕（相机未激活时恒等，等价 SFML 默认视图）
+// 以相机中心对齐窗口中心 + 统一按高度等比缩放；x 向实际可见世界宽度 = 窗口宽 ÷ scale
 Vec2f worldToScreen(const Vec2f p) {
     if (!g.cameraActive) return p;
     const Vec2f s = camEffectiveSize();
-    const Vec2f leftTop(g.camCenter.x - s.x * 0.5f, g.camCenter.y - s.y * 0.5f);
-    return { (p.x - leftTop.x) * (windowWidth() / s.x),
-             (p.y - leftTop.y) * (windowHeight() / s.y) };
+    const float scale = windowHeight() / s.y;
+    return { (p.x - g.camCenter.x) * scale + windowWidth() * 0.5f,
+             (p.y - g.camCenter.y) * scale + windowHeight() * 0.5f };
 }
 
 SDL_Color toSDLColor(const Color c) { return { c.r, c.g, c.b, c.a }; }
@@ -835,9 +839,10 @@ Vec2f Renderer::screenToWorld(const Vec2i screenPos) const {
         return Vec2f(static_cast<float>(screenPos.x), static_cast<float>(screenPos.y));
     }
     const Vec2f s = camEffectiveSize();
-    const Vec2f leftTop(g.camCenter.x - s.x * 0.5f, g.camCenter.y - s.y * 0.5f);
-    return { leftTop.x + static_cast<float>(screenPos.x) / windowWidth() * s.x,
-             leftTop.y + static_cast<float>(screenPos.y) / windowHeight() * s.y };
+    // worldToScreen 的逆变换（相机中心对齐 + 统一按高度等比缩放），必须保持互逆
+    const float scale = windowHeight() / s.y;
+    return { g.camCenter.x + (static_cast<float>(screenPos.x) - windowWidth() * 0.5f) / scale,
+             g.camCenter.y + (static_cast<float>(screenPos.y) - windowHeight() * 0.5f) / scale };
 }
 
 } // namespace eng

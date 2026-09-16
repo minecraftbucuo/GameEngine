@@ -81,6 +81,7 @@ void MenuScene::initScene() {
         btn->setOnClick(std::forward<decltype(callback)>(callback));
         btn->setToRectCenter(0, startY + index * (btnH + spacing), winW, btnH);
         this->addObject(btn);
+        this->buttons.push_back(btn);   // 存成员以便窗口 resize 后重排
     };
 
     // WASM 移植 Step 5：WEB 无裸 socket，单机入口走 NetworkManager Local 模式
@@ -153,6 +154,29 @@ void MenuScene::initScene() {
         p.alpha = distAlpha(rng);
         p.alphaSpeed = distAlphaSpeed(rng);
         particles.push_back(p);
+    }
+}
+
+void MenuScene::handleEvent(const eng::EngineEvent& event) {
+    Scene::handleEvent(event);
+    if (event.type == eng::EventType::WindowResize) {
+        // 基类已按新窗口同步相机视口（宽度自适应），此处按新视口重排 UI
+        relayout();
+    }
+}
+
+void MenuScene::relayout() {
+    const float winW = static_cast<float>(getWindowSize().x);
+    // 标题水平居中（垂直位置与恒定视口高绑定，无需重算）
+    if (renderer) {
+        titlePos.x = winW * 0.5f - renderer->measureText(font, titleText, TITLE_FONT_SIZE).x * 0.5f;
+    }
+    constexpr float btnW = 280.f;
+    constexpr float btnH = 55.f;
+    constexpr float spacing = 35.f;
+    const float startY = static_cast<float>(getWindowSize().y) * 0.45f;
+    for (size_t i = 0; i < buttons.size(); ++i) {
+        buttons[i]->setToRectCenter(0, startY + static_cast<float>(i) * (btnH + spacing), winW, btnH);
     }
 }
 
