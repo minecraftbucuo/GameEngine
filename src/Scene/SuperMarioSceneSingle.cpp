@@ -169,6 +169,7 @@ void SuperMarioSceneSingle::resetSession() {
     // 动态对象守卫复位：据此重新生成马里奥
     is_initDynamicObjects = false;
     show_death_screen = false;
+    initDynamicObjects();
 }
 
 void SuperMarioSceneSingle::showDeathScreen(eng::Renderer& renderer) {
