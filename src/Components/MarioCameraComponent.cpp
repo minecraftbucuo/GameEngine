@@ -20,7 +20,9 @@ void MarioCameraComponent::update(const eng::Time& deltaTime) {
     else this->setTargetPositionX(0);
     if (this->target_position != this->position) {
         if (Camera* camera = owner->getScene()->getCamera()) {
-            position = position + (target_position - position) * 0.03f;
+            auto add_position = (target_position - position) * 0.03f;
+            if (std::abs(add_position.x) < 0.2f) add_position.x = 0.f;
+            position = position + add_position;
             camera->setPosition(position.x, position.y);
         }
     }
