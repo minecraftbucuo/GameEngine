@@ -46,6 +46,8 @@ public:
     // 不重置则上一局的马里奥跨局残留（重进场景出现双马里奥的根因）
     void resetSession();
 
+    void clearObjects();
+
     static void showDeathScreen(eng::Renderer& renderer);
 
 private:

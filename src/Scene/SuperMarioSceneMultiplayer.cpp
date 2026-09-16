@@ -218,6 +218,7 @@ void SuperMarioSceneMultiplayer::handleEvent(const eng::EngineEvent& event) {
     } else if (event.type == eng::EventType::KeyPress) {
         if (event.key == eng::Key::Escape) {
             getSceneManager()->loadScene("MenuScene");
+            clearObjects();
         } else if (event.key == eng::Key::R && show_death_screen) {
             show_death_screen = false;
             // WASM 移植 Step 5：Local（网页单机）与 Server 同为本地权威，允许直接重生
@@ -240,17 +241,21 @@ void SuperMarioSceneMultiplayer::startServer() {
 }
 
 void SuperMarioSceneMultiplayer::resetSession() {
+    clearObjects();
+    initStaticObjects();
+    // 动态对象守卫复位：单机/服务端路径据此重新生成马里奥
+    is_initDynamicObjects = false;
+    show_death_screen = false;
+    show_disconnect_screen = false;
+}
+
+void SuperMarioSceneMultiplayer::clearObjects() {
     // 网络会话（连接断开/同步表/标志；Local 与 None 无连接资源，仅清表）
     simple_network.resetSession();
     // 对象全清（含上一局的马里奥与静态场景），随后重建静态场景
     game_objects.clear();
     game_objects_map.clear();
     collisionSystem = std::make_unique<CollisionSystem>();   // 顺带清空碰撞体引用
-    initStaticObjects();
-    // 动态对象守卫复位：单机/服务端路径据此重新生成马里奥
-    is_initDynamicObjects = false;
-    show_death_screen = false;
-    show_disconnect_screen = false;
 }
 
 void SuperMarioSceneMultiplayer::connectToServer(const std::string& address) {

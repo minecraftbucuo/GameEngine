@@ -64,6 +64,8 @@ public:
     // 不重置则上一局的马里奥/网络状态跨局残留（Client→单机出现双马里奥的根因）
     void resetSession();
 
+    void clearObjects();
+
     NetworkManager::NetworkType getNetworkType() const override {
         return simple_network.getNetworkType();
     }

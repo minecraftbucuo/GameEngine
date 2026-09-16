@@ -150,6 +150,7 @@ void SuperMarioSceneSingle::handleEvent(const eng::EngineEvent& event) {
     } else if (event.type == eng::EventType::KeyPress) {
         if (event.key == eng::Key::Escape) {
             getSceneManager()->loadScene("MenuScene");
+            clearObjects();
         } else if (event.key == eng::Key::R && show_death_screen) {
             show_death_screen = false;
             // 本地权威：死亡后 R 直接重生（与原 Server/Local 分支等价，网络同步为空操作）
@@ -160,16 +161,22 @@ void SuperMarioSceneSingle::handleEvent(const eng::EngineEvent& event) {
     }
 }
 
+
+
 void SuperMarioSceneSingle::resetSession() {
     // 对象全清（含上一局的马里奥与静态场景），随后重建静态场景
-    game_objects.clear();
-    game_objects_map.clear();
-    collisionSystem = std::make_unique<CollisionSystem>();   // 顺带清空碰撞体引用
+    clearObjects();
     initStaticObjects();
     // 动态对象守卫复位：据此重新生成马里奥
     is_initDynamicObjects = false;
     show_death_screen = false;
     initDynamicObjects();
+}
+
+void SuperMarioSceneSingle::clearObjects() {
+    game_objects.clear();
+    game_objects_map.clear();
+    collisionSystem = std::make_unique<CollisionSystem>();   // 顺带清空碰撞体引用
 }
 
 void SuperMarioSceneSingle::showDeathScreen(eng::Renderer& renderer) {
