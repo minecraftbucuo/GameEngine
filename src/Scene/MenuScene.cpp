@@ -62,6 +62,7 @@ MenuScene::MenuScene(eng::Renderer* _renderer) : Scene(_renderer, "MenuScene") {
 
 void MenuScene::init() {
     Scene::init();
+    relayout();
     if (is_init) return;
     is_init = true;
     initScene();

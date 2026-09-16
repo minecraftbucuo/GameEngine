@@ -23,9 +23,13 @@ SettingsScene::SettingsScene(eng::Renderer* _renderer) : Scene(_renderer, "Setti
 
 void SettingsScene::init() {
     Scene::init();
-    if (is_init) return;
+    if (is_init) {
+        relayout();
+        return;
+    }
     is_init = true;
     initScene();
+    relayout();
 }
 
 void SettingsScene::initScene() {

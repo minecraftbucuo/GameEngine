@@ -9,10 +9,8 @@
 #include "Scene.h"
 #include <cmath>
 
-Toggle::Toggle(float x, float y, float w, float h, bool initialState) {
-    position = {x, y};
-    size = {w, h};
-    GameObject::setPosition(x, y);   // 同步基类 position，保证 getPosition() 可靠
+Toggle::Toggle(float x, float y, float w, float h, bool initialState)
+    : GameObject(x, y, w, h) {
     state = initialState;
     currentKnobX = state ? (x + w - h * 0.5f) : (x + h * 0.5f);
     targetKnobX = currentKnobX;

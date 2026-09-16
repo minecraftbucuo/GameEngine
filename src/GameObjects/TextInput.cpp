@@ -68,10 +68,8 @@ size_t TextInput::utf8NextByteOffset(const std::string& s, size_t bytePos) {
     return pos;
 }
 
-TextInput::TextInput(float x, float y, float w, float h, const std::string& placeholder) {
-    position = {x, y};
-    size = {w, h};
-    GameObject::setPosition(x, y);   // 同步基类 position，保证 getPosition() 可靠
+TextInput::TextInput(float x, float y, float w, float h, const std::string& placeholder)
+    : GameObject(x, y, w, h) {
     this->placeholder = placeholder;
     font = AssetManager::getInstance().getFontHandle();
 

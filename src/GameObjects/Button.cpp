@@ -12,11 +12,8 @@
 #include <algorithm>
 #include <cmath>
 
-Button::Button(const float x, const float y, const float w, const float h, const std::string& button_text) {
-    position = {x, y};
-    size = {w, h};
-    GameObject::setPosition(x, y);   // 同步基类 position，保证 getPosition() 可靠
-
+Button::Button(const float x, const float y, const float w, const float h, const std::string& button_text)
+    : GameObject(x, y, w, h) {
     font = AssetManager::getInstance().getFontHandle();
     label = button_text;
 

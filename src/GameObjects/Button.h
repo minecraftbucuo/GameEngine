@@ -27,19 +27,13 @@ public:
 
     void setToRectCenter(float x, float y, float w, float h);
 
-    // public 化的定位（基类版本为 protected）：控件自绘位置与基类 position 一并同步，
+    // public 化的定位（基类版本为 protected）：控件直接复用基类 position/size，
     // 供场景在视口宽度自适应后重排布局
-    void setPosition(const float posX, const float posY) override {
-        position = eng::Vec2f(posX, posY);
-        GameObject::setPosition(posX, posY);
-    }
+    using GameObject::setPosition;
 
     void runOnClick() const;
 
 private:
-    // 位置和尺寸
-    eng::Vec2f position;
-    eng::Vec2f size;
     float cornerRadius = 12.f;
 
     // 状态

@@ -23,12 +23,9 @@ public:
 
     void setOnConfirm(std::function<void(const std::string&)> callback);
 
-    // public 化的定位（基类版本为 protected）：控件自绘位置与基类 position 一并同步，
+    // public 化的定位（基类版本为 protected）：控件直接复用基类 position/size，
     // 供场景在视口宽度自适应后重排布局
-    void setPosition(const float posX, const float posY) override {
-        position = eng::Vec2f(posX, posY);
-        GameObject::setPosition(posX, posY);
-    }
+    using GameObject::setPosition;
 
     // 限制可输入字符集（为空则不限制；ASCII 集合语义与迁移前一致）
     void setAllowedChars(const std::string& chars);
@@ -59,8 +56,6 @@ private:
     void backspaceAtCursor();
     void deleteAtCursor();
 
-    eng::Vec2f position;
-    eng::Vec2f size;
     float cornerRadius = 8.f;
 
     // 文本（SDL3 迁移 6d：sf::String → UTF-8 std::string）
