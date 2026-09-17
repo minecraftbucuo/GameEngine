@@ -102,7 +102,7 @@ void FireBall::handleCollision(const CollisionEvent& event) {
     if (is_exploded) return;
 
     // 击中敌人：炮弹直接爆炸（敌人死亡由敌人侧的 handleCollision 处理）
-    if (other->getClassName() == "Goomba") {
+    if (other->getClassName() == "Goomba" || other->getClassName() == "Bowser") {
         setExploded();
         return;
     }

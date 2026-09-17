@@ -1,0 +1,244 @@
+{
+    "frames": [
+        {
+            "frame_name": "bowser_walk_left_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 82,
+                        "rectTop": 211,
+                        "rectWidth": 32,
+                        "rectHeight": 32
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 122,
+                        "rectTop": 211,
+                        "rectWidth": 32,
+                        "rectHeight": 32
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                }
+            ]
+        },
+        {
+            "frame_name": "bowser_breath_left_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 2,
+                        "rectTop": 211,
+                        "rectWidth": 32,
+                        "rectHeight": 32
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 150
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 42,
+                        "rectTop": 211,
+                        "rectWidth": 32,
+                        "rectHeight": 32
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 150
+                }
+            ]
+        },
+        {
+            "frame_name": "bowser_breath_right_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 162,
+                        "rectTop": 211,
+                        "rectWidth": 32,
+                        "rectHeight": 32
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 150
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 202,
+                        "rectTop": 211,
+                        "rectWidth": 32,
+                        "rectHeight": 32
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 150
+                }
+            ]
+        },
+        {
+            "frame_name": "bowser_walk_right_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 242,
+                        "rectTop": 211,
+                        "rectWidth": 32,
+                        "rectHeight": 32
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 282,
+                        "rectTop": 211,
+                        "rectWidth": 32,
+                        "rectHeight": 32
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                }
+            ]
+        },
+        {
+            "frame_name": "bowser_fire_left_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 101,
+                        "rectTop": 253,
+                        "rectWidth": 24,
+                        "rectHeight": 8
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 100
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 131,
+                        "rectTop": 253,
+                        "rectWidth": 24,
+                        "rectHeight": 8
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 100
+                }
+            ]
+        },
+        {
+            "frame_name": "bowser_fire_right_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 161,
+                        "rectTop": 253,
+                        "rectWidth": 24,
+                        "rectHeight": 8
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 100
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 191,
+                        "rectTop": 253,
+                        "rectWidth": 24,
+                        "rectHeight": 8
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 100
+                }
+            ]
+        }
+    ]
+}

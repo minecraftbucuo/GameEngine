@@ -23,6 +23,7 @@
 #include "EventBus.h"
 #include "FireBall.h"
 #include "Goomba.h"
+#include "BowserFire.h"
 #include "Core/Types.h"
 
 namespace {
@@ -138,6 +139,31 @@ void Mario::handleCollision(const CollisionEvent& event) {
     if (other->getClassName() == "FireBall") {
         if (const auto fireball = std::dynamic_pointer_cast<FireBall>(other);
             fireball && fireball->getOwnerId() != this_->getId()) {
+            const auto& health_bar = getComponent<HealthBar>();
+            health_bar->takeDamage(1);
+            if (health_bar->isDead()) {
+                this->getComponent<StateMachine>()->setState("MarioDeadState");
+                return;
+            }
+        }
+    }
+
+    // 乌龟大王：带刺龟壳踩不得，任何部位接触都受伤，同时向上弹开避免贴身连扣血
+    if (other->getClassName() == "Bowser") {
+        const auto& health_bar = getComponent<HealthBar>();
+        health_bar->takeDamage(1);
+        if (const auto move = getComponent<MoveComponent>())
+            move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
+        if (health_bar->isDead()) {
+            this->getComponent<StateMachine>()->setState("MarioDeadState");
+            return;
+        }
+    }
+
+    // 乌龟大王的火焰弹：命中受伤并熄灭火焰弹
+    if (other->getClassName() == "BowserFire") {
+        if (const auto fire = std::dynamic_pointer_cast<BowserFire>(other)) {
+            fire->setExtinguished();
             const auto& health_bar = getComponent<HealthBar>();
             health_bar->takeDamage(1);
             if (health_bar->isDead()) {

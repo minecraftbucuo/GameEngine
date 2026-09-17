@@ -15,6 +15,7 @@
 #include "Brick.h"
 #include "SceneManager.h"
 #include "Goomba.h"
+#include "Bowser.h"
 #include "Collision.h"
 #include "Render/Renderer.h"
 
@@ -99,6 +100,10 @@ void SuperMarioSceneSingle::initDynamicObjects() {
     this->addObject(std::make_shared<Goomba>(5200.f, goomba_y));
     this->addObject(std::make_shared<Goomba>(8800.f, goomba_y, 120.f));
     this->addObject(std::make_shared<Goomba>(11500.f, goomba_y));
+
+    // 乌龟大王 BOSS：最终楼梯后的平地（x≈13500），2 块砖高（128px）→ y = 857 - 128
+    this->addObject(std::make_shared<Bowser>(1800.f,
+                                             857.f - CONFIG.game.defaultBlockSize * 2.f));
 }
 
 void SuperMarioSceneSingle::render(eng::Renderer& _renderer) {
