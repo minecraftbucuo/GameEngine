@@ -119,6 +119,14 @@ void Goomba::handleCollision(const CollisionEvent& event) {
         setKilledByFireball(dir);
         return;
     }
+    // 被 BOSS 火焰弹点燃：同样炸飞坠落（火焰弹侧不与小怪交互）
+    if (other->getClassName() == "BowserFire") {
+        const float dir = event.b_speed.x > 0.f ? 1.f : -1.f;
+        setKilledByFireball(dir);
+        return;
+    }
+    // BOSS 的旋转飞斧对小怪无效果：穿行
+    if (other->getClassName() == "BowserAxe") return;
     if (!this_->getMoveAble()) return;
 
     const std::shared_ptr<MoveComponent>& moveComponent = this_->getComponent<MoveComponent>();

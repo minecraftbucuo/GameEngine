@@ -101,9 +101,11 @@ void SuperMarioSceneSingle::initDynamicObjects() {
     this->addObject(std::make_shared<Goomba>(8800.f, goomba_y, 120.f));
     this->addObject(std::make_shared<Goomba>(11500.f, goomba_y));
 
-    // 乌龟大王 BOSS：最终楼梯后的平地（x≈13500），2 块砖高（128px）→ y = 857 - 128
+    // 乌龟大王 BOSS：放在前段平地方便测试（正式位置为最终楼梯后 x≈13500）
+    // 延迟激活：马里奥接近 800px 内才现身；巡逻速度 120 加快压迫感
     this->addObject(std::make_shared<Bowser>(1800.f,
-                                             857.f - CONFIG.game.defaultBlockSize * 2.f));
+                                             857.f - CONFIG.game.defaultBlockSize * 2.f,
+                                             -120.f));
 }
 
 void SuperMarioSceneSingle::render(eng::Renderer& _renderer) {

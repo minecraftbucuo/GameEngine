@@ -239,6 +239,80 @@
                     "duration": 100
                 }
             ]
+        },
+        {
+            "frame_name": "bowser_axe_frame",
+            "texture_name": "item_objects",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 64,
+                        "rectTop": 192,
+                        "rectWidth": 16,
+                        "rectHeight": 16
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 80
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 80,
+                        "rectTop": 192,
+                        "rectWidth": 16,
+                        "rectHeight": 16
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 80
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 64,
+                        "rectTop": 208,
+                        "rectWidth": 16,
+                        "rectHeight": 16
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 80
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 80,
+                        "rectTop": 208,
+                        "rectWidth": 16,
+                        "rectHeight": 16
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 80
+                }
+            ]
         }
     ]
 }

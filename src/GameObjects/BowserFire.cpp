@@ -19,8 +19,6 @@ namespace {
 }
 
 BowserFire::BowserFire(const float x, const float y, const float speed_x) {
-    this->position = eng::Vec2f(x, y);
-
 #ifndef SERVER_BUILD
     animation.setFrames(FrameManager::getInstance().getFrame(
         speed_x < 0.f ? "bowser_fire_left_frame" : "bowser_fire_right_frame"));
@@ -28,6 +26,8 @@ BowserFire::BowserFire(const float x, const float y, const float speed_x) {
 #else
     this->setSize(CONFIG.game.defaultBlockSize * 1.5f, CONFIG.game.defaultBlockSize * 0.5f);
 #endif
+    // y 为火焰垂直中心点：上移半高，让火焰居中于调用点（嘴部高度）而非从该点向下展开
+    this->position = eng::Vec2f(x, y - this->getSize().y * 0.5f);
 
     this->addComponent<Collision, BoxCollision>();
     // 直线飞行：不加重力组件
@@ -47,6 +47,17 @@ BowserFire::~BowserFire() {
 
 void BowserFire::start() {
     GameObject::start();
+
+    // BoxCollision::start() 会用渲染贴图尺寸覆盖碰撞盒，必须在组件初始化后重新缩小：
+    // 宽 75%、高 35% 的居中条带（火焰边缘渐隐部分不参与碰撞，也避免出生就蹭到地面）
+    if (const auto box = getComponent<Collision, BoxCollision>()) {
+        const float hit_w = this->getSize().x * 0.75f;
+        const float hit_h = this->getSize().y * 0.35f;
+        box->setSize(hit_w, hit_h);
+        box->setOffset(eng::Vec2f((this->getSize().x - hit_w) * 0.5f,
+                                  (this->getSize().y - hit_h) * 0.5f));
+    }
+
     EventBus::getInstance().subscribe<CollisionEvent>(
         "onCollision" + this->tag,
         [this](const CollisionEvent& collisionEvent) {

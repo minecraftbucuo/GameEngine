@@ -5,6 +5,7 @@
 #include "Mario.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "MarioRunState.h"
 #include "StateMachine.h"
@@ -24,9 +25,13 @@
 #include "FireBall.h"
 #include "Goomba.h"
 #include "BowserFire.h"
+#include "BowserAxe.h"
 #include "Core/Types.h"
 
 namespace {
+    // 被乌龟大王弹开的时长（秒）：短促推开，时间到恰好停住、交还控制权
+    constexpr float MARIO_KNOCK_TIME = 0.2f;
+
     // 本地玩家已经在客户端预测移动，服务端快照的小误差不要硬拉回去，否则会抖动。
     constexpr float LOCAL_POSITION_TOLERANCE = 6.f;
     // 超过这个距离说明客户端和服务端已经明显不同步，需要直接使用服务端权威位置。
@@ -90,6 +95,21 @@ void Mario::handleEvent(const eng::EngineEvent& e) {
 }
 
 void Mario::update(eng::Time deltaTime) {
+    // 被击退：固定短时长内匀减速到恰好停住，时间到直接交还控制权
+    if (knock_time_left > 0.f) {
+        knock_time_left -= deltaTime.asSeconds();
+        if (const auto move = getComponent<MoveComponent>()) {
+            if (knock_time_left <= 0.f) {
+                knock_time_left = 0.f;
+                knock_speed_x = 0.f;
+                move->setSpeedX(0.f);
+            }
+            else {
+                move->setSpeedX(knock_speed_x * (knock_time_left / MARIO_KNOCK_TIME));
+            }
+        }
+    }
+
     if (needGravity()) {
         this->getComponent<GravityComponent>()->setActive(true);
         if (this->getComponent<StateMachine>()->getCurrentStateName() != "MarioJumpState")
@@ -148,22 +168,43 @@ void Mario::handleCollision(const CollisionEvent& event) {
         }
     }
 
-    // 乌龟大王：带刺龟壳踩不得，任何部位接触都受伤，同时向上弹开避免贴身连扣血
+    // 乌龟大王：带刺龟壳踩不得，任何部位接触都受伤，沿远离 BOSS 的方向水平击退
+    // + 向上弹起；处理后直接结束（不落入下方通用贴合逻辑，否则马里奥会被贴合到龟壳上站住）
     if (other->getClassName() == "Bowser") {
         const auto& health_bar = getComponent<HealthBar>();
         health_bar->takeDamage(1);
-        if (const auto move = getComponent<MoveComponent>())
+        if (const auto move = getComponent<MoveComponent>()) {
+            const float dir = event.a_position.x + this_->getSize().x * 0.5f <
+                event.b_position.x + other->getSize().x * 0.5f ? -1.f : 1.f;
+            // 正常弹开：沿远离 BOSS 的方向短促推开，0.2 秒内匀减速停住
+            knock_speed_x = dir * CONFIG.game.playerSpeed * 0.9f;
+            knock_time_left = MARIO_KNOCK_TIME;
+            move->setSpeedX(knock_speed_x);
             move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
+        }
         if (health_bar->isDead()) {
             this->getComponent<StateMachine>()->setState("MarioDeadState");
-            return;
         }
+        return;
     }
 
     // 乌龟大王的火焰弹：命中受伤并熄灭火焰弹
     if (other->getClassName() == "BowserFire") {
         if (const auto fire = std::dynamic_pointer_cast<BowserFire>(other)) {
             fire->setExtinguished();
+            const auto& health_bar = getComponent<HealthBar>();
+            health_bar->takeDamage(1);
+            if (health_bar->isDead()) {
+                this->getComponent<StateMachine>()->setState("MarioDeadState");
+                return;
+            }
+        }
+    }
+
+    // 乌龟大王的旋转飞斧：命中受伤并击碎斧头
+    if (other->getClassName() == "BowserAxe") {
+        if (const auto axe = std::dynamic_pointer_cast<BowserAxe>(other)) {
+            axe->setDestroyed();
             const auto& health_bar = getComponent<HealthBar>();
             health_bar->takeDamage(1);
             if (health_bar->isDead()) {
