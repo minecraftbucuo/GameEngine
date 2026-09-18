@@ -11,6 +11,7 @@
 #include "Collision.h"
 #include "BoxCollision.h"
 #include "Core/Types.h"
+#include <cmath>
 
 MarioRunState::MarioRunState() : BaseState("MarioRunState") {
 #ifndef SERVER_BUILD
@@ -22,7 +23,8 @@ MarioRunState::MarioRunState() : BaseState("MarioRunState") {
 void MarioRunState::start() {
 #ifndef SERVER_BUILD
     // 每次进入跑步状态都按当前形态重指帧组（吃蘑菇长大后切到大马里奥帧）
-    applyForm();
+    applyForm(isBigForm());
+    applied_form = static_cast<int>(isBigForm());
 #endif
 }
 
@@ -32,9 +34,9 @@ bool MarioRunState::isBigForm() const {
 }
 
 #ifndef SERVER_BUILD
-void MarioRunState::applyForm() {
+void MarioRunState::applyForm(const bool big) {
     auto& frame_manager = FrameManager::getInstance();
-    if (isBigForm()) {
+    if (big) {
         animation_right.setFrames(frame_manager.getFrame("right_big_normal"));
         animation_left.setFrames(frame_manager.getFrame("left_big_normal"));
     } else {
@@ -60,6 +62,17 @@ void MarioRunState::update(const eng::Time& deltaTime) {
     }
 #ifndef SERVER_BUILD
     this->getAnimation().update(deltaTime);
+    // 变身闪烁（原版变身过程）：按相位在大小形态帧组间交替；
+    // 非变身期回退到实际形态（闪烁可能在另一形态的相位中结束）。
+    if (const auto* mario = dynamic_cast<const Mario*>(owner)) {
+        const bool show_big = mario->isTransforming()
+            ? isBigForm() != (mario->getTransformPhase() % 2 == 1)
+            : isBigForm();
+        if (applied_form != static_cast<int>(show_big)) {
+            applyForm(show_big);
+            applied_form = static_cast<int>(show_big);
+        }
+    }
 #endif
     // sf::Sprite* sprite;
     // if (getIsLeft()) {
@@ -94,8 +107,21 @@ void MarioRunState::handleEvent(const eng::EngineEvent& event) {
 
 #ifndef SERVER_BUILD
 void MarioRunState::render(eng::Renderer& renderer) {
-    if (owner) this->getAnimation().render(renderer, owner->getPosition());
-    else LOG_ERROR("owner is nullptr");
+    if (!owner) {
+        LOG_ERROR("owner is nullptr");
+        return;
+    }
+    eng::Vec2f draw_pos = owner->getPosition();
+    // 变身闪烁显示另一形态时，精灵锚定脚底、水平居中
+    //（帧默认从盒子左上角向下画，直接画会伸到脚底之下）。
+    if (const auto* mario = dynamic_cast<const Mario*>(owner); mario && mario->isTransforming()) {
+        const auto& frame = this->getAnimation().getFrame();
+        const float shown_w = std::abs(frame.scale.x) * static_cast<float>(frame.textureRect.width);
+        const float shown_h = std::abs(frame.scale.y) * static_cast<float>(frame.textureRect.height);
+        draw_pos.x += (owner->getSize().x - shown_w) * 0.5f;
+        draw_pos.y += owner->getSize().y - shown_h;
+    }
+    this->getAnimation().render(renderer, draw_pos);
 }
 #endif
 

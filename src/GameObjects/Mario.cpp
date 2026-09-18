@@ -37,6 +37,9 @@ namespace {
     // 中等误差每次只修正一部分，让校正过程看起来更平滑。
     constexpr float LOCAL_CORRECTION_RATIO = 0.18f;
 
+    // 变身闪烁总时长（毫秒）：期间无敌、渲染在大小形态间交替
+    constexpr int TRANSFORM_TIME_MS = 1000;
+
     // 这里只比较距离大小，不需要开方，避免每个网络同步包都做 sqrt。
     float lengthSquared(const eng::Vec2f& value) {
         return value.x * value.x + value.y * value.y;
@@ -93,6 +96,8 @@ void Mario::handleEvent(const eng::EngineEvent& e) {
 }
 
 void Mario::update(eng::Time deltaTime) {
+    // 变身闪烁计时：到时后结束无敌并停止形态交替
+    this->transform_timer.update(deltaTime);
     if (needGravity()) {
         this->getComponent<GravityComponent>()->setActive(true);
         if (this->getComponent<StateMachine>()->getCurrentStateName() != "MarioJumpState")
@@ -142,50 +147,34 @@ void Mario::handleCollision(const CollisionEvent& event) {
     if (other->getClassName() == "FireBall") {
         if (const auto fireball = std::dynamic_pointer_cast<FireBall>(other);
             fireball && fireball->getOwnerId() != this_->getId()) {
-            const auto& health_bar = getComponent<HealthBar>();
-            health_bar->takeDamage(1);
-            if (health_bar->isDead()) {
-                this->getComponent<StateMachine>()->setState("MarioDeadState");
-                return;
-            }
+            applyDamage(1);
+            if (getComponent<HealthBar>()->isDead()) return;
         }
     }
 
     if (other->getClassName() == "Bowser") {
-        const auto& health_bar = getComponent<HealthBar>();
-        health_bar->takeDamage(1);
+        applyDamage(1);
         if (const auto move = getComponent<MoveComponent>()) {
             move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
-        }
-        if (health_bar->isDead()) {
-            this->getComponent<StateMachine>()->setState("MarioDeadState");
         }
         return;
     }
 
-    // 乌龟大王的火焰弹：命中受伤并熄灭火焰弹
+    // 乌龟大王的火焰弹：命中受击并熄灭火焰弹
     if (other->getClassName() == "BowserFire") {
         if (const auto fire = std::dynamic_pointer_cast<BowserFire>(other)) {
             fire->setExtinguished();
-            const auto& health_bar = getComponent<HealthBar>();
-            health_bar->takeDamage(1);
-            if (health_bar->isDead()) {
-                this->getComponent<StateMachine>()->setState("MarioDeadState");
-                return;
-            }
+            applyDamage(1);
+            if (getComponent<HealthBar>()->isDead()) return;
         }
     }
 
-    // 乌龟大王的旋转飞斧：命中受伤并击碎斧头
+    // 乌龟大王的旋转飞斧：命中受击并击碎斧头
     if (other->getClassName() == "BowserAxe") {
         if (const auto axe = std::dynamic_pointer_cast<BowserAxe>(other)) {
             axe->setDestroyed();
-            const auto& health_bar = getComponent<HealthBar>();
-            health_bar->takeDamage(1);
-            if (health_bar->isDead()) {
-                this->getComponent<StateMachine>()->setState("MarioDeadState");
-                return;
-            }
+            applyDamage(1);
+            if (getComponent<HealthBar>()->isDead()) return;
         }
     }
 
@@ -216,15 +205,11 @@ void Mario::handleCollision(const CollisionEvent& event) {
                     move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
                 return;
             }
-            // 侧面接触：受伤并让板栗仔掉头
-            const auto& health_bar = getComponent<HealthBar>();
-            health_bar->takeDamage(1);
+            // 侧面接触：受击并让板栗仔掉头
+            applyDamage(1);
             if (const auto goomba_move = other->getComponent<MoveComponent>())
                 goomba_move->setSpeedX(-goomba->getSpeed().x);
-            if (health_bar->isDead()) {
-                this->getComponent<StateMachine>()->setState("MarioDeadState");
-                return;
-            }
+            if (getComponent<HealthBar>()->isDead()) return;
         }
     }
 
@@ -314,6 +299,52 @@ void Mario::growUp() {
     if (const auto& current = state_machine->getCurrentState()) {
         current->stop();
         current->start();
+    }
+    // 进入变身闪烁（原版变身过程）：期间无敌、渲染在大小形态间交替
+    transforming = true;
+    transform_timer.setCallback([this] { transforming = false; });
+    transform_timer.start(TRANSFORM_TIME_MS);
+}
+
+void Mario::shrinkDown() {
+    if (!is_big) return;
+    is_big = false;
+    // 与 growUp 对称：一帧内原子完成“脚底定位 + 尺寸重建”，
+    // 避免盒子悬空触发下落，或下沿嵌入地面被碰撞解析横向推走。
+    constexpr float BIG_HEIGHT = 128.f;    // 大马里奥碰撞盒：状态类写好的参数 64×128
+    constexpr float SMALL_WIDTH = 48.f;    // 小马里奥碰撞盒：状态类写好的参数 48×64（站立 12px × 4倍）
+    constexpr float SMALL_HEIGHT = 64.f;   // 跑步/跳跃的 12/16 偏移由状态自己恢复，这里不代劳
+    const float old_bottom = this->position.y + BIG_HEIGHT;
+    this->setSize(SMALL_WIDTH, SMALL_HEIGHT);
+    if (const auto box = getComponent<Collision, BoxCollision>()) {
+        box->setSize(SMALL_WIDTH, SMALL_HEIGHT);
+        box->setOffset(eng::Vec2f(0.f, 0.f));
+    }
+    if (const auto move = getComponent<MoveComponent>())
+        move->setPosition(eng::Vec2f(this->position.x, old_bottom - SMALL_HEIGHT));
+    const auto state_machine = getComponent<StateMachine>();
+    if (const auto& current = state_machine->getCurrentState()) {
+        current->stop();
+        current->start();
+    }
+    // 进入变身闪烁（原版变身过程）：期间无敌、渲染在大小形态间交替
+    transforming = true;
+    transform_timer.setCallback([this] { transforming = false; });
+    transform_timer.start(TRANSFORM_TIME_MS);
+}
+
+void Mario::applyDamage(const int damage) {
+    // 变身闪烁期间无敌（原版：变身过程不会连续受伤）
+    if (transforming) return;
+    // 大马里奥受击：缩回小马里奥而不是扣血（原版机制）
+    if (is_big) {
+        shrinkDown();
+        return;
+    }
+    const auto& health_bar = getComponent<HealthBar>();
+    health_bar->takeDamage(damage);
+    if (health_bar->isDead()) {
+        this->getComponent<StateMachine>()->setState("MarioDeadState");
     }
 }
 

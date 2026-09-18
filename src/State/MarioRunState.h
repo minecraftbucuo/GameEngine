@@ -34,8 +34,12 @@ private:
     Animation animation_right;
     Animation animation_left;
 
-    // 按当前形态重新指向动画帧（吃蘑菇长大后切到大马里奥帧组）
-    void applyForm();
+    // 按给定形态重新指向动画帧（长大切大帧组；变身闪烁按相位在两套帧组间切换）
+    void applyForm(bool big);
+
+    // 当前帧组形态：-1 未设置，0 小，1 大。只在形态变化时才 setFrames，
+    // 避免每帧重置动画播放进度。
+    int applied_form = -1;
 #endif
 
     bool isBigForm() const;

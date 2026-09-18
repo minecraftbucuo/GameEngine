@@ -70,15 +70,26 @@ public:
             LOG_ERROR("Owner is nullptr");
             return;
         }
+        // 变身闪烁（原版变身过程）：按相位在大小形态间交替展示
+        bool show_big = false;
+        if (const auto mario = dynamic_cast<Mario*>(owner)) {
+            show_big = mario->getIsBig();
+            if (mario->isTransforming())
+                show_big = show_big != (mario->getTransformPhase() % 2 == 1);
+        }
+        const eng::IntRect rect = show_big ? eng::IntRect(144, 0, 16, 32) : eng::IntRect(144, 32, 16, 16);
         constexpr float scale_x = 4.f, scale_y = 4.f;
-        const eng::Vec2f size(scale_x * static_cast<float>(texture_rect.width),
-                              scale_y * static_cast<float>(texture_rect.height));
+        const eng::Vec2f size(scale_x * static_cast<float>(rect.width),
+                              scale_y * static_cast<float>(rect.height));
+        // 统一锚定脚底、水平居中：正常形态与碰撞盒重合，闪烁时精灵贴着脚底缩放
+        const eng::Vec2f pos(owner->getPosition().x + (owner->getSize().x - size.x) * 0.5f,
+                             owner->getPosition().y + owner->getSize().y - size.y);
         renderer.drawTexture(texture,
-                             eng::FloatRect(static_cast<float>(texture_rect.left),
-                                            static_cast<float>(texture_rect.top),
-                                            static_cast<float>(texture_rect.width),
-                                            static_cast<float>(texture_rect.height)),
-                             eng::FloatRect(owner->getPosition(), size),
+                             eng::FloatRect(static_cast<float>(rect.left),
+                                            static_cast<float>(rect.top),
+                                            static_cast<float>(rect.width),
+                                            static_cast<float>(rect.height)),
+                             eng::FloatRect(pos, size),
                              0.f, {}, eng::Color::White, getIsLeft());
     }
 #endif

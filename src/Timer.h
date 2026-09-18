@@ -18,6 +18,11 @@ public:
 
     void setCallback(const std::function<void()>& _callback);
 
+    // 已累计时间（毫秒）：供外部读取计时相位（如变身闪烁的形态交替）
+    [[nodiscard]] int getPastTime() const {
+        return this->past_time;
+    }
+
     void reset();
 
     void stop();
