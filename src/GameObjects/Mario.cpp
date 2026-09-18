@@ -24,6 +24,7 @@
 #include "EventBus.h"
 #include "FireBall.h"
 #include "Goomba.h"
+#include "Mushroom.h"
 #include "BowserFire.h"
 #include "BowserAxe.h"
 #include "Core/Types.h"
@@ -186,6 +187,15 @@ void Mario::handleCollision(const CollisionEvent& event) {
                 return;
             }
         }
+    }
+
+    // 蘑菇：回复 1 点血量（上限内）并吃掉它
+    if (other->getClassName() == "Mushroom") {
+        if (const auto mushroom = std::dynamic_pointer_cast<Mushroom>(other)) {
+            mushroom->setEaten();
+            getComponent<HealthBar>()->heal(1);
+        }
+        return;
     }
 
     if (other->getClassName() == "Goomba") {

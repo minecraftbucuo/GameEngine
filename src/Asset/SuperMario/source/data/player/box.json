@@ -56,6 +56,29 @@
           "duration": 150
         }
       ]
+    },
+    {
+      "frame_name": "box_used_frame",
+      "texture_name": "tile_set",
+      "frame": [
+        {
+          "textureRect": {
+            "rectLeft": 432,
+            "rectTop": 0,
+            "rectWidth": 16,
+            "rectHeight": 16
+          },
+          "origin": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "scale": {
+            "x": 4.0,
+            "y": 4.0
+          },
+          "duration": 150
+        }
+      ]
     }
   ]
 }

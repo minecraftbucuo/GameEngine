@@ -19,7 +19,8 @@
             "box": "./Asset/SuperMario/source/data/player/box.json",
             "fireball": "./Asset/SuperMario/source/data/player/fireball.json",
             "goomba": "./Asset/SuperMario/source/data/enemy/goomba.json",
-            "bowser": "./Asset/SuperMario/source/data/enemy/bowser.json"
+            "bowser": "./Asset/SuperMario/source/data/enemy/bowser.json",
+            "mushroom": "./Asset/SuperMario/source/data/item/mushroom.json"
         }
     },
     "network": {

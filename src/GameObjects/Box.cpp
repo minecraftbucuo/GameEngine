@@ -9,6 +9,9 @@
 #include "GravityComponent.h"
 #include "MoveComponent.h"
 #include "BoxCollision.h"
+#include "Mushroom.h"
+#include "Scene.h"
+#include "CollisionSystem.h"
 #include "Core/Types.h"
 
 Box::Box(const float x, const float y, const std::string& tag) : BoxGameObject(x, y, 0, 0) {
@@ -57,6 +60,20 @@ void Box::start() {
             const auto& move_component = this->getComponent<MoveComponent>();
             move_component->setSpeedY(-300.f);
             this->getComponent<GravityComponent>()->setActive(true);
+
+            // 首次被顶：方块永久变暗，并请求在下一帧 update 里生成蘑菇
+            if (!has_spawned) {
+                has_spawned = true;
+#ifndef SERVER_BUILD
+                animation.setFrames(FrameManager::getInstance().getFrame("box_used_frame"));
+                // 1 帧的静态帧不能再用乒乓模式（3 帧弹跳动画遗留），否则索引越界
+                animation.setBack(false);
+                // 联机模式不同步敌人/道具（与 Goomba 一致），仅单机生成蘑菇
+                if (getScene() && getScene()->getNetworkType() == NetworkManager::NetworkType::None) {
+                    pending_spawn = true;
+                }
+#endif
+            }
         }
     );
 }
@@ -65,6 +82,27 @@ void Box::update(eng::Time deltaTime) {
     BoxGameObject::update(deltaTime);
 #ifndef SERVER_BUILD
     animation.update(deltaTime);
+
+    // 上一帧碰撞回调记录的生成请求：对象循环容忍 game_objects 变化，这里才真正改场景
+    if (pending_spawn) {
+        pending_spawn = false;
+        auto mushroom = std::make_shared<Mushroom>(this->getPosition().x, this->getPosition().y, 100.f);
+        auto& objs = getScene()->getGameObjects();
+        // 插到本方块之前：渲染顺序 = game_objects 顺序，升起过程被方块遮挡
+        size_t self_index = objs.size();
+        for (size_t i = 0; i < objs.size(); ++i) {
+            if (objs[i].get() == this) {
+                self_index = i;
+                break;
+            }
+        }
+        mushroom->setScene(getScene());
+        objs.insert(objs.begin() + self_index, mushroom);
+        // 与 SuperMarioSceneSingle::addObject 一致：带碰撞组件的对象要注册进碰撞系统
+        if (auto* cs = getScene()->getCollisionSystem(); cs && mushroom->getComponent<Collision>()) {
+            cs->addObject(mushroom);
+        }
+    }
 #endif
     if (this->getPosition().y > last_y) {
         const auto& move_component = this->getComponent<MoveComponent>();

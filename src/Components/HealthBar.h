@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <algorithm>
 #include "Component.h"
 #include "Timer.h"
 #include "Core/Types.h"
@@ -18,6 +19,12 @@ public:
 #endif
 
     void takeDamage(int damage);
+
+    // 回复血量（吃蘑菇等），不超过上限；已死亡不再回复
+    void heal(const int amount) {
+        if (this->dead || amount <= 0) return;
+        this->health = std::min(this->health + amount, this->max_health);
+    }
 
     [[nodiscard]] int getHealth() const {
         return this->health;

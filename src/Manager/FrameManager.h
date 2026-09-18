@@ -37,6 +37,7 @@ public:
         loadFrameFromJson(CONFIG.assets.frames["fireball"].c_str());
         loadFrameFromJson(CONFIG.assets.frames["goomba"].c_str());
         loadFrameFromJson(CONFIG.assets.frames["bowser"].c_str());
+        loadFrameFromJson(CONFIG.assets.frames["mushroom"].c_str());
     }
 
     void loadFrameFromJson(const char* path);

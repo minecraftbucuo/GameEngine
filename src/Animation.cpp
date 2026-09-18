@@ -18,6 +18,11 @@ void Animation::setBack(const bool flag) {
 
 void Animation::setFrames(std::vector<Frame>* _frames) {
     this->frames = _frames;
+    // 帧组切换时重置状态，避免旧 currentFrame 越界（如 3 帧 → 1 帧）
+    currentFrame = 0;
+    currentFrameDuration = 0;
+    over = false;
+    add = 1;
 }
 
 void Animation::update(const eng::Time& deltaTime) {
