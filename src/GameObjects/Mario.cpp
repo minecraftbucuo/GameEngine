@@ -223,9 +223,17 @@ void Mario::handleCollision(const CollisionEvent& event) {
     const float dy = std::min(event.a_position.y + this_->getSize().y,
                               event.b_position.y + other->getSize().y) - std::max(
         event.a_position.y, event.b_position.y);
+    // 马里奥上下边到对方中心线的距离：top_y 更小 = 马里奥偏上，bottom_y 更小 = 偏下
+    const float top_y = std::abs(event.a_position.y - (event.b_position.y + other->getSize().y * 0.5f));
+    const float bottom_y = std::abs(
+        event.a_position.y + this_->getSize().y - (event.b_position.y + other->getSize().y * 0.5f));
+    // 活着的板栗仔不是地板：马里奥从上方接触但未踩中时，若按垂直解析会把马里奥
+    // 贴到怪头顶并清零速度、关重力、切站立态——活怪被当成地板。必须禁止这种
+    // “落地”，强制走水平解析从侧面滑开，马里奥继续下落。
+    const bool is_goomba = other->getClassName() == "Goomba";
 
     // 水平碰撞
-    if (dx <= dy) {
+    if (dx <= dy || (is_goomba && top_y > bottom_y)) {
         // const float relativeSpeedX = event.b_speed.x - event.a_speed.x;
         // moveComponent->setSpeedX(relativeSpeedX * 0.28f);
         // if (std::abs(this_->getSpeed().x) <= 2.f) {
@@ -248,9 +256,6 @@ void Mario::handleCollision(const CollisionEvent& event) {
         if (std::abs(this_->getSpeed().y) <= 2.f) {
             moveComponent->setSpeedY(0.f);
         }
-        float top_y = std::abs(event.a_position.y - (event.b_position.y + other->getSize().y * 0.5f));
-        float bottom_y = std::abs(
-            event.a_position.y + this_->getSize().y - (event.b_position.y + other->getSize().y * 0.5f));
         if (top_y > bottom_y) {
             moveComponent->moveCollisionYTo(event.b_position.y - this_->getSize().y);
             moveComponent->setSpeedY(0.f);
