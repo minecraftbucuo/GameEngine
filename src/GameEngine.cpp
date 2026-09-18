@@ -59,6 +59,8 @@ void GameEngine::init() {
     LOG_INFO("Loading SuperMarioScene resources...");
     AssetManager::getInstance().loadTexture(CONFIG.getTexturePath("superMario").c_str());
     AssetManager::getInstance().loadSoundBuffer(CONFIG.getSoundPath("superMario").c_str());
+    // 死亡音效在 music 目录且是 .wav，目录扫描只认 sound 下的 .ogg，这里按单文件加载
+    AssetManager::getInstance().loadSoundBuffer((CONFIG.getSoundPath("music") + "/death.wav").c_str());
     FrameManager::getInstance().loadFrame();
     LOG_INFO("SuperMarioScene resources loaded.");
 

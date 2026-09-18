@@ -155,6 +155,20 @@ void AssetManager::loadSoundBuffer(const char* path) {
         LOG_ERROR_FMT("Path does not exist : {}", path);
         return;
     }
+    // 支持单文件加载（如 music/death.wav）：key = 文件名去扩展名
+    if (std::filesystem::is_regular_file(path)) {
+        MIX_Mixer* m = ensureMixer();
+        if (!m) {
+            LOG_ERROR_FMT("unable to load {} (no mixer)", path);
+            return;
+        }
+        if (MIX_Audio* audio = MIX_LoadAudio(m, path, true)) {
+            soundBuffers[std::filesystem::path(path).stem().string()] = audio;
+        } else {
+            LOG_ERROR_FMT("unable to load {}", path);
+        }
+        return;
+    }
     if (!std::filesystem::is_directory(path)) {
         LOG_ERROR_FMT("The provided path is not a directory : {}", path);
         return;
