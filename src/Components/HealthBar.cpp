@@ -39,7 +39,7 @@ void HealthBar::render(eng::Renderer& renderer) {
     Component::render(renderer);
     if (dead) return;
     // TODO: 根据 owner 改变血条形状
-    const float barWidth = 48.f;
+    const float barWidth = 16.f * max_health;
     const float barHeight = 5.f;
     const float barX = owner->getCenter().x - barWidth / 2;
     const float barY = owner->getPosition().y - 10.f;

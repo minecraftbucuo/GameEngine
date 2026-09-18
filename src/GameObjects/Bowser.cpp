@@ -65,7 +65,9 @@ Bowser::Bowser(const float x, const float y, const float speed_x) {
     this->addComponent<GravityComponent>();
     // 沉睡中不巡逻：激活后才按巡逻速度开始走动
     this->addComponent<MoveComponent>()->setSpeed(eng::Vec2f(0.f, 0.f));
-    this->addComponent<HealthBar>();
+    auto healthBar = this->addComponent<HealthBar>();
+    healthBar->setMaxHealth(5);
+    healthBar->setHealth(5);
 
     // 延迟激活检查：马里奥接近才现身（远处的行动不会被察觉）
     activate_timer.setCallback([this]() -> void { this->checkActivation(); });
