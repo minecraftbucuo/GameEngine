@@ -15,6 +15,7 @@
 #include "FireBall.h"
 #include "Collision.h"
 #include "Core/Types.h"
+#include "MapLoader.h"
 #ifndef SERVER_BUILD
 #include "Render/Renderer.h"
 #endif
@@ -107,43 +108,19 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
 }
 
 void SuperMarioSceneMultiplayer::initStaticObjects() {
-    // 左墙
-    std::shared_ptr<Ground> wall1 = std::make_shared<Ground>(0, 0, 10, CONFIG.window.height, "wall1");
-    this->addObject(wall1);
-
-    std::vector<std::pair<int, int>> bricks = {
-        {1154, 609}, {1429, 609}, {1557, 609}, {1621, 609},
-        {13186, 571}
-    };
-
-    this->addObject(std::make_shared<Box>(1493, 609));
-
-    for (const auto& [x, y] : bricks) {
-        this->addObject(std::make_shared<Brick>(x, y));
-    }
-
-    std::vector<std::array<int, 4>> collisions = {
-        {1927, 722, 2053, 852}, {2612, 655, 2738, 853}, {3163, 586, 3287, 851}, {3914, 585, 4042, 848},
-        {9188, 789, 9256, 854}, {9256, 721, 9321, 853}, {9325, 651, 9389, 851}, {9395, 583, 9459, 851},
-        {9599, 584, 9664, 851}, {9668, 651, 9734, 852}, {9738, 721, 9803, 853}, {9805, 790, 9873, 852},
-        {10149, 789, 10212, 852}, {10217, 720, 10282, 853}, {10284, 651, 10352, 852}, {10355, 584, 10490, 852},
-        {10629, 585, 10694, 851}, {10698, 652, 10761, 852}, {10764, 720, 10832, 850}, {10834, 789, 10901, 853},
-        {11183, 723, 11310, 852}, {12280, 720, 12406, 853},
-        {12412, 789, 12478, 852}, {12481, 720, 12544, 851}, {12547, 651, 12615, 852}, {12617, 583, 12682, 850},
-        {12687, 513, 12752, 852}, {12755, 448, 12819, 850}, {12824, 378, 12889, 851}, {12892, 310, 13025, 853},
-        {0, 857, 4728, 2000}, {4870, 858, 5893, 2000}, {6104, 859, 10489, 2000}, {10628, 857, 14535, 2000}
-    };
-
-    for (const auto [x1, y1, x2, y2] : collisions) {
-        this->addObject(std::make_shared<Ground>(x1, y1, x2 - x1, y2 - y1));
-    }
+    // 地图外置：静态地形（左墙/砖块/箱子/地面）从 level_1.json 加载（服务端同样需要地形）
+    MapLoader::loadStaticObjects(*this);
 }
 
 void SuperMarioSceneMultiplayer::initDynamicObjects() {
     if (is_initDynamicObjects) return;
     is_initDynamicObjects = true;
 #ifndef SERVER_BUILD
-    std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
+    // 玩家出生点取自 level_1.json
+    const auto map_data = MapLoader::loadDynamicData();
+    const float spawn_x = map_data ? map_data->player_spawn_x : 100.f;
+    const float spawn_y = map_data ? map_data->player_spawn_y : 100.f;
+    std::shared_ptr<Mario> mario = std::make_shared<Mario>(spawn_x, spawn_y);
     this->addObjectWithNetwork(mario);
     LOG_DEBUG("Create mario");
     // 敌人不在此生成：Goomba 的网络同步未实现，联机各端本地生成会互不同步

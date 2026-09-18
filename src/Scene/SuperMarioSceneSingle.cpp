@@ -17,6 +17,7 @@
 #include "Goomba.h"
 #include "Bowser.h"
 #include "Collision.h"
+#include "MapLoader.h"
 #include "Render/Renderer.h"
 
 void SuperMarioSceneSingle::init() {
@@ -54,58 +55,32 @@ void SuperMarioSceneSingle::exit() {
 }
 
 void SuperMarioSceneSingle::initStaticObjects() {
-    // 左墙
-    std::shared_ptr<Ground> wall1 = std::make_shared<Ground>(0, 0, 10, CONFIG.window.height, "wall1");
-    this->addObject(wall1);
-
-    std::vector<std::pair<int, int>> bricks = {
-        {1154, 609}, {1429, 609}, {1557, 609}, {1621, 609},
-        {13186, 571}
-    };
-
-    this->addObject(std::make_shared<Box>(1493, 609));
-
-    for (const auto& [x, y] : bricks) {
-        this->addObject(std::make_shared<Brick>(x, y));
-    }
-
-    std::vector<std::array<int, 4>> collisions = {
-        {1927, 722, 2053, 852}, {2612, 655, 2738, 853}, {3163, 586, 3287, 851}, {3914, 585, 4042, 848},
-        {9188, 789, 9256, 854}, {9256, 721, 9321, 853}, {9325, 651, 9389, 851}, {9395, 583, 9459, 851},
-        {9599, 584, 9664, 851}, {9668, 651, 9734, 852}, {9738, 721, 9803, 853}, {9805, 790, 9873, 852},
-        {10149, 789, 10212, 852}, {10217, 720, 10282, 853}, {10284, 651, 10352, 852}, {10355, 584, 10490, 852},
-        {10629, 585, 10694, 851}, {10698, 652, 10761, 852}, {10764, 720, 10832, 850}, {10834, 789, 10901, 853},
-        {11183, 723, 11310, 852}, {12280, 720, 12406, 853},
-        {12412, 789, 12478, 852}, {12481, 720, 12544, 851}, {12547, 651, 12615, 852}, {12617, 583, 12682, 850},
-        {12687, 513, 12752, 852}, {12755, 448, 12819, 850}, {12824, 378, 12889, 851}, {12892, 310, 13025, 853},
-        {0, 857, 4728, 2000}, {4870, 858, 5893, 2000}, {6104, 859, 10489, 2000}, {10628, 857, 14535, 2000}
-    };
-
-    for (const auto [x1, y1, x2, y2] : collisions) {
-        this->addObject(std::make_shared<Ground>(x1, y1, x2 - x1, y2 - y1));
-    }
+    // 地图外置：静态地形（左墙/砖块/箱子/地面）从 level_1.json 加载
+    MapLoader::loadStaticObjects(*this);
 }
 
 void SuperMarioSceneSingle::initDynamicObjects() {
     if (is_initDynamicObjects) return;
     is_initDynamicObjects = true;
-    std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
+
+    // 出生点与敌人同样来自 level_1.json（位置/速度与原硬编码一致）
+    const std::optional<MapLoader::MapDynamicData> map_data = MapLoader::loadDynamicData();
+    if (!map_data) {
+        LOG_ERROR("Failed to load dynamic map data from level_1.json");
+        return;
+    }
+    std::shared_ptr<Mario> mario = std::make_shared<Mario>(map_data->player_spawn_x, map_data->player_spawn_y);
     this->addObjectWithMap(mario);
     LOG_DEBUG("Create mario");
 
-    // 生成板栗仔敌人：地面顶部 y=857，板栗仔高 64 → y=793
-    const float goomba_y = 857.f - CONFIG.game.defaultBlockSize;
-    this->addObject(std::make_shared<Goomba>(1800.f, goomba_y));
-    this->addObject(std::make_shared<Goomba>(2800.f, goomba_y, 120.f));
-    this->addObject(std::make_shared<Goomba>(5200.f, goomba_y));
-    this->addObject(std::make_shared<Goomba>(8800.f, goomba_y, 120.f));
-    this->addObject(std::make_shared<Goomba>(11500.f, goomba_y));
+    for (const auto& spawn : map_data->goombas) {
+        this->addObject(std::make_shared<Goomba>(spawn.x, spawn.y, spawn.speed));
+    }
 
     // 乌龟大王 BOSS：放在前段平地方便测试（正式位置为最终楼梯后 x≈13500）
-    // 延迟激活：马里奥接近 800px 内才现身；巡逻速度 120 加快压迫感
-    this->addObject(std::make_shared<Bowser>(1800.f,
-                                             857.f - CONFIG.game.defaultBlockSize * 2.f,
-                                             -120.f));
+    if (map_data->has_bowser) {
+        this->addObject(std::make_shared<Bowser>(map_data->bowser.x, map_data->bowser.y, map_data->bowser.speed));
+    }
 }
 
 void SuperMarioSceneSingle::render(eng::Renderer& _renderer) {
@@ -161,9 +136,12 @@ void SuperMarioSceneSingle::handleEvent(const eng::EngineEvent& event) {
         } else if (event.key == eng::Key::R && show_death_screen) {
             show_death_screen = false;
             // 本地权威：死亡后 R 直接重生（与原 Server/Local 分支等价，网络同步为空操作）
-            std::shared_ptr<Mario> mario = std::make_shared<Mario>(100.f, 100.f);
-            this->addObjectWithMap(mario);
-            LOG_DEBUG("Respawn mario");
+            // 重生点同样取自 level_1.json 的 player_spawn
+            if (const auto map_data = MapLoader::loadDynamicData()) {
+                std::shared_ptr<Mario> mario = std::make_shared<Mario>(map_data->player_spawn_x, map_data->player_spawn_y);
+                this->addObjectWithMap(mario);
+                LOG_DEBUG("Respawn mario");
+            }
         }
     }
 }
