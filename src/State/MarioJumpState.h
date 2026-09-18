@@ -81,9 +81,15 @@ public:
         constexpr float scale_x = 4.f, scale_y = 4.f;
         const eng::Vec2f size(scale_x * static_cast<float>(rect.width),
                               scale_y * static_cast<float>(rect.height));
-        // 统一锚定脚底、水平居中：正常形态与碰撞盒重合，闪烁时精灵贴着脚底缩放
-        const eng::Vec2f pos(owner->getPosition().x + (owner->getSize().x - size.x) * 0.5f,
-                             owner->getPosition().y + owner->getSize().y - size.y);
+        // 正常渲染保持原版画法：精灵从盒子左上角直接向下画。
+        // 跳跃帧 64 宽、盒子 48 宽，若无条件水平居中会让精灵整体横移 8px，
+        // 看起来碰撞接触点对不上。只有变身闪烁期间才贴脚底、水平居中——
+        // 此时显示形态与盒子尺寸不一致，不锚定会伸到脚底之下。
+        eng::Vec2f pos = owner->getPosition();
+        if (const auto mario = dynamic_cast<Mario*>(owner); mario && mario->isTransforming()) {
+            pos.x += (owner->getSize().x - size.x) * 0.5f;
+            pos.y += owner->getSize().y - size.y;
+        }
         renderer.drawTexture(texture,
                              eng::FloatRect(static_cast<float>(rect.left),
                                             static_cast<float>(rect.top),
