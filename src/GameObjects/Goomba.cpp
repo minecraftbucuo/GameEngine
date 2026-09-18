@@ -127,6 +127,9 @@ void Goomba::handleCollision(const CollisionEvent& event) {
     }
     // BOSS 的旋转飞斧对小怪无效果：穿行
     if (other->getClassName() == "BowserAxe") return;
+    // 与 BOSS 不做实体交互：互相穿行。BOSS 碰撞盒（80×100）小于贴图且向下对齐脚底，
+    // 通用垂直解析按"碰撞盒位置 + 对方贴图全高"贴面，会把小怪压进地面一个偏移量
+    if (other->getClassName() == "Bowser") return;
     if (!this_->getMoveAble()) return;
 
     const std::shared_ptr<MoveComponent>& moveComponent = this_->getComponent<MoveComponent>();

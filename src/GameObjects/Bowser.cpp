@@ -199,6 +199,9 @@ void Bowser::handleCollision(const CollisionEvent& event) {
     // 自家投射物：穿过（投射物侧同样忽略发射路径上的友军）
     if (other->getClassName() == "BowserFire") return;
     if (other->getClassName() == "BowserAxe") return;
+    // 小怪与 BOSS 不做实体交互：互相穿行（小怪侧同步忽略 BOSS，
+    // 否则小怪会按贴图全高解析本类带偏移的碰撞盒位置而被压进地面）
+    if (other->getClassName() == "Goomba") return;
     // 被炮弹击中：扣血；血量打空沿炮弹飞行方向炸飞坠落（炮弹爆炸由炮弹侧处理）
     if (other->getClassName() == "FireBall") {
         const auto& health_bar = getComponent<HealthBar>();
