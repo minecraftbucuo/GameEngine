@@ -420,12 +420,12 @@ void Bowser::spawnFire() {
     Scene* scene = getScene();
     if (!scene) return;
 
-    // 火焰弹从嘴部生成：朝向前方一段距离、高度在身位 25%~60% 间随机（整体偏低，覆盖低空与跳跃之间的空档）
+    // 火焰弹从嘴部生成：朝向前方一段距离、高度在身位 35%~70% 间随机（整体偏低，覆盖低空与跳跃之间的空档）
     const float dir = facing_left ? -1.f : 1.f;
     const float fire_x = facing_left
         ? this->position.x - CONFIG.game.defaultBlockSize * 1.6f
         : this->position.x + this->getSize().x + CONFIG.game.defaultBlockSize * 0.1f;
-    std::uniform_real_distribution<float> fire_height(0.25f, 0.60f);
+    std::uniform_real_distribution<float> fire_height(0.35f, 0.70f);
     const float fire_y = this->position.y + this->getSize().y * fire_height(decisionRng());
     scene->addObject(std::make_shared<BowserFire>(fire_x, fire_y, dir * BOWSER_FIRE_SPEED));
 }
