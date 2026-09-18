@@ -189,11 +189,12 @@ void Mario::handleCollision(const CollisionEvent& event) {
         }
     }
 
-    // 蘑菇：回复 1 点血量（上限内）并吃掉它
+    // 蘑菇：回复 1 点血量（上限内）、吃掉它并让马里奥长大
     if (other->getClassName() == "Mushroom") {
         if (const auto mushroom = std::dynamic_pointer_cast<Mushroom>(other)) {
             mushroom->setEaten();
             getComponent<HealthBar>()->heal(1);
+            growUp();
         }
         return;
     }
@@ -276,6 +277,26 @@ void Mario::handleCollision(const CollisionEvent& event) {
 
 bool Mario::getIsPlayer() const {
     return isPlayer;
+}
+
+bool Mario::getIsBig() const {
+    return is_big;
+}
+
+void Mario::growUp() {
+    if (is_big) return;
+    is_big = true;
+    // 位置是精灵左上角：小马里奥高 16*4=64，大马里奥高 32*4=128，
+    // 上移高度差 64 让脚底保持不动，避免长大瞬间陷进地面。
+    if (const auto move_component = getComponent<MoveComponent>())
+        move_component->addPosition(eng::Vec2f(0.f, -64.f));
+    // setState 对同名状态会提前返回，这里手动让当前状态按新形态重新 start()
+    // （Idle/Run/Jump 的 start 都会按 is_big 重建贴图和碰撞盒）。
+    const auto state_machine = getComponent<StateMachine>();
+    if (const auto& current = state_machine->getCurrentState()) {
+        current->stop();
+        current->start();
+    }
 }
 
 void Mario::destroy() {

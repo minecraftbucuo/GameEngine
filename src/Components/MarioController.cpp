@@ -178,6 +178,8 @@ void MarioController::setWisPressed(const bool flag) {
 }
 
 void MarioController::shoot(const bool play_sound) {
+    // 小时候不能发射炮弹：只有吃蘑菇长大后才能射击（本地按键和服务端转发输入都会经过这里）
+    if (const auto mario = dynamic_cast<Mario*>(owner); mario && !mario->getIsBig()) return;
     if (!could_shoot) return;
     could_shoot = false;
     shoot_timer.start(CONFIG.game.shootDelay);

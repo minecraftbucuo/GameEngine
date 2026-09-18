@@ -11,6 +11,7 @@
 #include "Collision.h"
 #include "BoxCollision.h"
 #include "GameObject.h"
+#include "Mario.h"
 #include "MarioJumpState.h"
 #include "StateMachine.h"
 #include "Core/Types.h"
@@ -27,12 +28,22 @@ MarioIdleState::MarioIdleState() : BaseState("MarioIdleState") {
 void MarioIdleState::start() {
     const auto box_collision = owner->getComponent<Collision, BoxCollision>();
 #ifndef SERVER_BUILD
+    // 按当前形态选择贴图区域：小马里奥站立 (178,32,12,16)，大马里奥站立 (176,0,16,32)
+    if (const auto mario = dynamic_cast<Mario*>(owner); mario && mario->getIsBig()) {
+        texture_rect = eng::IntRect(176, 0, 16, 32);
+    } else {
+        texture_rect = eng::IntRect(178, 32, 12, 16);
+    }
     const float w = std::abs(scale.x) * static_cast<float>(texture_rect.width);
     const float h = std::abs(scale.y) * static_cast<float>(texture_rect.height);
     LOG_TRACE_FMT("MarioIdle sprite width:{}, height:{}", w, h);
 #else
-    const float w = 48.f;
-    const float h = 64.f;
+    float w = 48.f;
+    float h = 64.f;
+    if (const auto mario = dynamic_cast<Mario*>(owner); mario && mario->getIsBig()) {
+        w = 64.f;
+        h = 128.f;
+    }
 #endif
     box_collision->setSize(w, h);
     owner->setSize(w, h);

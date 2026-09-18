@@ -25,6 +25,11 @@ public:
 
     bool getIsPlayer() const;
 
+    bool getIsBig() const;
+
+    // 吃蘑菇长大：切换大马里奥贴图/动画、放大碰撞盒，长大后才能发射炮弹
+    void growUp();
+
     void destroy() override;
 
     eng::Vec2f getCenter() override;
@@ -41,4 +46,5 @@ private:
     void setAuthoritativeState(const eng::Vec2f& serverPosition, const eng::Vec2f& serverSpeed, bool isJump);
 
     bool isPlayer = true;
+    bool is_big = false;
 };

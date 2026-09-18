@@ -11,6 +11,7 @@
 #include "BoxCollision.h"
 #include "Collision.h"
 #include "GameObject.h"
+#include "Mario.h"
 #include "StateMachine.h"
 #include "GravityComponent.h"
 #include "Timer.h"
@@ -30,6 +31,15 @@ public:
     }
     ~MarioJumpState() override = default;
 
+    void start() override {
+        // 按当前形态选择跳跃贴图：小马里奥 (144,32,16,16)，大马里奥 (144,0,16,32)
+        if (const auto mario = dynamic_cast<Mario*>(owner); mario && mario->getIsBig()) {
+            texture_rect = eng::IntRect(144, 0, 16, 32);
+        } else {
+            texture_rect = eng::IntRect(144, 32, 16, 16);
+        }
+    }
+
     void update(const eng::Time& deltaTime) override {
         if (owner->getSpeed().x < 0) {
             setIsLeft(true);
@@ -38,7 +48,8 @@ public:
         }
         const auto& box_collision = owner->getComponent<Collision, BoxCollision>();
         if (!getIsLeft()) {
-            box_collision->setOffset(eng::Vec2f(16.f, 0.f));
+            // 大马里奥碰撞盒与精灵同宽，不再向右偏移
+            box_collision->setOffset(eng::Vec2f(isBigForm() ? 0.f : 16.f, 0.f));
         } else {
             box_collision->setOffset(eng::Vec2f(0.f, 0.f));
         }
@@ -85,4 +96,9 @@ private:
     eng::TextureHandle texture;
     eng::IntRect texture_rect;
 #endif
+
+    bool isBigForm() const {
+        const auto* mario = dynamic_cast<const Mario*>(owner);
+        return mario && mario->getIsBig();
+    }
 };

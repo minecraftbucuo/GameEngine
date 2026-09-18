@@ -77,6 +77,84 @@
                     "duration": 70
                 }
             ]
+        },
+        {
+            "frame_name": "right_big_normal",
+            "texture_name": "mario_bros",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 96,
+                        "rectTop": 0,
+                        "rectWidth": 16,
+                        "rectHeight": 32
+                    },
+                    "origin": {"x":  0.0, "y": 0.0},
+                    "scale": {"x": 4.0, "y": 4.0},
+                    "duration": 70
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 112,
+                        "rectTop": 0,
+                        "rectWidth": 16,
+                        "rectHeight": 32
+                    },
+                    "origin": {"x":  0.0, "y": 0.0},
+                    "scale": {"x": 4.0, "y": 4.0},
+                    "duration": 70
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 80,
+                        "rectTop": 0,
+                        "rectWidth": 15,
+                        "rectHeight": 32
+                    },
+                    "origin": {"x":  0.0, "y": 0.0},
+                    "scale": {"x": 4.0, "y": 4.0},
+                    "duration": 70
+                }
+            ]
+        },
+        {
+            "frame_name": "left_big_normal",
+            "texture_name": "mario_bros",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 96,
+                        "rectTop": 0,
+                        "rectWidth": 16,
+                        "rectHeight": 32
+                    },
+                    "origin": {"x":  16.0, "y": 0.0},
+                    "scale": {"x": -4.0, "y": 4.0},
+                    "duration": 70
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 112,
+                        "rectTop": 0,
+                        "rectWidth": 16,
+                        "rectHeight": 32
+                    },
+                    "origin": {"x":  16.0, "y": 0.0},
+                    "scale": {"x": -4.0, "y": 4.0},
+                    "duration": 70
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 80,
+                        "rectTop": 0,
+                        "rectWidth": 15,
+                        "rectHeight": 32
+                    },
+                    "origin": {"x":  15.0, "y": 0.0},
+                    "scale": {"x": -4.0, "y": 4.0},
+                    "duration": 70
+                }
+            ]
         }
     ]
 }

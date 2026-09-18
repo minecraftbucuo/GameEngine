@@ -7,6 +7,7 @@
 #include "FrameManager.h"
 #include "StateMachine.h"
 #include "GameObject.h"
+#include "Mario.h"
 #include "Collision.h"
 #include "BoxCollision.h"
 #include "Core/Types.h"
@@ -17,6 +18,31 @@ MarioRunState::MarioRunState() : BaseState("MarioRunState") {
     animation_left.setFrames(FrameManager::getInstance().getFrame("left_small_normal"));
 #endif
 }
+
+void MarioRunState::start() {
+#ifndef SERVER_BUILD
+    // 每次进入跑步状态都按当前形态重指帧组（吃蘑菇长大后切到大马里奥帧）
+    applyForm();
+#endif
+}
+
+bool MarioRunState::isBigForm() const {
+    const auto* mario = dynamic_cast<const Mario*>(owner);
+    return mario && mario->getIsBig();
+}
+
+#ifndef SERVER_BUILD
+void MarioRunState::applyForm() {
+    auto& frame_manager = FrameManager::getInstance();
+    if (isBigForm()) {
+        animation_right.setFrames(frame_manager.getFrame("right_big_normal"));
+        animation_left.setFrames(frame_manager.getFrame("left_big_normal"));
+    } else {
+        animation_right.setFrames(frame_manager.getFrame("right_small_normal"));
+        animation_left.setFrames(frame_manager.getFrame("left_small_normal"));
+    }
+}
+#endif
 
 void MarioRunState::update(const eng::Time& deltaTime) {
     // 防止错误更新
@@ -49,7 +75,8 @@ void MarioRunState::update(const eng::Time& deltaTime) {
 
     const auto box_collision = owner->getComponent<Collision, BoxCollision>();
     if (!getIsLeft()) {
-        box_collision->setOffset(eng::Vec2f(12.f, 0.f));
+        // 大马里奥碰撞盒与精灵同宽，不再向右偏移
+        box_collision->setOffset(eng::Vec2f(isBigForm() ? 0.f : 12.f, 0.f));
     } else {
         box_collision->setOffset(eng::Vec2f(0.f, 0.f));
     }
