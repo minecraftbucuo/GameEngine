@@ -201,8 +201,15 @@ void Mario::handleCollision(const CollisionEvent& event) {
 
     if (other->getClassName() == "Goomba") {
         if (const auto goomba = std::dynamic_pointer_cast<Goomba>(other)) {
-            // 马里奥中心在板栗仔中心上方 → 踩踏：踩扁敌人并向上反弹
-            if (event.a_position.y + this_->getSize().y * 0.5f <
+            // 水平重合宽度（左右边缘交集）：贴边/擦边接触不能算踩踏
+            const float overlap_x = std::min(event.a_position.x + this_->getSize().x,
+                                             event.b_position.x + other->getSize().x) -
+                std::max(event.a_position.x, event.b_position.x);
+            // 踩踏条件：马里奥中心在板栗仔中心上方，且水平重合至少占马里奥宽度的四成。
+            // 只比垂直中心不够：大马里奥站在地面时中心恒高于板栗仔中心，
+            // 侧面走位碰撞也会被误判成踩踏。
+            if (overlap_x >= this_->getSize().x * 0.4f &&
+                event.a_position.y + this_->getSize().y * 0.5f <
                 event.b_position.y + other->getSize().y * 0.5f) {
                 goomba->setSquashed();
                 if (const auto move = getComponent<MoveComponent>())
@@ -286,12 +293,23 @@ bool Mario::getIsBig() const {
 void Mario::growUp() {
     if (is_big) return;
     is_big = true;
-    // 位置是精灵左上角：小马里奥高 16*4=64，大马里奥高 32*4=128，
-    // 上移高度差 64 让脚底保持不动，避免长大瞬间陷进地面。
-    if (const auto move_component = getComponent<MoveComponent>())
-        move_component->addPosition(eng::Vec2f(0.f, -64.f));
+    // 变身必须在一帧内原子完成“脚底定位 + 尺寸重建”：
+    // 位置与碰撞盒都以左上角为锚点，若只上移位置、把尺寸重建留给状态机，
+    // 则跑步/跳跃中盒子仍只有 64 高，悬空触发下落；落地切回站立重建 128 高
+    // 的盒子后下沿又陷入地面，被碰撞解析横向推走（表现为变身瞬间位置乱跳）。
+    constexpr float SMALL_HEIGHT = 64.f;   // 小马里奥各形态：16px × 4倍
+    constexpr float BIG_WIDTH = 64.f;      // 大马里奥各形态：16px × 4倍
+    constexpr float BIG_HEIGHT = 128.f;    // 大马里奥各形态：32px × 4倍
+    const float old_bottom = this->position.y + SMALL_HEIGHT;
+    this->setSize(BIG_WIDTH, BIG_HEIGHT);
+    if (const auto box = getComponent<Collision, BoxCollision>()) {
+        box->setSize(BIG_WIDTH, BIG_HEIGHT);
+        box->setOffset(eng::Vec2f(0.f, 0.f));
+    }
+    if (const auto move = getComponent<MoveComponent>())
+        move->setPosition(eng::Vec2f(this->position.x, old_bottom - BIG_HEIGHT));
     // setState 对同名状态会提前返回，这里手动让当前状态按新形态重新 start()
-    // （Idle/Run/Jump 的 start 都会按 is_big 重建贴图和碰撞盒）。
+    // 重指大形态贴图（尺寸已在这里原子重建，不依赖状态的 start）。
     const auto state_machine = getComponent<StateMachine>();
     if (const auto& current = state_machine->getCurrentState()) {
         current->stop();
