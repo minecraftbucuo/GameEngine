@@ -59,7 +59,7 @@ void MarioController::handleEvent(const eng::EngineEvent& event) {
     } else if (event.type == eng::EventType::KeyRelease) {
         if (event.key == eng::Key::A) {
             a_held = false;
-            // 另一方向键仍按住时不立即停车，由按住纠偏逻辑接管方向
+            // 另一方向键仍按住时不立即停车，保持当前移动
             if (!d_held) stopRun();
         }
         if (event.key == eng::Key::D) {
@@ -87,21 +87,6 @@ void MarioController::update(const eng::Time& deltaTime) {
     if (w_is_pressed) {
         const auto& move_component = owner->getComponent<MoveComponent>();
         move_component->addSpeed(eng::Vec2f(0.f, -1815.f * deltaTime.asSeconds()));
-    }
-
-    // 按住方向键的每帧纠偏：输入是事件驱动的，击退等外部改动覆盖水平速度后，
-    // 一直按着的键不会再产生新按键事件，需要在这里检测方向被夺走并立刻重设。
-    // 击退未结束前不纠偏（否则刚被弹开就会被按住的键原路抵消），死亡状态同理。
-    if (is_player && (a_held != d_held)
-        && (!state || state->getCurrentStateName() != "MarioDeadState")) {
-        const auto* mario = dynamic_cast<const Mario*>(owner);
-        if (!mario || !mario->isKnockbackActive()) {
-            if (d_held && owner->getSpeed().x != CONFIG.game.playerSpeed) {
-                runRight();
-            } else if (a_held && owner->getSpeed().x != -CONFIG.game.playerSpeed) {
-                runLeft();
-            }
-        }
     }
 
     shoot_timer.update(deltaTime);

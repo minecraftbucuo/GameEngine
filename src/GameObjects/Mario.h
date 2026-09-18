@@ -25,9 +25,6 @@ public:
 
     bool getIsPlayer() const;
 
-    // 是否处于被击退状态（击退未结束前，按住的方向键不夺回方向）
-    bool isKnockbackActive() const { return knock_time_left > 0.f; }
-
     void destroy() override;
 
     eng::Vec2f getCenter() override;
@@ -44,7 +41,4 @@ private:
     void setAuthoritativeState(const eng::Vec2f& serverPosition, const eng::Vec2f& serverSpeed, bool isJump);
 
     bool isPlayer = true;
-    // 被击退中的初速度与剩余时长：固定短时长匀减速，时间到恰好停住、交还控制权
-    float knock_speed_x = 0.f;
-    float knock_time_left = 0.f;
 };

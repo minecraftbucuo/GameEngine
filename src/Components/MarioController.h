@@ -35,9 +35,6 @@ public:
 
     void shoot(bool play_sound = true);
 
-    // 当前按住的水平方向：+1 右、-1 左、0 未按（双键同按视为 0）
-    int heldDirectionX() const { return d_held && !a_held ? 1 : (a_held && !d_held ? -1 : 0); }
-
 private:
 #ifndef SERVER_BUILD
     // 一次性音效 = 常驻 track（绑预解码 MIX_Audio，play 时 restart）
@@ -45,8 +42,8 @@ private:
     MIX_Track* shoot_track = nullptr;
 #endif
     bool w_is_pressed = false;
-    bool a_held = false;    // A 键按住状态（供每帧方向纠偏）
-    bool d_held = false;    // D 键按住状态（供每帧方向纠偏）
+    bool a_held = false;    // A 键按住状态（供松键时判断另一方向是否仍按住）
+    bool d_held = false;    // D 键按住状态（供松键时判断另一方向是否仍按住）
     Timer jump_timer;
     bool could_shoot = true;
     Timer shoot_timer;
