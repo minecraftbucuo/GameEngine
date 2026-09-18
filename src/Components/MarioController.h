@@ -39,6 +39,7 @@ private:
 #ifndef SERVER_BUILD
     // 一次性音效 = 常驻 track（绑预解码 MIX_Audio，play 时 restart）
     MIX_Track* jump_track = nullptr;
+    MIX_Track* big_jump_track = nullptr;   // 大马里奥跳跃音效（与小的不同）
     MIX_Track* shoot_track = nullptr;
 #endif
     bool w_is_pressed = false;

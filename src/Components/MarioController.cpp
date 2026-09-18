@@ -22,6 +22,7 @@
 MarioController::~MarioController() {
 #ifndef SERVER_BUILD
     if (jump_track) MIX_DestroyTrack(jump_track);
+    if (big_jump_track) MIX_DestroyTrack(big_jump_track);
     if (shoot_track) MIX_DestroyTrack(shoot_track);
 #endif
 }
@@ -32,6 +33,8 @@ void MarioController::start() {
     auto& am = AssetManager::getInstance();
     jump_track = MIX_CreateTrack(am.getMixer());
     if (jump_track) MIX_SetTrackAudio(jump_track, am.getSoundBuffer("small_jump"));
+    big_jump_track = MIX_CreateTrack(am.getMixer());
+    if (big_jump_track) MIX_SetTrackAudio(big_jump_track, am.getSoundBuffer("big_jump"));
     shoot_track = MIX_CreateTrack(am.getMixer());
     if (shoot_track) MIX_SetTrackAudio(shoot_track, am.getSoundBuffer("fireball"));
 #endif
@@ -103,7 +106,11 @@ void MarioController::jump(const bool play_sound) {
         moveComponent->setSpeedY(-CONFIG.game.jumpForce);
 #ifndef SERVER_BUILD
         if (play_sound) {
-            if (jump_track) { MIX_StopTrack(jump_track, 0); MIX_PlayTrack(jump_track, 0); }
+            // 大小马里奥跳跃音效不同：按当前形态选 track
+            MIX_Track* track = jump_track;
+            if (const auto mario = dynamic_cast<Mario*>(owner); mario && mario->getIsBig())
+                track = big_jump_track;
+            if (track) { MIX_StopTrack(track, 0); MIX_PlayTrack(track, 0); }
             LOG_TRACE("jump sound play!");
         }
 #endif
