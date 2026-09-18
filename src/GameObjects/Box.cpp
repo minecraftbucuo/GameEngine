@@ -42,6 +42,8 @@ void Box::start() {
     GameObject::start();
     EventBus::getInstance().subscribe<CollisionEvent>("onCollision" + this->tag,
         [this](const CollisionEvent& event) {
+            if (event.b->getClassName() != "Mario") return;
+
             const auto& this_pos = event.a_position;
             const auto& other_pos = event.b_position;
             if (other_pos.y < this_pos.y) return;
