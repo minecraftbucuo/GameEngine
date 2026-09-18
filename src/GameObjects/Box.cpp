@@ -86,7 +86,7 @@ void Box::update(eng::Time deltaTime) {
     // 上一帧碰撞回调记录的生成请求：对象循环容忍 game_objects 变化，这里才真正改场景
     if (pending_spawn) {
         pending_spawn = false;
-        auto mushroom = std::make_shared<Mushroom>(this->getPosition().x, this->getPosition().y, 100.f);
+        auto mushroom = std::make_shared<Mushroom>(this->getPosition().x, this->getPosition().y - 20.f, 120.f);
         auto& objs = getScene()->getGameObjects();
         // 插到本方块之前：渲染顺序 = game_objects 顺序，升起过程被方块遮挡
         size_t self_index = objs.size();

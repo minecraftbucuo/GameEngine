@@ -91,7 +91,7 @@ void Mushroom::update(eng::Time deltaTime) {
 
     if (is_emerging) {
         // 升到方块顶部正上方即完成：开启碰撞与重力，开始行走
-        const float target_y = spawn_y - CONFIG.game.defaultBlockSize;
+        const float target_y = spawn_y - CONFIG.game.defaultBlockSize + 20.f;
         if (this->position.y <= target_y) {
             if (const auto move = getComponent<MoveComponent>()) {
                 move->setPositionY(target_y);
@@ -131,7 +131,11 @@ void Mushroom::handleCollision(const CollisionEvent& event) {
                               event.b_position.y + other->getSize().y) - std::max(
         event.a_position.y, event.b_position.y);
 
-    if (dx <= dy) {
+    // 底边在对方中线之上 = 站在其上：在方块接缝处，重力每帧下陷产生的 dy 会大于刚
+    // 跨过接缝的 dx 细条，仅凭 dx<=dy 会把"踩在相邻方块上"误判成撞墙而原地掉头
+    const bool standing_on_other =
+        event.a_position.y + this_->getSize().y <= event.b_position.y + other->getSize().y * 0.5f;
+    if (dx <= dy && !standing_on_other) {
         // 水平碰撞：贴合碰撞面并掉头继续走
         const float right_x = std::abs(
             event.a_position.x + this_->getSize().x - (event.b_position.x + other->getSize().x * 0.5f));
