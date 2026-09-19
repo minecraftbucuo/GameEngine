@@ -30,6 +30,9 @@ public:
 
     void deserialize(eng::Packet& packet) override;
 
+    // 服务端销毁时广播 RemoveObject（客户端本地销毁静默，方案 B：移除由服务端统一裁决）
+    void destroy() override;
+
     unsigned int getOwnerId() const;
 
 private:
@@ -40,4 +43,6 @@ private:
 #endif
     unsigned int owner_id;
     Timer ttl_timer;
+    // 服务端爆炸后延迟销毁：给客户端留出播放爆炸动画的窗口（立即 RemoveObject 会截断动画）
+    Timer explode_timer;
 };

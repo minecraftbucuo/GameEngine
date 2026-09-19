@@ -11,7 +11,12 @@
 #include "BoxCollision.h"
 #include "Logger.h"
 #include "MoveComponent.h"
+#include "NetworkManager.h"
+#include "Scene.h"
 #include "Core/Types.h"
+
+// 服务端爆炸到销毁的延迟：给客户端留出播放爆炸动画的窗口
+constexpr int EXPLODE_DESTROY_DELAY_MS = 300;
 
 FireBall::FireBall(const unsigned int owner_id, const float x, const float y, const float speed_x) {
     this->owner_id = owner_id;
@@ -79,7 +84,10 @@ void FireBall::update(eng::Time deltaTime) {
 void FireBall::update(eng::Time deltaTime) {
     GameObject::update(deltaTime);
     if (is_exploded) {
-        destroy();
+        // 爆炸后延迟销毁（由 explode_timer 回调触发 destroy 广播 RemoveObject），
+        // 客户端在这段窗口内播放爆炸动画
+        explode_timer.update(deltaTime);
+        return;
     }
     ttl_timer.update(deltaTime);
 }
@@ -91,6 +99,12 @@ void FireBall::setExploded() {
     this->getComponent<MoveComponent>()->setActive(false);
     const float offset = CONFIG.game.defaultBlockSize / 4;
     this->getComponent<MoveComponent>()->addPosition(eng::Vec2f(-offset, -offset), false);
+#ifdef SERVER_BUILD
+    // 服务端爆炸后延迟销毁：客户端收到 exploded 快照本地播爆炸动画，
+    // 服务端立即 RemoveObject 会截断动画甚至抢在快照前直接删除
+    explode_timer.setCallback([this] { destroy(); });
+    explode_timer.start(EXPLODE_DESTROY_DELAY_MS);
+#endif
 }
 
 void FireBall::handleCollision(const CollisionEvent& event) {
@@ -166,10 +180,37 @@ void FireBall::serialize(eng::Packet& packet, const NetworkMsg type) {
         packet << NetworkMsg::SpawnFireBall;
         packet << this->id << ObjectType::FireBall << this->owner_id << this->position.x <<
             this->position.y << this->getSpeed().x << this->getSpeed().y;
+    } else if (type == NetworkMsg::UpdateObject) {
+        // 火球是纯抛射物，客户端无需预测，直接硬同步服务端权威位置/速度
+        packet << type << this->id << type << this->position.x << this->position.y <<
+            this->getSpeed().x << this->getSpeed().y << is_exploded;
     }
 }
 
 void FireBall::deserialize(eng::Packet& packet) {
+    NetworkMsg msg_type;
+    packet >> msg_type;
+    if (msg_type != NetworkMsg::UpdateObject) return;
+    float x, y, s_x, s_y;
+    bool exploded;
+    packet >> x >> y >> s_x >> s_y >> exploded;
+    // 服务端判爆兜底：本地尚未预测到（碰撞判定分歧）时强制本地爆炸（播放爆炸动画，
+    // 动画播完由 update 里的 destroy 静默移除，与服务端随后的 RemoveObject 幂等）
+    if (exploded && !is_exploded) {
+        setExploded();
+        return;
+    }
+    if (is_exploded) return;
+    if (const auto move = getComponent<MoveComponent>()) {
+        move->setPosition(eng::Vec2f(x, y));
+        move->setSpeed(eng::Vec2f(s_x, s_y));
+    }
+}
+
+void FireBall::destroy() {
+    auto* nm = getScene() ? getScene()->getNetworkManager() : nullptr;
+    if (nm && nm->isServer()) nm->broadcastRemoveObject(this->getId());
+    NetworkGameObject::destroy();
 }
 
 unsigned int FireBall::getOwnerId() const {
