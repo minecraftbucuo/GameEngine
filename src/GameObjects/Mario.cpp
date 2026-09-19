@@ -426,17 +426,14 @@ void Mario::deserialize(eng::Packet& packet) {
             this->getComponent<StateMachine>()->setState("MarioDeadState");
             return;
         }
+        health_bar->syncHealth(health);
+        if (is_big && !this->is_big) growUp();
+        else if (!is_big && this->is_big) shrinkDown();
         if (isPlayer && nm && nm->isClient()) {
-            // 本地玩家：保留客户端预测手感，只用服务端状态做温和纠偏。
-            // 体型只做"变大"方向的单向幂等纠正：服务端判定吃到蘑菇而本地尚未预测到时补 growUp；
-            // "服务端说小"可能是本地刚变大后的旧快照，不回退，防止变身闪烁来回抖动。
-            if (is_big && !this->is_big) growUp();
+            // 本地玩家：保留客户端预测手感，只用服务端状态做温和纠偏（防抖动）。
             reconcileLocalPlayer(serverPosition, serverSpeed, is_jump);
         } else if (!isPlayer && nm && nm->isClient()) {
-            // 远端玩家：血量、体型都以服务端为准，双向同步变身（growUp/shrinkDown 自带幂等保护）。
-            health_bar->syncHealth(health);
-            if (is_big && !this->is_big) growUp();
-            else if (!is_big && this->is_big) shrinkDown();
+            // 远端玩家：直接用服务端状态做权威移动。  
             setAuthoritativeState(serverPosition, serverSpeed, is_jump);
         }
     } else if (msg_type == NetworkMsg::ClientInput) {
