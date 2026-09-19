@@ -155,7 +155,7 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
 }
 
 void SuperMarioSceneMultiplayer::initStaticObjects() {
-    // 地图外置：静态地形（左墙/砖块/箱子/地面）从 level_1.json 加载（服务端同样需要地形）
+    // 地图外置：静态地形（左墙/砖块/箱子/地面）从配置指定的关卡地图加载（服务端同样需要地形）
     MapLoader::loadStaticObjects(*this);
 }
 

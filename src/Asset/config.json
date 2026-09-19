@@ -31,6 +31,7 @@
         "timeout": 5.0
     },
     "game": {
+        "levelMap": "./Asset/maps/level_1.json",
         "gravity": 3200.0,
         "playerSpeed": 500.0,
         "jumpForce": 900.0,

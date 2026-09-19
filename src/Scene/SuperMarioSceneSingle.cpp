@@ -55,7 +55,7 @@ void SuperMarioSceneSingle::exit() {
 }
 
 void SuperMarioSceneSingle::initStaticObjects() {
-    // 地图外置：静态地形（左墙/砖块/箱子/地面）从 level_1.json 加载
+    // 地图外置：静态地形（左墙/砖块/箱子/地面）从配置指定的关卡地图加载
     MapLoader::loadStaticObjects(*this);
 }
 
@@ -63,10 +63,10 @@ void SuperMarioSceneSingle::initDynamicObjects() {
     if (is_initDynamicObjects) return;
     is_initDynamicObjects = true;
 
-    // 出生点与敌人同样来自 level_1.json（位置/速度与原硬编码一致）
+    // 出生点与敌人来自配置指定的关卡地图（位置/速度与原硬编码一致）
     const std::optional<MapLoader::MapDynamicData> map_data = MapLoader::loadDynamicData();
     if (!map_data) {
-        LOG_ERROR("Failed to load dynamic map data from level_1.json");
+        LOG_ERROR("Failed to load dynamic map data");
         return;
     }
     std::shared_ptr<Mario> mario = std::make_shared<Mario>(map_data->player_spawn_x, map_data->player_spawn_y);
@@ -136,7 +136,7 @@ void SuperMarioSceneSingle::handleEvent(const eng::EngineEvent& event) {
         } else if (event.key == eng::Key::R && show_death_screen) {
             show_death_screen = false;
             // 本地权威：死亡后 R 直接重生（与原 Server/Local 分支等价，网络同步为空操作）
-            // 重生点同样取自 level_1.json 的 player_spawn
+            // 重生点同样取自关卡地图的 player_spawn
             if (const auto map_data = MapLoader::loadDynamicData()) {
                 std::shared_ptr<Mario> mario = std::make_shared<Mario>(map_data->player_spawn_x, map_data->player_spawn_y);
                 this->addObjectWithMap(mario);

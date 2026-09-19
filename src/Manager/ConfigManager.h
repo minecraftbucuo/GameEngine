@@ -50,6 +50,7 @@ public:
 
     // Game 配置
     struct GameConfig {
+        std::string levelMap = "./Asset/maps/level_1.json";
         float gravity = 3200.0f;
         float playerSpeed = 500.0f;
         float jumpForce = 900.0f;

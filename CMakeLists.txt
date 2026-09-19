@@ -275,11 +275,25 @@ else ()
 endif ()
 target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 
-# 客户端：资源目录随构建拷到 exe 旁（WEB 版资源已打进 .data 包，跳过）
+# 资源随构建拷到 exe 旁（getExeDir 约定：运行期 ./Asset/... 相对路径以 exe 目录为基准）
+#   客户端：整目录拷贝（纹理/音频/字体/动画/地图/配置全量）
+#   服务端：无渲染无音频（SERVER_BUILD 门控），运行期只读 config.json 与关卡地图 JSON，
+#           只拷这两样；新增关卡 JSON 放 src/Asset/maps/ 即随构建自动同步
+#   WEB    ：资源已由 --preload-file 打进 .data 包，跳过
 if (NOT BUILD_FOR_SERVER AND NOT EMSCRIPTEN)
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${SRC_DIR}/Asset/
             $<TARGET_FILE_DIR:GameEngine>/Asset
+    )
+elseif (BUILD_FOR_SERVER)
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/Asset
+            COMMAND ${CMAKE_COMMAND} -E copy
+                    ${SRC_DIR}/Asset/config.json
+                    $<TARGET_FILE_DIR:${PROJECT_NAME}>/Asset/
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${SRC_DIR}/Asset/maps
+                    $<TARGET_FILE_DIR:${PROJECT_NAME}>/Asset/maps
     )
 endif ()

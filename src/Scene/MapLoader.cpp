@@ -71,7 +71,7 @@ bool loadStaticObjects(Scene& scene, const std::string& json_path) {
                                                  g.value("y2", 0.f) - y1));
     }
 
-    LOG_DEBUG("Static map loaded from level_1.json");
+    LOG_DEBUG_FMT("Static map loaded from {}", json_path);
     return true;
 }
 

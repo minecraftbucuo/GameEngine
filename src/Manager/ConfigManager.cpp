@@ -67,6 +67,7 @@ void ConfigManager::parseNetwork(const json& j) {
 }
 
 void ConfigManager::parseGame(const json& j) {
+    game.levelMap = j.value("levelMap", game.levelMap);
     game.gravity = j.value("gravity", game.gravity);
     game.playerSpeed = j.value("playerSpeed", game.playerSpeed);
     game.jumpForce = j.value("jumpForce", game.jumpForce);
@@ -107,6 +108,7 @@ bool ConfigManager::save() {
         config["network"]["timeout"] = network.timeout;
 
         // Game
+        config["game"]["levelMap"] = game.levelMap;
         config["game"]["gravity"] = game.gravity;
         config["game"]["playerSpeed"] = game.playerSpeed;
         config["game"]["jumpForce"] = game.jumpForce;
