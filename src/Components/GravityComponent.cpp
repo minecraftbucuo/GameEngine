@@ -19,7 +19,6 @@ void GravityComponent::update(const eng::Time& deltaTime) {
     if (smart) {
         if (auto* collisionSystem = scene->getCollisionSystem();
             collisionSystem && collisionSystem->isStanding(owner)) {
-            if (owner->getSpeed().y > 0.f) moveComponent->setSpeedY(0.f);
             return;
         }
     }
