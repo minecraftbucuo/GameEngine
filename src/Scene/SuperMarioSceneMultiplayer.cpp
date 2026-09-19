@@ -14,6 +14,7 @@
 #include "MoveComponent.h"
 #include "FireBall.h"
 #include "Goomba.h"
+#include "Mushroom.h"
 #include "Collision.h"
 #include "Core/Types.h"
 #include "MapLoader.h"
@@ -112,6 +113,34 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
         LOG_DEBUG_FMT("Create goomba, id:{}, x:{}, y:{}, s_x:{}", id, x, y, s_x);
         this->addObjectWithNetwork(goomba);
         return goomba;
+    }
+    if (obj_type == ObjectType::Mushroom) {
+        float x, y, s_x;
+        packet >> x >> y >> s_x;
+        const auto mushroom = std::make_shared<Mushroom>(x, y, s_x);
+        mushroom->setId(id);
+        LOG_DEBUG_FMT("Create mushroom, id:{}, x:{}, y:{}, s_x:{}", id, x, y, s_x);
+        this->addObjectWithNetwork(mushroom);
+        // 渲染顺序重排：把蘑菇插到出生点正下方的方块之前，升起过程被方块遮挡（与单机一致）
+        auto& objs = this->getGameObjects();
+        size_t mush_index = objs.size();
+        for (size_t i = 0; i < objs.size(); ++i) {
+            if (objs[i] == mushroom) {
+                mush_index = i;
+                break;
+            }
+        }
+        for (size_t i = 0; i < mush_index; ++i) {
+            const auto& obj_ptr = objs[i];
+            if (obj_ptr->getClassName() == "Box"
+                && obj_ptr->getPosition().x == x
+                && obj_ptr->getPosition().y == y + 20.f) {
+                objs.erase(objs.begin() + mush_index);
+                objs.insert(objs.begin() + i, mushroom);
+                break;
+            }
+        }
+        return mushroom;
     }
     LOG_ERROR("Invalid object type");
     return nullptr;

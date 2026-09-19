@@ -5,7 +5,7 @@
 #pragma once
 #include "Animation.h"
 #include "Events.h"
-#include "GameObject.h"
+#include "NetworkGameObject.h"
 #include "Timer.h"
 #include "Core/Types.h"
 
@@ -13,7 +13,7 @@
 struct MIX_Track;   // SDL_mixer track 前置声明（头文件不引 SDL 头）
 #endif
 
-class Mushroom : public GameObject {
+class Mushroom : public NetworkGameObject {
 public:
     Mushroom(float x, float y, float speed_x = -100.f);
 
@@ -32,6 +32,13 @@ public:
 
     // 被敌人/BOSS/飞斧击杀：向远离敌人的方向弹飞，坠落穿出场景后销毁
     void setKilled(float blast_dir_x);
+
+    void serialize(eng::Packet& packet, NetworkMsg type) override;
+
+    void deserialize(eng::Packet& packet) override;
+
+    // 服务端销毁时广播 RemoveObject，客户端本地销毁静默（方案 B：移除由服务端统一裁决）
+    void destroy() override;
 
 private:
     // 升起阶段：从方块内部匀速上移一个方块位，期间不响应碰撞、不受重力

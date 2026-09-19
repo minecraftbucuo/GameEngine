@@ -386,11 +386,11 @@ void Mario::serialize(eng::Packet& packet, const NetworkMsg type) {
     } else if (type == NetworkMsg::UpdateObject) {  // 交给自己处理
         packet << type << this->getId();   // 给 NetworkManager 判断是哪种操作和定位对象的 ID
 
-        // 通知客户端同步对象   ID   同步对象(这是在deserialize用来判断的)   对象类型   x   y   s_x   s_y   is_jump   health
+        // 通知客户端同步对象   ID   同步对象(这是在deserialize用来判断的)   对象类型   x   y   s_x   s_y   is_jump   health   is_big
         const bool is_jump = this->getComponent<StateMachine>()->getCurrentStateName() == "MarioJumpState";
         const int health = this->getComponent<HealthBar>()->getHealth();
         packet << type << this->getPosition().x << this->getPosition().y << this->getSpeed().x << this->getSpeed().y <<
-            is_jump << health;
+            is_jump << health << is_big;
     } else if (type == NetworkMsg::SpawnPlayer) {  // 交给Scene处理
         packet << type << this->getId();   // 给 NetworkManager 判断是哪种操作和定位对象的 ID
 
@@ -412,9 +412,9 @@ void Mario::deserialize(eng::Packet& packet) {
 
     if (msg_type == NetworkMsg::UpdateObject) {
         float x, y, s_x, s_y;
-        bool is_jump;
+        bool is_jump, is_big;
         int health;
-        packet >> x >> y >> s_x >> s_y >> is_jump >> health;
+        packet >> x >> y >> s_x >> s_y >> is_jump >> health >> is_big;
         const eng::Vec2f serverPosition{x, y};
         const eng::Vec2f serverSpeed{s_x, s_y};
         const auto& health_bar = this->getComponent<HealthBar>();
@@ -428,10 +428,15 @@ void Mario::deserialize(eng::Packet& packet) {
         }
         if (isPlayer && nm && nm->isClient()) {
             // 本地玩家：保留客户端预测手感，只用服务端状态做温和纠偏。
+            // 体型只做"变大"方向的单向幂等纠正：服务端判定吃到蘑菇而本地尚未预测到时补 growUp；
+            // "服务端说小"可能是本地刚变大后的旧快照，不回退，防止变身闪烁来回抖动。
+            if (is_big && !this->is_big) growUp();
             reconcileLocalPlayer(serverPosition, serverSpeed, is_jump);
         } else if (!isPlayer && nm && nm->isClient()) {
-            // 远端玩家：血量以服务端为准，命中分歧时纠正本地血条。
+            // 远端玩家：血量、体型都以服务端为准，双向同步变身（growUp/shrinkDown 自带幂等保护）。
             health_bar->syncHealth(health);
+            if (is_big && !this->is_big) growUp();
+            else if (!is_big && this->is_big) shrinkDown();
             setAuthoritativeState(serverPosition, serverSpeed, is_jump);
         }
     } else if (msg_type == NetworkMsg::ClientInput) {

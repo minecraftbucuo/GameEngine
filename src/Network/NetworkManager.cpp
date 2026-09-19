@@ -11,6 +11,7 @@
 #include "Scene.h"
 #include "NetworkProtocol.h"
 #include "Goomba.h"
+#include "Mushroom.h"
 
 bool NetworkManager::startServer() {
     if (network_type == NetworkType::Server) return true;
@@ -357,6 +358,16 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
                                 packet >> blast_dir_x;
                                 LOG_INFO_FMT("client reported goomba {} killed by fireball", target_id);
                                 goomba->setKilledByFireball(blast_dir_x);
+                            }
+                        } else if (const auto mushroom = std::dynamic_pointer_cast<Mushroom>(obj)) {
+                            if (event_type == GameEventType::MushroomEaten) {
+                                LOG_INFO_FMT("client reported mushroom {} eaten", target_id);
+                                mushroom->setEaten();
+                            } else if (event_type == GameEventType::MushroomKilled) {
+                                float blast_dir_x;
+                                packet >> blast_dir_x;
+                                LOG_INFO_FMT("client reported mushroom {} killed", target_id);
+                                mushroom->setKilled(blast_dir_x);
                             }
                         }
                     } else {

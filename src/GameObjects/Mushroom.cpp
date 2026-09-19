@@ -13,6 +13,7 @@
 #include "MoveComponent.h"
 #include "Scene.h"
 #include "AssetManager.h"
+#include "NetworkManager.h"
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <SDL3_mixer/SDL_mixer.h>
@@ -20,6 +21,16 @@
 
 // 从方块里长出来的速度（像素/秒），升起一个方块位约 0.8 秒
 constexpr float EMERGE_SPEED = 80.f;
+
+// 方案 B：客户端预测交互结果后上报（仅客户端实际发送；服务端/单机为本地权威，直接静默）
+static void reportMushroomEvent(const Mushroom* mushroom, const GameEventType type, const float blast_dir_x = 0.f) {
+    auto* nm = mushroom->getScene() ? mushroom->getScene()->getNetworkManager() : nullptr;
+    if (!nm || !nm->isClient()) return;
+    eng::Packet packet;
+    packet << NetworkMsg::ClientEvent << mushroom->getId() << type;
+    if (type == GameEventType::MushroomKilled) packet << blast_dir_x;
+    nm->getClientSocket().append(packet);
+}
 
 Mushroom::Mushroom(const float x, const float y, const float speed_x) {
     this->position = eng::Vec2f(x, y);
@@ -175,6 +186,8 @@ void Mushroom::handleCollision(const CollisionEvent& event) {
 void Mushroom::setEaten() {
     if (is_eaten) return;
     is_eaten = true;
+    // 客户端预测吃掉后上报，服务端裁决并统一广播移除
+    reportMushroomEvent(this, GameEventType::MushroomEaten);
 
 #ifndef SERVER_BUILD
     if (eaten_track) { MIX_StopTrack(eaten_track, 0); MIX_PlayTrack(eaten_track, 0); }
@@ -199,6 +212,9 @@ void Mushroom::setKilled(const float blast_dir_x) {
     const auto collision = getComponent<Collision>();
     if (!collision || !collision->getActive()) return;
 
+    // 客户端预测击杀后上报（附带弹飞方向，供服务端复现抛物线）
+    reportMushroomEvent(this, GameEventType::MushroomKilled, blast_dir_x);
+
     // 关闭碰撞（清零碰撞盒尺寸），保留重力 → 弹飞后坠落穿出场景，由 update 兜底销毁
     collision->setActive(false);
     if (const auto box = getComponent<Collision, BoxCollision>()) box->setSize(0.f, 0.f);
@@ -208,4 +224,53 @@ void Mushroom::setKilled(const float blast_dir_x) {
         move->setSpeed(eng::Vec2f(blast_dir_x * 180.f, -CONFIG.game.jumpForce * 0.55f));
         move->setActive(true);
     }
+}
+
+void Mushroom::serialize(eng::Packet& packet, const NetworkMsg type) {
+    if (type == NetworkMsg::SpawnObject) {   // 交给 Scene 处理
+        // ID   对象类型   x   y   s_x
+        packet << type << this->getId() << ObjectType::Mushroom
+            << this->getPosition().x << this->getPosition().y << walk_speed;
+    } else if (type == NetworkMsg::UpdateObject) {   // 交给自己处理
+        // 第二个 type 供 deserialize 判别（与 Mario/Goomba 的线上格式一致）
+        packet << type << this->getId() << type
+            << this->getPosition().x << this->getPosition().y << walk_speed << is_eaten;
+    }
+    // RemoveObject 由 destroy() 触发 broadcastRemoveObject 统一广播，不走 serialize
+}
+
+void Mushroom::deserialize(eng::Packet& packet) {
+    NetworkMsg msg_type;
+    packet >> msg_type;
+    if (msg_type != NetworkMsg::UpdateObject) return;
+
+    float x, y, s_x;
+    bool remote_eaten;
+    packet >> x >> y >> s_x >> remote_eaten;
+
+    // 服务端判死兜底：本地尚未预测到被吃时补走完整流程（组件关闭/上报，服务端对重复上报幂等）
+    if (remote_eaten && !is_eaten) {
+        setEaten();
+        return;
+    }
+    // 已被吃掉的对象（本地预测或补走流程）不再接受快照，等待 RemoveObject 清理
+    if (is_eaten) return;
+    // 升起阶段轨迹由出生点+速度决定（确定性），不同步快照，防止水平速度被污染
+    if (is_emerging) return;
+
+    if (const auto& move = getComponent<MoveComponent>()) {
+        move->setPosition(eng::Vec2f(x, y));
+        move->setSpeedX(s_x);
+        walk_speed = s_x;
+    }
+}
+
+void Mushroom::destroy() {
+    // 服务端是移除的唯一权威：销毁时广播 RemoveObject（被吃延时销毁、弹飞坠落与
+    // 掉出场景底部三种路径）；客户端本地销毁静默，由服务端消息兜底
+    auto* nm = getScene() ? getScene()->getNetworkManager() : nullptr;
+    if (nm && nm->isServer()) {
+        nm->broadcastRemoveObject(this->getId());
+    }
+    NetworkGameObject::destroy();
 }

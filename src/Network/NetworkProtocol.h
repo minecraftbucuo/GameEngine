@@ -23,16 +23,17 @@ enum class NetworkMsg : uint8_t {
 // ClientEvent 的事件类型（附加数据见注释，服务端按类型读取）
 enum class GameEventType : uint8_t {
     GoombaSquashed = 0,          // 踩扁小怪，无附加数据
-    GoombaKilledByFireball = 1   // 炮弹击毙小怪，附加数据：float 炸飞方向（±1）
+    GoombaKilledByFireball = 1,  // 炮弹击毙小怪，附加数据：float 炸飞方向（±1）
+    MushroomEaten = 2,           // 蘑菇被吃掉，无附加数据
+    MushroomKilled = 3           // 蘑菇被敌人/BOSS/飞斧击杀，附加数据：float 弹飞方向（±1）
 };
 
 enum class ObjectType : uint8_t {
     MarioPlayer = 0,
     Mario = 1,
-    CircleObject = 2, // 暂不维护
-    BoxGameObject = 3, // 暂不维护
     FireBall = 4,
-    Goomba = 5
+    Goomba = 5,
+    Mushroom = 6
 };
 
 enum class InputType : uint8_t {
