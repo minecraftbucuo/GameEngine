@@ -7,20 +7,20 @@
     },
     "assets": {
         "textures": {
-            "superMario": "./Asset/SuperMario/resources/graphics"
+            "superMario": "./Asset/textures"
         },
         "sounds": {
-            "superMario": "./Asset/SuperMario/resources/sound",
-            "music": "./Asset/SuperMario/resources/music"
+            "superMario": "./Asset/sound",
+            "music": "./Asset/music"
         },
-        "font": "./Asset/Font/Minecraft_AE.ttf",
+        "font": "./Asset/fonts/Minecraft_AE.ttf",
         "animations": {
-            "mario": "./Asset/SuperMario/source/data/player/mario.json",
-            "box": "./Asset/SuperMario/source/data/player/box.json",
-            "fireball": "./Asset/SuperMario/source/data/player/fireball.json",
-            "goomba": "./Asset/SuperMario/source/data/enemy/goomba.json",
-            "bowser": "./Asset/SuperMario/source/data/enemy/bowser.json",
-            "mushroom": "./Asset/SuperMario/source/data/item/mushroom.json"
+            "mario": "./Asset/animations/mario.json",
+            "box": "./Asset/animations/box.json",
+            "fireball": "./Asset/animations/fireball.json",
+            "goomba": "./Asset/animations/goomba.json",
+            "bowser": "./Asset/animations/bowser.json",
+            "mushroom": "./Asset/animations/mushroom.json"
         }
     },
     "network": {

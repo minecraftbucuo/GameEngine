@@ -2,7 +2,7 @@
 // Created by MINEC on 2026/9/18.
 //
 // 超级马里奥关卡地图加载器：把原本硬编码在场景类里的地图数据外置到
-// Asset/SuperMario/source/data/maps/level_1.json，单机/联机场景共用静态部分。
+// Asset/maps/level_1.json，单机/联机场景共用静态部分。
 
 #pragma once
 #include <memory>
@@ -15,7 +15,7 @@ class Scene; // 全局命名空间前置声明
 namespace MapLoader {
 
 // 当前关卡地图文件（运行期工作目录为 exe 所在目录，Asset 目录随构建拷贝）
-constexpr const char* kLevel1MapPath = "./Asset/SuperMario/source/data/maps/level_1.json";
+constexpr const char* kLevel1MapPath = "./Asset/maps/level_1.json";
 
 // 动态出生点数据（仅纯数据：敌人等玩法对象的创建仍归各场景，加载器不依赖玩法类）
 struct EnemySpawn {

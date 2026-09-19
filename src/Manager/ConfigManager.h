@@ -36,7 +36,7 @@ public:
         std::unordered_map<std::string, std::string> textures;
         std::unordered_map<std::string, std::string> sounds;
         std::unordered_map<std::string, std::string> frames;
-        std::string font = "./Asset/Font/Minecraft_AE.ttf";
+        std::string font = "./Asset/fonts/Minecraft_AE.ttf";
     } assets;
 
     // Network 配置
