@@ -128,7 +128,7 @@ void SuperMarioSceneSingle::handleEvent(const eng::EngineEvent& event) {
 
     if (event.type == eng::EventType::MouseButtonPress) {
         const eng::Vec2i pos = getMousePosition();
-        LOG_TRACE_FMT("Mouse clicked at ({}, {})", pos.x, pos.y);
+        LOG_DEBUG_FMT("Mouse clicked at ({}, {})", pos.x, pos.y);
     } else if (event.type == eng::EventType::KeyPress) {
         if (event.key == eng::Key::Escape) {
             getSceneManager()->loadScene("MenuScene");
