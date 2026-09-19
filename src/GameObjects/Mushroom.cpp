@@ -33,8 +33,9 @@ Mushroom::Mushroom(const float x, const float y, const float speed_x) {
     this->setSize(CONFIG.game.defaultBlockSize, CONFIG.game.defaultBlockSize);
 #endif
 
-    // 升起阶段：碰撞与重力都先关闭，避免与承载方块/马里奥误碰撞
-    this->addComponent<Collision, BoxCollision>()->setActive(false);
+    // 升起阶段：关闭重力保证匀速上升；碰撞保持开启，马里奥在升起途中即可吃掉
+    // （自身 handleCollision 在升起阶段直接 return，不会与承载方块误响应）
+    this->addComponent<Collision, BoxCollision>();
     const auto gravity = this->addComponent<GravityComponent>();
     gravity->setActive(false);
     gravity->setSmartGravity(true);
@@ -124,7 +125,7 @@ void Mushroom::handleCollision(const CollisionEvent& event) {
 
     // 碰到敌人/BOSS/飞斧：朝远离敌人的方向弹飞，坠落穿出场景后销毁
     const std::string& other_class = other->getClassName();
-    if (other_class == "Goomba" || other_class == "Bowser" || other_class == "BowserAxe" || other_class == "BowserFire") {
+    if (other_class == "Bowser" || other_class == "BowserAxe" || other_class == "BowserFire") {
         const float enemy_center = event.b_position.x + other->getSize().x * 0.5f;
         const float self_center = event.a_position.x + this_->getSize().x * 0.5f;
         setKilled(enemy_center < self_center ? 1.f : -1.f);

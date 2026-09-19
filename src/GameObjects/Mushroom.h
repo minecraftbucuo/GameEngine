@@ -34,7 +34,8 @@ public:
     void setKilled(float blast_dir_x);
 
 private:
-    // 升起阶段：从方块内部匀速上移一个方块位，期间不参与碰撞、不受重力
+    // 升起阶段：从方块内部匀速上移一个方块位，期间不响应碰撞、不受重力
+    // （碰撞盒保持开启，马里奥升起途中即可吃掉；重力升起结束后再开）
     bool is_emerging = true;
     bool is_eaten = false;
     float spawn_y = 0.f;
