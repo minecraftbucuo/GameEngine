@@ -62,7 +62,7 @@ Bowser::Bowser(const float x, const float y, const float speed_x) {
 #endif
 
     this->addComponent<Collision, BoxCollision>();
-    this->addComponent<GravityComponent>();
+    this->addComponent<GravityComponent>()->setSmartGravity(true);
     // 沉睡中不巡逻：激活后才按巡逻速度开始走动
     this->addComponent<MoveComponent>()->setSpeed(eng::Vec2f(0.f, 0.f));
     auto healthBar = this->addComponent<HealthBar>();

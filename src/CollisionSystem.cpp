@@ -14,6 +14,27 @@ void CollisionSystem::addObject(const std::shared_ptr<GameObject>& obj) {
     objects.push_back(obj);
 }
 
+bool CollisionSystem::isStanding(GameObject* obj) {
+    auto collision = obj->getComponent<Collision>();
+    if (!collision) return false;
+
+    const eng::Vec2f dy(0.f, 1.f);
+    collision->setCollisionPosition(collision->getCollisionPosition() + dy);
+
+    for (const auto& other : objects) {
+        if (other.get() == obj) continue;
+        auto other_collision = other->getComponent<Collision>();
+        if (!other_collision || !other_collision->getActive()) continue;
+        if (other_collision->checkCollision(*collision)) {
+            collision->setCollisionPosition(collision->getCollisionPosition() - dy);
+            return true;
+        }
+    }
+
+    collision->setCollisionPosition(collision->getCollisionPosition() - dy);
+    return false;
+}
+
 void CollisionSystem::checkCollisions() {
     std::erase_if(objects, [](const auto& obj) { return obj->isDestroy(); });
 

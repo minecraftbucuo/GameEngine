@@ -6,16 +6,29 @@
 #include "MoveComponent.h"
 #include "GameObject.h"
 #include "Scene.h"
+#include "CollisionSystem.h"
 #include "Core/Types.h"
 
 void GravityComponent::update(const eng::Time& deltaTime) {
-    float worldHeight = owner->getScene()->getWindowSize().y;
-
-    if (std::abs(this->owner->getPosition().y + this->owner->getSize().y - worldHeight) < 0.1f
-        && std::abs(owner->getSpeed().y) <= 1.f) return;
+    auto* scene = owner->getScene();
+    if (!scene) return;
 
     std::shared_ptr<MoveComponent> moveComponent = owner->getComponent<MoveComponent>();
     if (!moveComponent) return;
+
+    if (smart) {
+        if (auto* collisionSystem = scene->getCollisionSystem();
+            collisionSystem && collisionSystem->isStanding(owner)) {
+            if (owner->getSpeed().y > 0.f) moveComponent->setSpeedY(0.f);
+            return;
+        }
+    }
+    else {
+        const float worldHeight = scene->getWindowSize().y;
+        if (std::abs(owner->getPosition().y + owner->getSize().y - worldHeight) < 0.1f
+            && std::abs(owner->getSpeed().y) <= 1.f) return;
+    }
+
     moveComponent->setSpeedY(owner->getSpeed().y + gravity * deltaTime.asSeconds());
 }
 

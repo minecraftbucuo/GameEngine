@@ -30,7 +30,7 @@ Goomba::Goomba(const float x, const float y, const float speed_x) {
 #endif
 
     this->addComponent<Collision, BoxCollision>();
-    this->addComponent<GravityComponent>();
+    this->addComponent<GravityComponent>()->setSmartGravity(true);
     this->addComponent<MoveComponent>()->setSpeed(eng::Vec2f(speed_x, 0.f));
 
     this->tag = "goomba:" + std::to_string(this->id);

@@ -14,6 +14,8 @@ public:
     void addObject(const std::shared_ptr<GameObject>& obj);
     void checkCollisions();
 
+    bool isStanding(GameObject* obj);
+
     [[nodiscard]] std::vector<std::shared_ptr<GameObject>>* getObjects();
 
 private:
