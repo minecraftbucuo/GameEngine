@@ -74,8 +74,8 @@ void Mushroom::start() {
 #ifndef SERVER_BUILD
 void Mushroom::render(eng::Renderer& renderer) {
     if (is_eaten) return;
-    GameObject::render(renderer);
     idleAnimation.render(renderer, this->position);
+    GameObject::render(renderer);
 }
 #endif
 

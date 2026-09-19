@@ -119,7 +119,6 @@ void Bowser::render(eng::Renderer& renderer) {
     // 沉睡中保持隐身（马里奥接近才现身）
     if (!is_activated) return;
 
-    GameObject::render(renderer);
     if (is_killed) {
         // 被击败：180° 翻转贴图（渲染器无 flipY，绕中心旋转等效）
         const Animation::Frame& f = walkAnimation.getFrame();
@@ -135,6 +134,7 @@ void Bowser::render(eng::Renderer& renderer) {
     }
     else if (is_breathing) breathAnimation.render(renderer, this->position);
     else walkAnimation.render(renderer, this->position);
+    GameObject::render(renderer);
 }
 #endif
 

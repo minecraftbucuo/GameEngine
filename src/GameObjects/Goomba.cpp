@@ -67,7 +67,6 @@ void Goomba::start() {
 
 #ifndef SERVER_BUILD
 void Goomba::render(eng::Renderer& renderer) {
-    GameObject::render(renderer);
     if (killed_by_fireball) {
         // 被炮弹击毙：180° 翻转贴图（渲染器无 flipY，绕中心旋转等效）
         const Animation::Frame& f = walkAnimation.getFrame();
@@ -83,6 +82,7 @@ void Goomba::render(eng::Renderer& renderer) {
     }
     else if (is_squashed) squashAnimation.render(renderer, this->position);
     else walkAnimation.render(renderer, this->position);
+    GameObject::render(renderer);
 }
 #endif
 
