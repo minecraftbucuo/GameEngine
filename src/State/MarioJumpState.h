@@ -32,12 +32,14 @@ public:
     ~MarioJumpState() override = default;
 
     void start() override {
+#ifndef SERVER_BUILD
         // 按当前形态选择跳跃贴图：小马里奥 (144,32,16,16)，大马里奥 (144,0,16,32)
         if (const auto mario = dynamic_cast<Mario*>(owner); mario && mario->getIsBig()) {
             texture_rect = eng::IntRect(144, 0, 16, 32);
         } else {
             texture_rect = eng::IntRect(144, 32, 16, 16);
         }
+#endif
     }
 
     void update(const eng::Time& deltaTime) override {
