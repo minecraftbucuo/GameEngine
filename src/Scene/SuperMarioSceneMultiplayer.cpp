@@ -121,7 +121,9 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
         mushroom->setId(id);
         LOG_DEBUG_FMT("Create mushroom, id:{}, x:{}, y:{}, s_x:{}", id, x, y, s_x);
         this->addObjectWithNetwork(mushroom);
-        // 渲染顺序重排：把蘑菇插到出生点正下方的方块之前，升起过程被方块遮挡（与单机一致）
+        // 渲染顺序重排：把蘑菇插到出生点正下方的方块之前，升起过程被方块遮挡（与单机一致）。
+        // 不能按坐标精确匹配：客户端顶砖是本地预测，方块正在弹跳（y 每帧变化），
+        // 收到 SpawnObject 时方块当前位置与出生快照对不上，所以按 x 相同 + y 最近的方块认领。
         auto& objs = this->getGameObjects();
         size_t mush_index = objs.size();
         for (size_t i = 0; i < objs.size(); ++i) {
@@ -130,15 +132,21 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
                 break;
             }
         }
+        size_t best_index = objs.size();
+        float best_distance = 0.f;
         for (size_t i = 0; i < mush_index; ++i) {
             const auto& obj_ptr = objs[i];
-            if (obj_ptr->getClassName() == "Box"
-                && obj_ptr->getPosition().x == x
-                && obj_ptr->getPosition().y == y + 20.f) {
-                objs.erase(objs.begin() + mush_index);
-                objs.insert(objs.begin() + i, mushroom);
-                break;
+            if (obj_ptr->getClassName() != "Box" || obj_ptr->getPosition().x != x) continue;
+            const float diff = obj_ptr->getPosition().y - (y + 20.f);
+            const float distance = diff < 0 ? -diff : diff;
+            if (distance <= 64.f && (best_index == objs.size() || distance < best_distance)) {
+                best_index = i;
+                best_distance = distance;
             }
+        }
+        if (best_index < mush_index) {
+            objs.erase(objs.begin() + mush_index);
+            objs.insert(objs.begin() + best_index, mushroom);
         }
         return mushroom;
     }
