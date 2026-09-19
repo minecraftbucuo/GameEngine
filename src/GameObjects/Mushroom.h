@@ -30,6 +30,9 @@ public:
     // 被马里奥吃掉：关闭运动与碰撞，播放获得音效后延时销毁
     void setEaten();
 
+    // 被敌人/BOSS/飞斧击杀：向远离敌人的方向弹飞，坠落穿出场景后销毁
+    void setKilled(float blast_dir_x);
+
 private:
     // 升起阶段：从方块内部匀速上移一个方块位，期间不参与碰撞、不受重力
     bool is_emerging = true;

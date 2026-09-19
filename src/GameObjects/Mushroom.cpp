@@ -122,6 +122,15 @@ void Mushroom::handleCollision(const CollisionEvent& event) {
     if (other->getClassName() == "Mario") return;
     if (!this_->getMoveAble()) return;
 
+    // 碰到敌人/BOSS/飞斧：朝远离敌人的方向弹飞，坠落穿出场景后销毁
+    const std::string& other_class = other->getClassName();
+    if (other_class == "Goomba" || other_class == "Bowser" || other_class == "BowserAxe" || other_class == "BowserFire") {
+        const float enemy_center = event.b_position.x + other->getSize().x * 0.5f;
+        const float self_center = event.a_position.x + this_->getSize().x * 0.5f;
+        setKilled(enemy_center < self_center ? 1.f : -1.f);
+        return;
+    }
+
     const std::shared_ptr<MoveComponent>& moveComponent = this_->getComponent<MoveComponent>();
     if (!moveComponent) return;
 
@@ -182,4 +191,20 @@ void Mushroom::setEaten() {
     // 音效挂在本对象 track 上，等播放一段再销毁对象
     eaten_timer.setCallback([this]() -> void { this->destroy(); });
     eaten_timer.start(1000);
+}
+
+void Mushroom::setKilled(const float blast_dir_x) {
+    if (is_eaten) return;
+    const auto collision = getComponent<Collision>();
+    if (!collision || !collision->getActive()) return;
+
+    // 关闭碰撞（清零碰撞盒尺寸），保留重力 → 弹飞后坠落穿出场景，由 update 兜底销毁
+    collision->setActive(false);
+    if (const auto box = getComponent<Collision, BoxCollision>()) box->setSize(0.f, 0.f);
+
+    if (const auto gravity = getComponent<GravityComponent>()) gravity->setActive(true);
+    if (const auto move = getComponent<MoveComponent>()) {
+        move->setSpeed(eng::Vec2f(blast_dir_x * 180.f, -CONFIG.game.jumpForce * 0.55f));
+        move->setActive(true);
+    }
 }
