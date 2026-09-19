@@ -10,6 +10,7 @@
 #include "Logger.h"
 #include "Scene.h"
 #include "NetworkProtocol.h"
+#include "Goomba.h"
 
 bool NetworkManager::startServer() {
     if (network_type == NetworkType::Server) return true;
@@ -339,6 +340,28 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
                     if (player) {
                         player->deserialize(packet);
                     }
+                } else if (msg_type == NetworkMsg::ClientEvent) {
+                    // 方案 B：客户端预测交互（踩扁/炸飞小怪）后上报，服务端把事件落到
+                    // 权威对象上（幂等）；对象随后走自身销毁流程触发 RemoveObject 广播。
+                    // 目标对象不存在说明已被移除（如两名客户端同时踩同一只），直接忽略
+                    unsigned int target_id;
+                    GameEventType event_type;
+                    packet >> target_id >> event_type;
+                    if (const auto& obj = current_scene->findGameObjectById(target_id)) {
+                        if (const auto goomba = std::dynamic_pointer_cast<Goomba>(obj)) {
+                            if (event_type == GameEventType::GoombaSquashed) {
+                                LOG_INFO_FMT("client reported goomba {} squashed", target_id);
+                                goomba->setSquashed();
+                            } else if (event_type == GameEventType::GoombaKilledByFireball) {
+                                float blast_dir_x;
+                                packet >> blast_dir_x;
+                                LOG_INFO_FMT("client reported goomba {} killed by fireball", target_id);
+                                goomba->setKilledByFireball(blast_dir_x);
+                            }
+                        }
+                    } else {
+                        LOG_TRACE_FMT("ClientEvent: object with ID {} not found, skip", target_id);
+                    }
                 }
             }
             status = client->receive(packet);
@@ -470,6 +493,21 @@ void NetworkManager::addGameObjectAndSync(const std::shared_ptr<GameObject>& obj
 
 void NetworkManager::addGameObject(const std::shared_ptr<GameObject>& obj) {
     game_objects.emplace_back(std::dynamic_pointer_cast<ISerializable>(obj));
+}
+
+void NetworkManager::broadcastRemoveObject(const unsigned int id) {
+    if (network_type != NetworkType::Server) return;
+    // 同步表立即移除（销毁流程中对象仍存活，需按 id 精确删除而非等 expired 清理）
+    std::erase_if(game_objects, [id](const auto& obj) -> bool {
+        const auto shared = obj.lock();
+        return !shared || shared->getNetworkId() == id;
+    });
+    // 通知所有客户端删除该对象（本地已销毁的客户端会自行跳过）
+    for (const auto& client : clients) {
+        eng::Packet packet;
+        packet << NetworkMsg::RemoveObject << id;
+        client->append(packet);
+    }
 }
 
 bool NetworkManager::isClient() const {

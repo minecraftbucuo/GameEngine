@@ -13,10 +13,21 @@
 #include "MoveComponent.h"
 #include "Scene.h"
 #include "AssetManager.h"
+#include "NetworkManager.h"
 #include "Core/Types.h"
 #ifndef SERVER_BUILD
 #include <SDL3_mixer/SDL_mixer.h>
 #endif
+
+// 方案 B：客户端预测交互结果后上报（仅客户端实际发送；服务端/单机为本地权威，直接静默）
+static void reportGoombaEvent(const Goomba* goomba, const GameEventType type, const float blast_dir_x = 0.f) {
+    auto* nm = goomba->getScene() ? goomba->getScene()->getNetworkManager() : nullptr;
+    if (!nm || !nm->isClient()) return;
+    eng::Packet packet;
+    packet << NetworkMsg::ClientEvent << goomba->getId() << type;
+    if (type == GameEventType::GoombaKilledByFireball) packet << blast_dir_x;
+    nm->getClientSocket().append(packet);
+}
 
 Goomba::Goomba(const float x, const float y, const float speed_x) {
     this->position = eng::Vec2f(x, y);
@@ -174,6 +185,8 @@ void Goomba::handleCollision(const CollisionEvent& event) {
 void Goomba::setSquashed() {
     if (is_squashed) return;
     is_squashed = true;
+    // 客户端预测踩扁成功后上报，服务端裁决并统一广播移除
+    reportGoombaEvent(this, GameEventType::GoombaSquashed);
 
 #ifndef SERVER_BUILD
     if (stomp_track) { MIX_StopTrack(stomp_track, 0); MIX_PlayTrack(stomp_track, 0); }
@@ -200,6 +213,8 @@ void Goomba::setKilledByFireball(const float blast_dir_x) {
     if (is_squashed) return;
     is_squashed = true;
     killed_by_fireball = true;
+    // 客户端预测击毙后上报（附带炸飞方向，供服务端复现抛物线）
+    reportGoombaEvent(this, GameEventType::GoombaKilledByFireball, blast_dir_x);
 
 #ifndef SERVER_BUILD
     if (kick_track) { MIX_StopTrack(kick_track, 0); MIX_PlayTrack(kick_track, 0); }
@@ -209,9 +224,57 @@ void Goomba::setKilledByFireball(const float blast_dir_x) {
     // 重力保留 → 被炸飞后坠落穿出场景，掉出底部由 update 销毁
     if (const auto collision = getComponent<Collision>()) collision->setActive(false);
     if (const auto box = getComponent<Collision, BoxCollision>()) box->setSize(0.f, 0.f);
-    if (const auto move = getComponent<MoveComponent>()) {
+    if (const auto& move = getComponent<MoveComponent>()) {
         // 水平沿炮弹方向炸飞，垂直向上弹起（0.6 倍跳力），重力把轨迹拉成抛物线
         move->setSpeed(eng::Vec2f(blast_dir_x * CONFIG.game.playerSpeed * 0.6f,
                                   -CONFIG.game.jumpForce * 0.6f));
     }
+}
+
+void Goomba::serialize(eng::Packet& packet, const NetworkMsg type) {
+    if (type == NetworkMsg::SpawnObject) {   // 交给 Scene 处理
+        // ID   对象类型   x   y   s_x
+        packet << type << this->getId() << ObjectType::Goomba
+            << this->getPosition().x << this->getPosition().y << this->getSpeed().x;
+    } else if (type == NetworkMsg::UpdateObject) {   // 交给自己处理
+        // 第二个 type 供 deserialize 判别（与 Mario 的线上格式一致）
+        packet << type << this->getId() << type
+            << this->getPosition().x << this->getPosition().y << this->getSpeed().x << is_squashed;
+    }
+    // RemoveObject 由 destroy() 触发 broadcastRemoveObject 统一广播，不走 serialize
+}
+
+void Goomba::deserialize(eng::Packet& packet) {
+    NetworkMsg msg_type;
+    packet >> msg_type;
+    if (msg_type != NetworkMsg::UpdateObject) return;
+
+    float x, y, s_x;
+    bool remote_squashed;
+    packet >> x >> y >> s_x >> remote_squashed;
+
+    // 服务端判死兜底：本地尚未预测到踩扁时补走完整流程（音效/组件关闭/上报，
+    // 服务端对重复上报幂等）；补走 setSquashed 按同一几何规则下移半格，与快照
+    // 位置一致，跳过位移同步防止二次偏移
+    if (remote_squashed && !is_squashed) {
+        setSquashed();
+        return;
+    }
+    // 已死亡对象（本地预测或补走流程）不再接受快照，等待 RemoveObject 清理
+    if (is_squashed) return;
+
+    if (const auto& move = getComponent<MoveComponent>()) {
+        move->setPosition(eng::Vec2f(x, y));
+        move->setSpeedX(s_x);
+    }
+}
+
+void Goomba::destroy() {
+    // 服务端是移除的唯一权威：销毁时广播 RemoveObject（含踩扁延时销毁、
+    // 炸飞坠落与掉出场景底部三种路径）；客户端本地销毁静默，由服务端消息兜底
+    auto* nm = getScene() ? getScene()->getNetworkManager() : nullptr;
+    if (nm && nm->isServer()) {
+        nm->broadcastRemoveObject(this->getId());
+    }
+    NetworkGameObject::destroy();
 }

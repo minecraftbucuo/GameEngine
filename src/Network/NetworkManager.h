@@ -62,6 +62,9 @@ public:
 
     void addGameObjectAndSync(const std::shared_ptr<GameObject>& obj);
 
+    // 服务端移除权威对象并广播 RemoveObject（对象销毁流程/ClientEvent 裁决共用出口）
+    void broadcastRemoveObject(unsigned int id);
+
     void initClientScene(const std::shared_ptr<TcpClient>& newClient);
 
     void verifyClient();
@@ -71,6 +74,10 @@ public:
     void addGameObject(const std::shared_ptr<GameObject>& obj);
 
     bool isClient() const;
+
+    bool isServer() const {
+        return network_type == NetworkType::Server;
+    }
 
     // N4 断线反馈：Client→None 转变瞬间置位（仅客户端路径；Server 端逐客户端
     // 断开属正常事件，Local 永不断线，均不触发）。场景每帧轮询驱动提示层

@@ -13,6 +13,7 @@
 #include "SceneManager.h"
 #include "MoveComponent.h"
 #include "FireBall.h"
+#include "Goomba.h"
 #include "Collision.h"
 #include "Core/Types.h"
 #include "MapLoader.h"
@@ -103,6 +104,15 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
         this->addObjectWithNetwork(fire_ball);
         return fire_ball;
     }
+    if (obj_type == ObjectType::Goomba) {
+        float x, y, s_x;
+        packet >> x >> y >> s_x;
+        const auto goomba = std::make_shared<Goomba>(x, y, s_x);
+        goomba->setId(id);
+        LOG_DEBUG_FMT("Create goomba, id:{}, x:{}, y:{}, s_x:{}", id, x, y, s_x);
+        this->addObjectWithNetwork(goomba);
+        return goomba;
+    }
     LOG_ERROR("Invalid object type");
     return nullptr;
 }
@@ -115,17 +125,23 @@ void SuperMarioSceneMultiplayer::initStaticObjects() {
 void SuperMarioSceneMultiplayer::initDynamicObjects() {
     if (is_initDynamicObjects) return;
     is_initDynamicObjects = true;
+    const auto map_data = MapLoader::loadDynamicData();
 #ifndef SERVER_BUILD
     // 玩家出生点取自 level_1.json
-    const auto map_data = MapLoader::loadDynamicData();
     const float spawn_x = map_data ? map_data->player_spawn_x : 100.f;
     const float spawn_y = map_data ? map_data->player_spawn_y : 100.f;
     std::shared_ptr<Mario> mario = std::make_shared<Mario>(spawn_x, spawn_y);
     this->addObjectWithNetwork(mario);
     LOG_DEBUG("Create mario");
-    // 敌人不在此生成：Goomba 的网络同步未实现，联机各端本地生成会互不同步
-    // （敌人玩法目前归 SuperMarioSceneSingle 单机版专属）
 #endif
+    // 敌人由服务器（含客户端房主）从地图生成：addObjectWithNetwork 会注册进
+    // NetworkManager 并广播 SpawnObject；纯客户端不进入本函数，靠消息生成
+    if (map_data) {
+        for (const auto& spawn : map_data->goombas) {
+            this->addObjectWithNetwork(std::make_shared<Goomba>(spawn.x, spawn.y, spawn.speed));
+        }
+        LOG_DEBUG_FMT("Created {} goombas", map_data->goombas.size());
+    }
 }
 
 #ifndef SERVER_BUILD

@@ -5,7 +5,7 @@
 #pragma once
 #include "Animation.h"
 #include "Events.h"
-#include "GameObject.h"
+#include "NetworkGameObject.h"
 #include "Timer.h"
 #include "Core/Types.h"
 
@@ -13,7 +13,7 @@
 struct MIX_Track;   // SDL_mixer track 前置声明（头文件不引 SDL 头）
 #endif
 
-class Goomba : public GameObject {
+class Goomba : public NetworkGameObject {
 public:
     Goomba(float x, float y, float speed_x = -100.f);
 
@@ -37,6 +37,13 @@ public:
     bool isDead() const {
         return is_squashed;
     }
+
+    void serialize(eng::Packet& packet, NetworkMsg type) override;
+
+    void deserialize(eng::Packet& packet) override;
+
+    // 服务端销毁时广播 RemoveObject，客户端本地销毁静默（方案 B：移除由服务端统一裁决）
+    void destroy() override;
 
 private:
     bool is_squashed = false;
