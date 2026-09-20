@@ -81,7 +81,9 @@ void Mushroom::start() {
     if (appear_track) MIX_SetTrackAudio(appear_track, am.getSoundBuffer("powerup_appears"));
     eaten_track = MIX_CreateTrack(am.getMixer());
     if (eaten_track) MIX_SetTrackAudio(eaten_track, am.getSoundBuffer("powerup"));
-    if (appear_track) { MIX_StopTrack(appear_track, 0); MIX_PlayTrack(appear_track, 0); }
+    // 只有真正处于"刚从方块里长出来"的状态才播出生音效；加入服务器时还原的
+    // 已长出/已被吃蘑菇（restoreNetworkState）不重放
+    if (appear_track && is_emerging && !is_eaten) { MIX_StopTrack(appear_track, 0); MIX_PlayTrack(appear_track, 0); }
 #endif
 }
 
@@ -226,11 +228,40 @@ void Mushroom::setKilled(const float blast_dir_x) {
     }
 }
 
+void Mushroom::restoreNetworkState(const float birth_y, const bool emerging, const bool eaten) {
+    spawn_y = birth_y;
+    if (eaten) {
+        // 已被吃的蘑菇：静默进入被吃状态（不走 setEaten，避免客户端重复上报
+        // ClientEvent，也不重播音效/延时器），等 RemoveObject 清理
+        is_eaten = true;
+        if (const auto gravity = getComponent<GravityComponent>()) gravity->setActive(false);
+        if (const auto move = getComponent<MoveComponent>()) {
+            move->setSpeed(eng::Vec2f(0.f, 0.f));
+            move->setActive(false);
+        }
+        if (const auto collision = getComponent<Collision>()) collision->setActive(false);
+        if (const auto box = getComponent<Collision, BoxCollision>()) box->setSize(0.f, 0.f);
+        return;
+    }
+    if (!emerging) {
+        // 已长出的蘑菇：跳过升起流程，直接按快照位置开启重力与碰撞开始行走
+        is_emerging = false;
+        if (const auto move = getComponent<MoveComponent>()) {
+            move->setPosition(this->position);
+            move->setSpeed(eng::Vec2f(walk_speed, 0.f));
+        }
+        if (const auto collision = getComponent<Collision>()) collision->setActive(true);
+        if (const auto gravity = getComponent<GravityComponent>()) gravity->setActive(true);
+    }
+    // 升起中途加入：保持升起状态，从快照位置以 EMERGE_SPEED 继续升到 spawn_y 目标位
+}
+
 void Mushroom::serialize(eng::Packet& packet, const NetworkMsg type) {
     if (type == NetworkMsg::SpawnObject) {   // 交给 Scene 处理
-        // ID   对象类型   x   y   s_x
+        // ID   对象类型   x   y   s_x   spawn_y   is_emerging   is_eaten
         packet << type << this->getId() << ObjectType::Mushroom
-            << this->getPosition().x << this->getPosition().y << walk_speed;
+            << this->getPosition().x << this->getPosition().y << walk_speed
+            << spawn_y << is_emerging << is_eaten;
     } else if (type == NetworkMsg::UpdateObject) {   // 交给自己处理
         // 第二个 type 供 deserialize 判别（与 Mario/Goomba 的线上格式一致）
         packet << type << this->getId() << type

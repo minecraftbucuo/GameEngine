@@ -37,6 +37,9 @@ public:
 
     void deserialize(eng::Packet& packet) override;
 
+    // 按服务端快照还原已有蘑菇的状态：已长出/已被吃的蘑菇不重放升起动画与出生音效
+    void restoreNetworkState(float birth_y, bool emerging, bool eaten);
+
     // 服务端销毁时广播 RemoveObject，客户端本地销毁静默（方案 B：移除由服务端统一裁决）
     void destroy() override;
 

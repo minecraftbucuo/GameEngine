@@ -115,11 +115,14 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
         return goomba;
     }
     if (obj_type == ObjectType::Mushroom) {
-        float x, y, s_x;
-        packet >> x >> y >> s_x;
+        float x, y, s_x, birth_y;
+        bool emerging, eaten;
+        packet >> x >> y >> s_x >> birth_y >> emerging >> eaten;
         const auto mushroom = std::make_shared<Mushroom>(x, y, s_x);
         mushroom->setId(id);
-        LOG_DEBUG_FMT("Create mushroom, id:{}, x:{}, y:{}, s_x:{}", id, x, y, s_x);
+        // 按服务端权威状态还原：新客户端加入时，已长出/已被吃的蘑菇不重放升起动画与音效
+        mushroom->restoreNetworkState(birth_y, emerging, eaten);
+        LOG_DEBUG_FMT("Create mushroom, id:{}, x:{}, y:{}, s_x:{}, emerging:{}, eaten:{}", id, x, y, s_x, emerging, eaten);
         this->addObjectWithNetwork(mushroom);
         // 渲染顺序重排：把蘑菇插到出生点正下方的方块之前，升起过程被方块遮挡（与单机一致）。
         // 不能按坐标精确匹配：客户端顶砖是本地预测，方块正在弹跳（y 每帧变化），
