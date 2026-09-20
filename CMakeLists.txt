@@ -77,7 +77,7 @@ if (EMSCRIPTEN)
             "-lwebsocket.js"                      # 联机 N2：TcpClient WEB 后端
                                                   # （emscripten/websocket.h 的 JS 运行时胶水）
             "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
-            "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/src/Asset@/Asset"
+            "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/Asset@/Asset"
     )
 endif ()
 
@@ -233,6 +233,7 @@ endif ()
 
 # ── 引擎源码与目标 ────────────────────────────────────────────────
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(ASSET_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Asset)
 set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 file(GLOB_RECURSE SRC CONFIGURE_DEPENDS ${SRC_DIR}/*.cpp)
@@ -278,22 +279,22 @@ target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 # 资源随构建拷到 exe 旁（getExeDir 约定：运行期 ./Asset/... 相对路径以 exe 目录为基准）
 #   客户端：整目录拷贝（纹理/音频/字体/动画/地图/配置全量）
 #   服务端：无渲染无音频（SERVER_BUILD 门控），运行期只读 config.json 与关卡地图 JSON，
-#           只拷这两样；新增关卡 JSON 放 src/Asset/maps/ 即随构建自动同步
+#           只拷这两样；新增关卡 JSON 放 Asset/maps/ 即随构建自动同步
 #   WEB    ：资源已由 --preload-file 打进 .data 包，跳过
 if (NOT BUILD_FOR_SERVER AND NOT EMSCRIPTEN)
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${SRC_DIR}/Asset/
+            ${ASSET_DIR}/
             $<TARGET_FILE_DIR:GameEngine>/Asset
     )
 elseif (BUILD_FOR_SERVER)
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/Asset
             COMMAND ${CMAKE_COMMAND} -E copy
-                    ${SRC_DIR}/Asset/config.json
+                    ${ASSET_DIR}/config.json
                     $<TARGET_FILE_DIR:${PROJECT_NAME}>/Asset/
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${SRC_DIR}/Asset/maps
+                    ${ASSET_DIR}/maps
                     $<TARGET_FILE_DIR:${PROJECT_NAME}>/Asset/maps
     )
 endif ()

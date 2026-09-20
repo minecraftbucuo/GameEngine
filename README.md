@@ -44,7 +44,7 @@ chmod +x scripts/*.sh        # 首次：从 Windows 检出的脚本丢了执行�
 ### Windows
 
 ```powershell
-# 桌面版（CMake 会自动把 src/Asset 拷到 exe 旁）
+# 桌面版（CMake 会自动把 Asset/ 拷到 exe 旁）
 cmake -S . -B build
 cmake --build build --config Release
 .\build\bin\GameEngine.exe
@@ -108,7 +108,7 @@ flowchart LR
 
 ## ⚙️ 配置
 
-`src/Asset/config.json`（构建时拷到 exe 旁 / Web 版打进 .data 包）：
+`Asset/config.json`（构建时拷到 exe 旁 / Web 版打进 .data 包）：
 
 | 键                              | 说明                                                                                                   |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
@@ -165,7 +165,7 @@ FetchContent 在拉依赖（SDL3 全家 + Box2D），需要网络，之后有缓
 <details>
 <summary><b>服务端启动报找不到 config.json</b></summary>
 
-CMake 在服务端构建时会自动把 `src/Asset/config.json` 和 `maps/` 拷到 exe 同级的 `Asset/` 目录——重新构建一次即可自动补齐。手动兜底：把 `src/Asset/config.json` 与 `src/Asset/maps/` 拷到服务端 exe 同级的 `Asset/` 下。
+CMake 在服务端构建时会自动把 `Asset/config.json` 和 `Asset/maps/` 拷到 exe 同级的 `Asset/` 目录——重新构建一次即可自动补齐。手动兜底：把根目录 `Asset/` 下的 `config.json` 与 `maps/` 拷到服务端 exe 同级的 `Asset/` 下。
 
 </details>
 
