@@ -91,7 +91,7 @@ WEB 版里 `auto`/`127.0.0.1`/`localhost` 同为自动寻址：本机打开的�
 
 两个脚本各自干了啥：
 
-- **`build.sh`**：选目标（默认服务器）→ `cmake -B build-server -DBUILD_FOR_SERVER=ON` 配置编译出无头 `GameEngineServer`（自动开服、无菜单无渲染）；**额外把 `src/Asset` 拷到 exe 同级**——CMake 只给客户端拷 Asset，服务端运行期要读 `config.json`（端口、tickRate），脚本补上这一刀。选了 Web 版则再走 `emcmake` 产出 `build-web/web/` 四件套（找不到 emsdk 会明确报错并给出安装命令）
+- **`build.sh`**：选目标（默认服务器）→ `cmake -B build-server -DBUILD_FOR_SERVER=ON` 配置编译出无头 `GameEngineServer`（自动开服、无菜单无渲染）；资源拷贝已由 CMake 接管——服务端构建自动把 `config.json` 与 `maps/`（关卡地图，路径由 config 的 `game.levelMap` 指定）拷到 exe 同级 `Asset/`，服务端运行期读的就是这两样。选了 Web 版则再走 `emcmake` 产出 `build-web/web/` 四件套（找不到 emsdk 会明确报错并给出安装命令）
 - **`start_server.sh`**：自检（服务端二进制/websockify 缺哪个直接报错并告知怎么补）→ 后台启动服务端（日志 `logs/server.log`，端口读 config.json）→ 前台启动 websockify 桥（8081→6666，有 Web 产物就加 `--web` 顺带发页面）。**Ctrl+C 一键停全家**（trap 保证后台服务端不被遗留）
 
 首次在 Linux 上运行前：`chmod +x scripts/*.sh`（从 Windows 检出的脚本丢了执行位）；首次构建首次跑同 Windows 一样要网络（FetchContent 拉依赖）。

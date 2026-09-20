@@ -67,7 +67,7 @@ cmake --build build --config Release
 | 目标                               | 产物路径                                   | 说明                                                                                    |
 | -------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
 | **桌面版**（默认）                      | `build/bin/GameEngine`                 | 全功能客户端，启动进菜单                                                                          |
-| **服务器版** `-DBUILD_FOR_SERVER=ON` | `build-server/server/GameEngineServer` | 无头，**启动即自动开服**（无菜单无渲染）；`build.sh` 会在 exe 同级建 `Asset/` 目录并拷入 `config.json`（服务端只读这一个文件） |
+| **服务器版** `-DBUILD_FOR_SERVER=ON` | `build-server/server/GameEngineServer` | 无头，**启动即自动开服**（无菜单无渲染）；CMake 随构建自动在 exe 同级建 `Asset/`，拷入 `config.json` 与 `maps/`（服务端运行期只读这两样） |
 | **Web 版**（`emcmake` 配置）          | `build-web/web/` 四件套                   | WASM/Emscripten，资源打进 .data 虚拟盘                                                        |
 
 ### CMake 开关
@@ -117,6 +117,7 @@ flowchart LR
 | `network.port`                 | 游戏端口（默认 6666），桌面直连 & 桥的转发目标                                                                          |
 | `network.webBridgePort`        | 桥监听端口（默认 8081）                                                                                       |
 | `network.tickRate` / `timeout` | 服务端同步频率 / 连接超时                                                                                       |
+| `game.levelMap`                | 当前关卡地图路径（默认 `./Asset/maps/level_1.json`），换关改这里即可，无需重新编译                                               |
 | `game.*`                       | 重力、速度、跳跃力度、火球、Box2D 步长等参数                                                                            |
 
 > \[!TIP]
@@ -164,7 +165,7 @@ FetchContent 在拉依赖（SDL3 全家 + Box2D），需要网络，之后有缓
 <details>
 <summary><b>服务端启动报找不到 config.json</b></summary>
 
-用 `build.sh` 构建（会在 exe 同级建 `Asset/` 并拷入 `config.json`），或手动把 `src/Asset/config.json` 拷到服务端 exe 同级的 `Asset/` 目录下。
+CMake 在服务端构建时会自动把 `src/Asset/config.json` 和 `maps/` 拷到 exe 同级的 `Asset/` 目录——重新构建一次即可自动补齐。手动兜底：把 `src/Asset/config.json` 与 `src/Asset/maps/` 拷到服务端 exe 同级的 `Asset/` 下。
 
 </details>
 
