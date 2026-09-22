@@ -33,7 +33,10 @@ enum class ObjectType : uint8_t {
     Mario = 1,
     FireBall = 4,
     Goomba = 5,
-    Mushroom = 6
+    Mushroom = 6,
+    Bowser = 7,       // BOSS：服务端权威模拟 AI，客户端快照硬同步（提线木偶）
+    BowserFire = 8,   // BOSS 火焰弹投射物
+    BowserAxe = 9     // BOSS 旋转飞斧投射物
 };
 
 enum class InputType : uint8_t {

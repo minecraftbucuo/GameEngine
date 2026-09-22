@@ -15,6 +15,9 @@
 #include "FireBall.h"
 #include "Goomba.h"
 #include "Mushroom.h"
+#include "Bowser.h"
+#include "BowserFire.h"
+#include "BowserAxe.h"
 #include "Collision.h"
 #include "Core/Types.h"
 #include "MapLoader.h"
@@ -153,6 +156,40 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
         }
         return mushroom;
     }
+    if (obj_type == ObjectType::Bowser) {
+        float x, y, patrol_speed;
+        bool activated, breathing, killed;
+        int health;
+        packet >> x >> y >> patrol_speed >> activated >> breathing >> health >> killed;
+        const auto bowser = std::make_shared<Bowser>(x, y, patrol_speed);
+        bowser->setId(id);
+        // 按服务端权威状态还原：新客户端加入时不重放激活/死亡动画与音效
+        bowser->restoreNetworkState(activated, breathing, health, killed);
+        LOG_DEBUG_FMT("Create bowser, id:{}, x:{}, y:{}, activated:{}, health:{}, killed:{}", id, x, y, activated, health, killed);
+        this->addObjectWithNetwork(bowser);
+        return bowser;
+    }
+    if (obj_type == ObjectType::BowserFire) {
+        float x, y, s_x;
+        packet >> x >> y >> s_x;
+        const auto bowser_fire = std::make_shared<BowserFire>(x, y, s_x);
+        bowser_fire->setId(id);
+        // 构造函数按"嘴部中心点"做了半高偏移，快照 y 是已偏移后的权威位置，
+        // 重置回快照值避免二次偏移
+        bowser_fire->getComponent<MoveComponent>()->setPosition(eng::Vec2f(x, y));
+        LOG_DEBUG_FMT("Create bowser fire, id:{}, x:{}, y:{}, s_x:{}", id, x, y, s_x);
+        this->addObjectWithNetwork(bowser_fire);
+        return bowser_fire;
+    }
+    if (obj_type == ObjectType::BowserAxe) {
+        float x, y, s_x;
+        packet >> x >> y >> s_x;
+        const auto bowser_axe = std::make_shared<BowserAxe>(x, y, s_x);
+        bowser_axe->setId(id);
+        LOG_DEBUG_FMT("Create bowser axe, id:{}, x:{}, y:{}, s_x:{}", id, x, y, s_x);
+        this->addObjectWithNetwork(bowser_axe);
+        return bowser_axe;
+    }
     LOG_ERROR("Invalid object type");
     return nullptr;
 }
@@ -181,6 +218,11 @@ void SuperMarioSceneMultiplayer::initDynamicObjects() {
             this->addObjectWithNetwork(std::make_shared<Goomba>(spawn.x, spawn.y, spawn.speed));
         }
         LOG_DEBUG_FMT("Created {} goombas", map_data->goombas.size());
+        if (map_data->has_bowser) {
+            this->addObjectWithNetwork(
+                std::make_shared<Bowser>(map_data->bowser.x, map_data->bowser.y, map_data->bowser.speed));
+            LOG_DEBUG("Created bowser");
+        }
     }
 }
 

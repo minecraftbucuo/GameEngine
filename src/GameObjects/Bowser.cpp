@@ -17,6 +17,7 @@
 #include "HealthBar.h"
 #include "Logger.h"
 #include "MoveComponent.h"
+#include "NetworkManager.h"
 #include "Scene.h"
 #include "AssetManager.h"
 #include "Core/Types.h"
@@ -69,11 +70,12 @@ Bowser::Bowser(const float x, const float y, const float speed_x) {
     healthBar->setMaxHealth(5);
     healthBar->setHealth(5);
 
-    // 延迟激活检查：马里奥接近才现身（远处的行动不会被察觉）
+    // 延迟激活检查：马里奥接近才现身（远处的行动不会被察觉）。
+    // 计时器只在 start() 里由权威端启动：构造时 scene 尚未设置，无法判定
+    // 网络身份；客户端若启动会用远端马里奥的位置自行"激活"
     activate_timer.setCallback([this]() -> void { this->checkActivation(); });
-    activate_timer.start(BOWSER_ACTIVATE_INTERVAL, true);
 
-    // 飞斧连发计时：每到间隔发一把（回调只注册一次）
+    // 飞斧连发计时：每到间隔发一把（回调只注册一次，权威端启动）
     axe_timer.setCallback([this]() -> void { this->throwAxeOne(); });
 
     this->tag = "bowser:" + std::to_string(this->id);
@@ -90,6 +92,11 @@ Bowser::~Bowser() {
 
 void Bowser::start() {
     GameObject::start();
+
+    // 延迟激活检查仅权威端运转（客户端的激活由服务端快照驱动）
+    if (isAuthority()) {
+        activate_timer.start(BOWSER_ACTIVATE_INTERVAL, true);
+    }
 
     // BoxCollision::start() 会用渲染贴图尺寸覆盖碰撞盒，必须在组件初始化后重新缩小：
     // 水平居中、底部对齐（头冠/四肢留白不参与碰撞）
@@ -136,6 +143,13 @@ void Bowser::render(eng::Renderer& renderer) {
     else walkAnimation.render(renderer, this->position);
     GameObject::render(renderer);
 }
+
+void Bowser::switchFacing() {
+    anim_facing_left = facing_left;
+    auto& fm = FrameManager::getInstance();
+    walkAnimation.setFrames(fm.getFrame(facing_left ? "bowser_walk_left_frame" : "bowser_walk_right_frame"));
+    breathAnimation.setFrames(fm.getFrame(facing_left ? "bowser_breath_left_frame" : "bowser_breath_right_frame"));
+}
 #endif
 
 void Bowser::update(eng::Time deltaTime) {
@@ -147,6 +161,19 @@ void Bowser::update(eng::Time deltaTime) {
         return;
     }
 
+#ifndef SERVER_BUILD
+    // 朝向变化时切换走路/喷火两组动画的帧集（客户端朝向由快照驱动）
+    if (facing_left != anim_facing_left) switchFacing();
+
+    if (is_activated && !is_killed) {
+        if (is_breathing) breathAnimation.update(deltaTime);
+        else walkAnimation.update(deltaTime);
+    }
+#endif
+
+    // 客户端木偶：位置/状态由服务端快照硬设，不跑 AI 与计时器
+    if (!isAuthority()) return;
+
     // 延迟激活检查：未激活时唯一运转的逻辑（驱动 checkActivation 回调）
     activate_timer.update(deltaTime);
 
@@ -156,19 +183,6 @@ void Bowser::update(eng::Time deltaTime) {
     const float sx = this->getSpeed().x;
     if (sx > 1.f) facing_left = false;
     else if (sx < -1.f) facing_left = true;
-
-#ifndef SERVER_BUILD
-    // 朝向变化时切换走路/喷火两组动画的帧集
-    if (facing_left != anim_facing_left) {
-        anim_facing_left = facing_left;
-        auto& fm = FrameManager::getInstance();
-        walkAnimation.setFrames(fm.getFrame(facing_left ? "bowser_walk_left_frame" : "bowser_walk_right_frame"));
-        breathAnimation.setFrames(fm.getFrame(facing_left ? "bowser_breath_left_frame" : "bowser_breath_right_frame"));
-    }
-
-    if (is_breathing) breathAnimation.update(deltaTime);
-    else walkAnimation.update(deltaTime);
-#endif
 
     if (is_breathing) {
         shoot_timer.update(deltaTime);
@@ -202,8 +216,10 @@ void Bowser::handleCollision(const CollisionEvent& event) {
     // 小怪与 BOSS 不做实体交互：互相穿行（小怪侧同步忽略 BOSS，
     // 否则小怪会按贴图全高解析本类带偏移的碰撞盒位置而被压进地面）
     if (other->getClassName() == "Goomba") return;
-    // 被炮弹击中：扣血；血量打空沿炮弹飞行方向炸飞坠落（炮弹爆炸由炮弹侧处理）
+    // 被炮弹击中：扣血；血量打空沿炮弹飞行方向炸飞坠落（炮弹爆炸由炮弹侧处理）。
+    // 客户端不结算：Bowser 血量为服务端权威模拟（客户端木偶），一切等快照
     if (other->getClassName() == "FireBall") {
+        if (!isAuthority()) return;
         const auto& health_bar = getComponent<HealthBar>();
         health_bar->takeDamage(1);
         if (health_bar->isDead()) {
@@ -257,8 +273,9 @@ void Bowser::handleCollision(const CollisionEvent& event) {
                 is_in_air = false;
                 if (!is_breathing)
                     moveComponent->setSpeedX(facing_left ? -patrol_speed_x : patrol_speed_x);
-                // 决策心跳恢复地面节奏（腾空期间切的是掷斧短间隔）
-                decision_timer.start(BOWSER_DECISION_INTERVAL, true);
+                // 决策心跳恢复地面节奏（腾空期间切的是掷斧短间隔）；
+                // 客户端 is_in_air 恒 false，计时器启动仅权威端需要
+                if (isAuthority()) decision_timer.start(BOWSER_DECISION_INTERVAL, true);
             }
         }
         else {
@@ -296,6 +313,7 @@ void Bowser::setKilled(const float blast_dir_x) {
 }
 
 void Bowser::checkActivation() {
+    if (!isAuthority()) return;   // 客户端激活由服务端快照驱动
     if (is_activated || is_killed) return;
     Scene* scene = getScene();
     if (!scene) return;
@@ -316,6 +334,7 @@ void Bowser::checkActivation() {
 }
 
 void Bowser::makeDecision() {
+    if (!isAuthority()) return;   // AI 只在权威端模拟（随机源非确定，双端无法一致）
     if (is_killed || is_breathing) return;
     // 腾空时不做落地决策：跳扑方向即马里奥方向，直接连续掷斧
     if (is_in_air) {
@@ -361,6 +380,7 @@ void Bowser::makeDecision() {
 }
 
 void Bowser::jumpAction() {
+    if (!isAuthority()) return;
     if (is_killed || is_in_air) return;
     const auto move = getComponent<MoveComponent>();
     if (!move) return;
@@ -373,6 +393,7 @@ void Bowser::jumpAction() {
 }
 
 void Bowser::throwAxe() {
+    if (!isAuthority()) return;
     if (is_killed) return;
 
     // 一次掷斧动作 = 连发 2~3 把（首把立即出手，后续按连发间隔逐发）
@@ -382,6 +403,7 @@ void Bowser::throwAxe() {
 }
 
 void Bowser::throwAxeOne() {
+    if (!isAuthority()) return;
     if (is_killed) return;
     Scene* scene = getScene();
     if (!scene) return;
@@ -390,13 +412,14 @@ void Bowser::throwAxeOne() {
     const float dir = facing_left ? -1.f : 1.f;
     const float axe_x = this->position.x + this->getSize().x * 0.5f - CONFIG.game.defaultBlockSize * 0.5f;
     const float axe_y = this->position.y - CONFIG.game.defaultBlockSize * 0.3f;
-    scene->addObject(std::make_shared<BowserAxe>(axe_x, axe_y, dir * BOWSER_AXE_SPEED));
+    spawnProjectile(scene, std::make_shared<BowserAxe>(axe_x, axe_y, dir * BOWSER_AXE_SPEED));
 
     if (--axe_burst_left > 0) axe_timer.start(BOWSER_AXE_BURST_INTERVAL);
     else axe_timer.stop();
 }
 
 void Bowser::startBreathing() {
+    if (!isAuthority()) return;
     if (is_killed || is_breathing) return;
     is_breathing = true;
 
@@ -410,6 +433,7 @@ void Bowser::startBreathing() {
 }
 
 void Bowser::stopBreathing() {
+    if (!isAuthority()) return;
     if (!is_breathing) return;
     is_breathing = false;
     // 跳扑腾空时不恢复速度（落地由垂直碰撞恢复）
@@ -421,6 +445,7 @@ void Bowser::stopBreathing() {
 }
 
 void Bowser::spawnFire() {
+    if (!isAuthority()) return;
     if (is_killed) return;
     Scene* scene = getScene();
     if (!scene) return;
@@ -432,5 +457,106 @@ void Bowser::spawnFire() {
         : this->position.x + this->getSize().x + CONFIG.game.defaultBlockSize * 0.1f;
     std::uniform_real_distribution<float> fire_height(0.35f, 0.70f);
     const float fire_y = this->position.y + this->getSize().y * fire_height(decisionRng());
-    scene->addObject(std::make_shared<BowserFire>(fire_x, fire_y, dir * BOWSER_FIRE_SPEED));
+    spawnProjectile(scene, std::make_shared<BowserFire>(fire_x, fire_y, dir * BOWSER_FIRE_SPEED));
+}
+
+bool Bowser::isAuthority() const {
+    auto* nm = getScene() ? getScene()->getNetworkManager() : nullptr;
+    return !nm || !nm->isClient();
+}
+
+void Bowser::spawnProjectile(Scene* scene, const std::shared_ptr<GameObject>& obj) const {
+    // 单机（None）本地直接生成；服务端/主机走网络生成链路（注册 + 广播 SpawnObject）
+    if (scene->getNetworkType() == NetworkManager::NetworkType::None) {
+        scene->addObject(obj);
+    }
+    else {
+        scene->addObjectWithNetwork(obj);
+    }
+}
+
+void Bowser::serialize(eng::Packet& packet, const NetworkMsg type) {
+    const auto& health_bar = getComponent<HealthBar>();
+    if (type == NetworkMsg::SpawnObject) {   // 交给 Scene 处理
+        // ID   对象类型   x   y   带符号巡逻速度   is_activated   is_breathing   health   is_killed
+        packet << type << this->getId() << ObjectType::Bowser
+            << this->getPosition().x << this->getPosition().y
+            << (facing_left ? -patrol_speed_x : patrol_speed_x)
+            << is_activated << is_breathing
+            << (health_bar ? health_bar->getHealth() : 0)
+            << is_killed;
+    } else if (type == NetworkMsg::UpdateObject) {   // 交给自己处理
+        // 第二个 type 供 deserialize 判别（与 Mario/Goomba 的线上格式一致）
+        packet << type << this->getId() << type
+            << this->getPosition().x << this->getPosition().y
+            << facing_left << is_activated << is_breathing
+            << (health_bar ? health_bar->getHealth() : 0)
+            << is_killed;
+    }
+    // RemoveObject 由 destroy() 触发 broadcastRemoveObject 统一广播，不走 serialize
+}
+
+void Bowser::deserialize(eng::Packet& packet) {
+    NetworkMsg msg_type;
+    packet >> msg_type;
+    if (msg_type != NetworkMsg::UpdateObject) return;
+
+    float x, y;
+    bool remote_facing_left, remote_activated, remote_breathing, remote_killed;
+    int remote_health;
+    packet >> x >> y >> remote_facing_left >> remote_activated >> remote_breathing
+        >> remote_health >> remote_killed;
+
+    // 服务端判死兜底：本地尚未预测到被击败时补走完整流程（音效/组件关闭，幂等）；
+    // 炸飞坠落轨迹由后续快照驱动，补走流程设置的炸飞速度会被快照覆盖
+    if (remote_killed && !is_killed) {
+        setKilled(remote_facing_left ? -1.f : 1.f);
+        return;
+    }
+    // 已被击败的对象不再接受快照，等待 RemoveObject 清理
+    if (is_killed) return;
+
+    if (const auto& health_bar = getComponent<HealthBar>()) {
+        health_bar->syncHealth(remote_health);
+    }
+    // 激活/朝向/喷火状态直接采用服务端权威值（客户端不自行激活、不跑 AI）
+    facing_left = remote_facing_left;
+    is_activated = remote_activated;
+    is_breathing = remote_breathing;
+
+    if (const auto& move = getComponent<MoveComponent>()) {
+        move->setPosition(eng::Vec2f(x, y));
+    }
+}
+
+void Bowser::restoreNetworkState(const bool activated, const bool breathing, const int health, const bool killed) {
+    if (killed) {
+        // 已被击败的 BOSS：静默进入击败态（不走 setKilled，不重放 kick 音效、
+        // 不设炸飞速度——坠落轨迹由后续快照驱动），等 RemoveObject 清理
+        is_killed = true;
+        is_breathing = false;
+        if (const auto health_bar = getComponent<HealthBar>()) health_bar->setHealth(0);
+        if (const auto collision = getComponent<Collision>()) collision->setActive(false);
+        if (const auto box = getComponent<Collision, BoxCollision>()) box->setSize(0.f, 0.f);
+        return;
+    }
+    // 沉睡中的 BOSS：保持隐身（渲染层按 is_activated 剔除），激活由服务端快照驱动；
+    // 激活中的 BOSS：从快照位置/朝向继续接受同步
+    is_activated = activated;
+    is_breathing = breathing;
+    if (const auto health_bar = getComponent<HealthBar>()) health_bar->setHealth(health);
+    if (activated) {
+        if (const auto move = getComponent<MoveComponent>())
+            move->setSpeedX(facing_left ? -patrol_speed_x : patrol_speed_x);
+    }
+}
+
+void Bowser::destroy() {
+    // 服务端是移除的唯一权威：销毁时广播 RemoveObject（被击败坠出场景等路径）；
+    // 客户端本地销毁静默，由服务端消息兜底
+    auto* nm = getScene() ? getScene()->getNetworkManager() : nullptr;
+    if (nm && nm->isServer()) {
+        nm->broadcastRemoveObject(this->getId());
+    }
+    NetworkGameObject::destroy();
 }

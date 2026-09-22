@@ -3,7 +3,8 @@
 //
 // 马里奥联机场景：Server（权威主机）/ Client / WEB Local 全部网络路径所在。
 // 单机玩法见 SuperMarioSceneSingle（无网络层）。
-// 注意：联机版不生成敌人——Goomba 同步未实现，敌人玩法为单机版专属。
+// 敌人（Goomba/蘑菇/BOSS Bowser 及其投射物）由服务端（含主机）权威生成并同步，
+// 客户端靠 SpawnObject/UpdateObject 消息重建与硬同步。
 
 #pragma once
 #include "Scene.h"
