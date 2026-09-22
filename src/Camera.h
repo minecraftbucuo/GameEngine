@@ -41,7 +41,7 @@ private:
     // left/top 语义为可视区左上角（与原 sf::View(FloatRect) 构造语义一致）
     eng::FloatRect floatRect;
     eng::Renderer* renderer{};
-    bool mouseControl = false;
+    bool mouseControl = true;
     eng::Vec2i mousePos;
     bool isPressed = false;
 
