@@ -320,7 +320,8 @@ void Bowser::checkActivation() {
 
     for (const auto& obj : scene->getGameObjects()) {
         if (!obj || obj->getClassName() != "Mario") continue;
-        // 马里奥水平距离进入阈值：现身并开始行动
+        // 任一马里奥水平距离进入阈值：现身并开始行动（联机有多名马里奥，
+        // 不能只看第一个，否则只有房主能触发激活）
         if (std::abs(obj->getPosition().x - this->position.x) <= BOWSER_ACTIVATE_RANGE) {
             is_activated = true;
             activate_timer.stop();
@@ -328,8 +329,8 @@ void Bowser::checkActivation() {
                 move->setSpeedX(facing_left ? -patrol_speed_x : patrol_speed_x);
             decision_timer.setCallback([this]() -> void { this->makeDecision(); });
             decision_timer.start(BOWSER_DECISION_INTERVAL, true);
+            break;
         }
-        break;
     }
 }
 
@@ -344,12 +345,16 @@ void Bowser::makeDecision() {
     Scene* scene = getScene();
     if (!scene) return;
 
-    // 找到马里奥，按水平距离选择动作
+    // 找到最近的马里奥（联机有多名马里奥，按最近者决策与朝向）
     GameObject* mario = nullptr;
+    float nearest = 0.f;
     for (const auto& obj : scene->getGameObjects()) {
-        if (obj && obj->getClassName() == "Mario") {
+        if (!obj || obj->getClassName() != "Mario") continue;
+        const float dist = std::abs(obj->getPosition().x + obj->getSize().x * 0.5f
+            - (this->position.x + this->getSize().x * 0.5f));
+        if (!mario || dist < nearest) {
             mario = obj.get();
-            break;
+            nearest = dist;
         }
     }
     if (!mario) return;
