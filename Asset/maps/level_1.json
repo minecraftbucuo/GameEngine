@@ -7,7 +7,10 @@
         "block_size": 64
     },
     "static": {
-        "wall": {"x": 0, "y": 0, "width": 10, "height": 960, "tag": "wall1"},
+        "walls": [
+            {"x": 0, "y": 0, "width": 10, "height": 960, "tag": "wall1"},
+            {"x": 14496, "y": 0, "width": 10, "height": 960, "tag": "wall2"}
+        ],
         "bricks": [
             {"x": 1373, "y": 584},
             {"x": 1500, "y": 584},

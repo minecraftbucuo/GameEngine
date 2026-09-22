@@ -45,7 +45,13 @@ bool loadStaticObjects(Scene& scene, const std::string& json_path) {
 
     const auto& stat = root["static"];
 
-    // 左墙
+    // 墙：边界碰撞箱（新格式用 "walls" 数组支持多面墙，旧的单对象 "wall" 保留兼容）
+    for (const auto& wall : stat.value("walls", nlohmann::json::array())) {
+        scene.addObject(std::make_shared<Ground>(
+            wall.value("x", 0.f), wall.value("y", 0.f),
+            wall.value("width", 10.f), wall.value("height", 960.f),
+            wall.value("tag", std::string("ground"))));
+    }
     if (stat.contains("wall")) {
         const auto& wall = stat["wall"];
         scene.addObject(std::make_shared<Ground>(
