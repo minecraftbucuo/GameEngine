@@ -217,17 +217,12 @@ void Mario::handleCollision(const CollisionEvent& event) {
     // 乌龟：按三态结算（踩缩壳/踢壳/踩停/滑动壳受伤；静止壳无伤）
     if (other->getClassName() == "Koopa") {
         if (const auto koopa = std::dynamic_pointer_cast<Koopa>(other)) {
-            // 踩踏判定：水平重合至少占马里奥宽度四成（防擦边误判），且接触方向
-            // 以垂直为主（垂直侵入 < 水平侵入 = 从上往下踩）。不能用"马里奥中心
-            // 严格高于壳中心"：小马里奥站在壳顶时两者中心恰好相等，会被误判成
-            // 侧面接触而受伤；而同地面侧碰时垂直侵入大、水平侵入小，不会误判
-            const float overlap_x = std::min(event.a_position.x + this_->getSize().x,
-                                             event.b_position.x + other->getSize().x) -
-                std::max(event.a_position.x, event.b_position.x);
-            const float overlap_y = std::min(event.a_position.y + this_->getSize().y,
-                                             event.b_position.y + other->getSize().y) -
-                std::max(event.a_position.y, event.b_position.y);
-            const bool stomped = overlap_x >= this_->getSize().x * 0.4f && overlap_y < overlap_x;
+            // 踩踏判定（垂直接触）：马里奥底边侵入壳顶不超过半个壳高 = 从上方
+            // 接触。不能用"水平重合 ≥ 四成宽度"：壳在高速滑动，从上方落下时
+            // 接触帧恰好压在壳前后缘的话水平重合很窄，会被误判成侧碰扣血；
+            // 同地面侧碰时马里奥底边在壳底（侵入 = 整个壳高），不会误判
+            const bool stomped = event.a_position.y + this_->getSize().y -
+                                 event.b_position.y < other->getSize().y * 0.5f;
             switch (koopa->getState()) {
             case KoopaState::Walking:
                 if (stomped) {
