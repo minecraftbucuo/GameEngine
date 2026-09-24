@@ -115,18 +115,18 @@ void FireBall::handleCollision(const CollisionEvent& event) {
     // 已爆炸：碰撞组件仍活跃到销毁为止，期间不再响应（防止 setExploded 重复偏移）
     if (is_exploded) return;
 
-    // 击中敌人：炮弹直接爆炸（敌人死亡由敌人侧的 handleCollision 处理）
-    if (other->getClassName() == "Goomba" || other->getClassName() == "Bowser") {
+    // 击中敌人（板栗仔/乌龟/BOSS）：炮弹直接爆炸（死亡由敌人侧的 handleCollision 处理）
+    if (other->getClassName() == "Goomba" || other->getClassName() == "Bowser" ||
+        other->getClassName() == "Koopa") {
         setExploded();
         return;
     }
 
-    // 乌龟免疫火系（Koopa 侧对炮弹穿行，双向一致）：炮弹穿过不爆炸。
-    // 蘑菇是道具、BOSS 火焰弹/飞斧是敌方投射物：均与炮弹互不交互（穿行）——
-    // 否则炮弹会对着完全不受影响的对象单方面爆炸/弹跳
+    // 蘑菇是道具：与炮弹互不交互（穿行），避免把道具弹得乱跳。
+    // BOSS 火焰弹/飞斧不在穿行之列：炮弹撞上敌方投射物会被挡下爆炸——
+    // 这是原有设计（BOSS 弹幕天然拦截马里奥的火球，增加难度），不要改成互不交互
     const std::string& other_name = other->getClassName();
-    if (other_name == "Koopa" || other_name == "Mushroom" ||
-        other_name == "BowserFire" || other_name == "BowserAxe") {
+    if (other_name == "Mushroom") {
         return;
     }
 

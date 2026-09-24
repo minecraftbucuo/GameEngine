@@ -379,6 +379,11 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
                                 packet >> kick_dir_x;
                                 LOG_INFO_FMT("client reported koopa {} kicked", target_id);
                                 koopa->kicked(kick_dir_x);
+                            } else if (event_type == GameEventType::KoopaKilledByFireball) {
+                                float blast_dir_x;
+                                packet >> blast_dir_x;
+                                LOG_INFO_FMT("client reported koopa {} killed by fireball", target_id);
+                                koopa->setKilledByFireball(blast_dir_x);
                             }
                         }
                     } else {

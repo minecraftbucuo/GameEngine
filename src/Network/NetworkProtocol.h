@@ -26,8 +26,9 @@ enum class GameEventType : uint8_t {
     GoombaKilledByFireball = 1,  // 炮弹击毙小怪，附加数据：float 炸飞方向（±1）
     MushroomEaten = 2,           // 蘑菇被吃掉，无附加数据
     MushroomKilled = 3,          // 蘑菇被敌人/BOSS/飞斧击杀，附加数据：float 弹飞方向（±1）
-    KoopaStomped = 4,            // 踩乌龟（缩壳）或踩停滑动壳，无附加数据
-    KoopaKicked = 5              // 踢出静止龟壳，附加数据：float 踢出方向（±1）
+    KoopaStomped = 4,            // 踩缩壳/踩停滑动壳，无附加数据
+    KoopaKicked = 5,             // 踢出静止壳，附加数据：float 踢出方向（±1）
+    KoopaKilledByFireball = 6,   // 炮弹/火焰弹击毙乌龟，附加数据：float 炸飞方向（±1）
 };
 
 enum class ObjectType : uint8_t {

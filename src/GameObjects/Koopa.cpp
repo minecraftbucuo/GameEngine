@@ -36,7 +36,8 @@ static void reportKoopaEvent(const Koopa* koopa, const GameEventType type, const
     if (!nm || !nm->isClient()) return;
     eng::Packet packet;
     packet << NetworkMsg::ClientEvent << koopa->getId() << type;
-    if (type == GameEventType::KoopaKicked) packet << dir_x;
+    if (type == GameEventType::KoopaKicked || type == GameEventType::KoopaKilledByFireball)
+        packet << dir_x;
     nm->getClientSocket().append(packet);
 }
 
@@ -100,7 +101,21 @@ void Koopa::switchFacing() {
 }
 
 void Koopa::render(eng::Renderer& renderer) {
-    if (state == KoopaState::Walking) {
+    if (is_killed) {
+        // 被火系击毙：180° 翻转贴图坠落（渲染器无 flipY，绕中心旋转等效）
+        Animation& anim = state == KoopaState::Walking ? walkAnimation : shellAnimation;
+        const Animation::Frame& f = anim.getFrame();
+        const float w = anim.getFrameWidth();
+        const float h = anim.getFrameHeight();
+        renderer.drawTexture(f.texture,
+                             eng::FloatRect(static_cast<float>(f.textureRect.left),
+                                            static_cast<float>(f.textureRect.top),
+                                            static_cast<float>(f.textureRect.width),
+                                            static_cast<float>(f.textureRect.height)),
+                             eng::FloatRect(this->position.x, this->position.y, w, h),
+                             180.f, eng::Vec2f(w * 0.5f, h * 0.5f), eng::Color::White, false);
+    }
+    else if (state == KoopaState::Walking) {
         switchFacing();
         walkAnimation.render(renderer, this->position);
     }
@@ -113,6 +128,13 @@ void Koopa::render(eng::Renderer& renderer) {
 
 void Koopa::update(const eng::Time deltaTime) {
     GameObject::update(deltaTime);
+    // 被击毙：只保留重力坠落轨迹，停掉一切计时与动画，掉出场景底部销毁
+    if (is_killed) {
+        if (getScene() && this->position.y > static_cast<float>(getScene()->getWindowSize().y)) {
+            destroy();
+        }
+        return;
+    }
     // 朝向跟随速度符号（行走动画翻转与复活恢复方向都依赖它）
     if (state == KoopaState::Walking) {
         facing_left = this->getSpeed().x < 0.f;
@@ -142,17 +164,32 @@ void Koopa::handleCollision(const CollisionEvent& event) {
     auto& this_ = event.a;
     auto& other = event.b;
 
+    // 被击毙坠落中：不再参与任何交互
+    if (is_killed) return;
+
     // 与马里奥的交互（踩缩壳/踢壳/踩停/受伤）由马里奥侧的 handleCollision 处理
     if (other->getClassName() == "Mario") return;
+
+    // 被炮弹击毙：沿炮弹飞行方向炸飞并翻身坠落（炮弹爆炸由炮弹侧处理）
+    if (other->getClassName() == "FireBall") {
+        // 炸飞方向：优先按炮弹飞行方向；炮弹近乎垂直落下时按相对位置向外炸
+        const float dir = std::abs(event.b_speed.x) > 1.f
+            ? (event.b_speed.x > 0.f ? 1.f : -1.f)
+            : (event.a_position.x >= event.b_position.x ? 1.f : -1.f);
+        setKilledByFireball(dir);
+        return;
+    }
+    // 被 BOSS 火焰弹点燃：同样炸飞坠落（火焰弹侧不与小怪交互）
+    if (other->getClassName() == "BowserFire") {
+        setKilledByFireball(event.b_speed.x > 0.f ? 1.f : -1.f);
+        return;
+    }
     // 壳撞死小怪由受害者侧结算（Goomba/Mushroom 自己认滑动壳），这里一律穿行
     if (other->getClassName() == "Goomba") return;
     if (other->getClassName() == "Mushroom") return;
     // 同类穿行（壳 vs 壳、壳与行走乌龟互不结算）
     if (other->getClassName() == "Koopa") return;
-    // 炮弹/BOSS 系对乌龟无效：穿行（BOSS 碰撞盒带偏移且小于贴图，小怪按贴图全高
-    // 解析会错位，与 Goomba 侧同理互相穿行）
-    if (other->getClassName() == "FireBall") return;
-    if (other->getClassName() == "BowserFire") return;
+    // BOSS 的飞斧对乌龟无效果：穿行
     if (other->getClassName() == "BowserAxe") return;
     if (other->getClassName() == "Bowser") return;
     if (!this_->getMoveAble()) return;
@@ -201,7 +238,7 @@ void Koopa::handleCollision(const CollisionEvent& event) {
 }
 
 void Koopa::setShellIdle() {
-    if (state == KoopaState::ShellIdle) return;   // 幂等
+    if (state == KoopaState::ShellIdle || is_killed) return;   // 幂等
     state = KoopaState::ShellIdle;
     // 客户端预测踩缩壳/踩停成功后上报（两种踩合并为同一事件，服务端幂等裁决）
     reportKoopaEvent(this, GameEventType::KoopaStomped);
@@ -222,7 +259,7 @@ void Koopa::setShellIdle() {
 }
 
 void Koopa::kicked(const float dir_x) {
-    if (state != KoopaState::ShellIdle) return;   // 幂等：只有静止壳能被踢出
+    if (state != KoopaState::ShellIdle || is_killed) return;   // 幂等：只有静止壳能被踢出
     state = KoopaState::ShellMoving;
     revive_timer.stop();
     stomp_grace_timer.stop();
@@ -241,8 +278,32 @@ void Koopa::kicked(const float dir_x) {
     kick_grace_timer.start(KICK_GRACE_MS);
 }
 
+void Koopa::setKilledByFireball(const float blast_dir_x) {
+    if (is_killed) return;
+    is_killed = true;
+    // 客户端预测击毙后上报（附带炸飞方向，供服务端复现抛物线）
+    reportKoopaEvent(this, GameEventType::KoopaKilledByFireball, blast_dir_x);
+
+#ifndef SERVER_BUILD
+    if (kick_track) { MIX_StopTrack(kick_track, 0); MIX_PlayTrack(kick_track, 0); }
+#endif
+
+    // 停掉状态计时（复活/豁免），只关碰撞保留重力 → 被炸飞后坠落穿出场景，
+    // 掉出底部由 update 销毁（碰撞盒同步清零，马里奥的地面几何探测不看 active 标志）
+    revive_timer.stop();
+    kick_grace_timer.stop();
+    stomp_grace_timer.stop();
+    if (const auto collision = getComponent<Collision>()) collision->setActive(false);
+    if (const auto box = getComponent<Collision, BoxCollision>()) box->setSize(0.f, 0.f);
+    if (const auto& move = getComponent<MoveComponent>()) {
+        // 水平沿炮弹方向炸飞，垂直向上弹起（0.6 倍跳力），重力把轨迹拉成抛物线
+        move->setSpeed(eng::Vec2f(blast_dir_x * CONFIG.game.playerSpeed * 0.6f,
+                                  -CONFIG.game.jumpForce * 0.6f));
+    }
+}
+
 void Koopa::revive() {
-    if (state != KoopaState::ShellIdle) return;   // 幂等
+    if (state != KoopaState::ShellIdle || is_killed) return;   // 幂等
     state = KoopaState::Walking;
     revive_timer.stop();
     // 尺寸还原为行走态并保持底边对齐（左上角上移）
@@ -307,6 +368,9 @@ void Koopa::deserialize(eng::Packet& packet) {
     KoopaState remote_state;
     bool remote_facing;
     packet >> x >> y >> s_x >> remote_state >> remote_facing;
+
+    // 被击毙坠落中不再接受快照（服务端随后的 RemoveObject 幂等清理）
+    if (is_killed) return;
 
     // 状态差异走幂等补流程（补走的方法会再次上报 ClientEvent，服务端幂等，
     // 与 Goomba 现状一致）；补流程含状态转换的底边对齐平移，return 跳过本次

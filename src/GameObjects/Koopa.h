@@ -58,6 +58,10 @@ public:
     // KoopaKicked(dir)；启动 250ms 踢壳豁免（双端确定性，豁免期内马里奥侧碰不受伤）
     void kicked(float dir_x);
 
+    // 被炮弹/BOSS 火焰弹击毙（幂等）：关碰撞保留重力，沿炸飞方向抛物线坠落，
+    // 掉出场景由 update 销毁；客户端预测后上报 KoopaKilledByFireball(dir)
+    void setKilledByFireball(float dir_x);
+
     // 静止壳复活为行走乌龟（仅 ShellIdle 生效，幂等）
     void revive();
 
@@ -103,6 +107,7 @@ private:
     void applyStateSize(KoopaState new_state);
 
     KoopaState state = KoopaState::Walking;
+    bool is_killed = false;          // 被火系击毙：坠落中，不再参与任何交互
     bool facing_left = true;
     float patrol_speed_x = -100.f;   // 巡逻速度（带符号，复活的恢复值）
 #ifndef SERVER_BUILD
