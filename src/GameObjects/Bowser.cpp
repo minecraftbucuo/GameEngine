@@ -217,6 +217,9 @@ void Bowser::handleCollision(const CollisionEvent& event) {
     // 小怪与 BOSS 不做实体交互：互相穿行（小怪侧同步忽略 BOSS，
     // 否则小怪会按贴图全高解析本类带偏移的碰撞盒位置而被压进地面）
     if (other->getClassName() == "Goomba") return;
+    // 蘑菇：碰到 BOSS 自行弹飞销毁（结算在蘑菇侧），BOSS 不做实体响应——
+    // 否则 BOSS 会对着正在消失的道具做通用解析（被推开甚至掉头）
+    if (other->getClassName() == "Mushroom") return;
     // 滑动龟壳撞 BOSS：扣 1 血（血量为服务端权威模拟，客户端只等快照），
     // 物理上互相制约（BOSS 被壳挡住、壳被 BOSS 弹开）；静止壳/行走乌龟与 BOSS 穿行
     if (other->getClassName() == "Koopa") {

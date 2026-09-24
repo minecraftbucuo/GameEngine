@@ -135,6 +135,9 @@ void Mushroom::handleCollision(const CollisionEvent& event) {
 
     // 与马里奥的交互（吃掉回复）由马里奥侧的 handleCollision 处理
     if (other->getClassName() == "Mario") return;
+    // 炮弹与道具互不交互：穿行（FireBall 侧同样对蘑菇穿行，双向一致）——
+    // 否则蘑菇会对着穿身而过的炮弹走通用解析（被弹得掉头）
+    if (other->getClassName() == "FireBall") return;
     if (!this_->getMoveAble()) return;
 
     // 碰到敌人/BOSS/飞斧：朝远离敌人的方向弹飞，坠落穿出场景后销毁

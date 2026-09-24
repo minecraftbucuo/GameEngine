@@ -121,6 +121,15 @@ void FireBall::handleCollision(const CollisionEvent& event) {
         return;
     }
 
+    // 乌龟免疫火系（Koopa 侧对炮弹穿行，双向一致）：炮弹穿过不爆炸。
+    // 蘑菇是道具、BOSS 火焰弹/飞斧是敌方投射物：均与炮弹互不交互（穿行）——
+    // 否则炮弹会对着完全不受影响的对象单方面爆炸/弹跳
+    const std::string& other_name = other->getClassName();
+    if (other_name == "Koopa" || other_name == "Mushroom" ||
+        other_name == "BowserFire" || other_name == "BowserAxe") {
+        return;
+    }
+
     // std::cout << this_->getTag() << ' ' << other->getTag() << std::endl;
 
     if (!this_->getMoveAble()) return;
