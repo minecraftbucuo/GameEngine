@@ -217,17 +217,21 @@ void Mario::handleCollision(const CollisionEvent& event) {
     // 乌龟：按三态结算（踩缩壳/踢壳/踩停/滑动壳受伤；静止壳无伤）
     if (other->getClassName() == "Koopa") {
         if (const auto koopa = std::dynamic_pointer_cast<Koopa>(other)) {
-            // 水平重合宽度与垂直中心比较（与板栗仔同款踩踏判定，防擦边误判）
+            // 踩踏判定：水平重合至少占马里奥宽度四成（防擦边误判），且接触方向
+            // 以垂直为主（垂直侵入 < 水平侵入 = 从上往下踩）。不能用"马里奥中心
+            // 严格高于壳中心"：小马里奥站在壳顶时两者中心恰好相等，会被误判成
+            // 侧面接触而受伤；而同地面侧碰时垂直侵入大、水平侵入小，不会误判
             const float overlap_x = std::min(event.a_position.x + this_->getSize().x,
                                              event.b_position.x + other->getSize().x) -
                 std::max(event.a_position.x, event.b_position.x);
-            const bool stomped = overlap_x >= this_->getSize().x * 0.4f &&
-                event.a_position.y + this_->getSize().y * 0.5f <
-                event.b_position.y + other->getSize().y * 0.5f;
+            const float overlap_y = std::min(event.a_position.y + this_->getSize().y,
+                                             event.b_position.y + other->getSize().y) -
+                std::max(event.a_position.y, event.b_position.y);
+            const bool stomped = overlap_x >= this_->getSize().x * 0.4f && overlap_y < overlap_x;
             switch (koopa->getState()) {
             case KoopaState::Walking:
                 if (stomped) {
-                    // 踩中：缩成静止壳并反弹
+                    // 踩中：缩成静止壳并反弹（第一下不动，再踩/再碰才踢出）
                     koopa->setShellIdle();
                     if (const auto move = getComponent<MoveComponent>())
                         move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
@@ -240,8 +244,12 @@ void Mario::handleCollision(const CollisionEvent& event) {
                 }
                 break;
             case KoopaState::ShellIdle:
-                // 静止壳无伤：踩/侧碰都是踢出，方向 = 马里奥指向壳中心的相反方向
-                koopa->kicked(event.b_position.x + other->getSize().x * 0.5f <
+                // 变壳豁免期内无视接触：马里奥刚踩中还压在壳上，等他反弹离开，
+                // 否则变壳的下一帧就会被踢走，壳无法保持静止
+                if (koopa->isShellGraceActive()) return;
+                // 静止壳无伤：踩/侧碰都是踢出，方向 = 远离马里奥（壳中心在马里奥
+                // 哪一侧就往哪侧飞；马里奥在壳右踩 → 壳向左飞）
+                koopa->kicked(event.b_position.x + other->getSize().x * 0.5f >
                               event.a_position.x + this_->getSize().x * 0.5f ? 1.f : -1.f);
                 if (stomped) {
                     if (const auto move = getComponent<MoveComponent>())
@@ -249,16 +257,22 @@ void Mario::handleCollision(const CollisionEvent& event) {
                 }
                 return;   // 壳已飞离，无需几何解析
             case KoopaState::ShellMoving:
+                // 踢壳豁免期内一律无视：壳刚被踢出时马里奥仍与其重叠，若不豁免
+                // 下一帧就会被"踩停"判回静止壳，壳永远滑不出去（踩停必须等壳离开）
+                if (koopa->isKickGraceActive()) return;
                 if (stomped) {
                     // 踩停滑动壳并反弹
                     koopa->setShellIdle();
                     if (const auto move = getComponent<MoveComponent>())
                         move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
                 }
-                else if (!koopa->isKickGraceActive()) {
-                    // 滑动壳侧碰受伤（踢壳豁免期内免疫：壳刚离脚马里奥仍与其重叠）
+                else {
+                    // 滑动壳侧碰受伤并向上弹开（与 BOSS 接触同款），快速脱离壳
+                    // 避免持续重叠每帧连扣；死亡则不再反弹
                     applyDamage(1);
                     if (getComponent<HealthBar>()->isDead()) return;
+                    if (const auto move = getComponent<MoveComponent>())
+                        move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
                 }
                 return;   // 滑动壳继续滑行，不做几何解析
             }

@@ -25,6 +25,9 @@ namespace {
     // 踢壳豁免时长（毫秒，双端确定性）：壳刚被踢出时马里奥仍与其重叠，
     // 豁免期内滑动壳侧碰马里奥不结算受伤
     constexpr int KICK_GRACE_MS = 250;
+    // 变壳豁免时长（毫秒，双端确定性）：刚缩成/踩停成静止壳时，马里奥的接触
+    // 不触发踢出（马里奥还压在壳上，需要等他弹开）
+    constexpr int STOMP_GRACE_MS = 250;
 }
 
 // 方案 B：客户端预测交互结果后上报（仅客户端实际发送；服务端/单机为本地权威，直接静默）
@@ -113,14 +116,18 @@ void Koopa::update(const eng::Time deltaTime) {
     // 朝向跟随速度符号（行走动画翻转与复活恢复方向都依赖它）
     if (state == KoopaState::Walking) {
         facing_left = this->getSpeed().x < 0.f;
+#ifndef SERVER_BUILD
+        walkAnimation.update(deltaTime);
+#endif
     }
 #ifndef SERVER_BUILD
     else {
         shellAnimation.update(deltaTime);
     }
 #endif
-    // 踢壳豁免倒计时（双端确定性运转）
+    // 踢壳/变壳豁免倒计时（双端确定性运转）
     kick_grace_timer.update(deltaTime);
+    stomp_grace_timer.update(deltaTime);
     // 复活计时仅权威端运转：客户端等快照 state 变化走幂等补流程
     if (isAuthority() && state == KoopaState::ShellIdle) {
         revive_timer.update(deltaTime);
@@ -202,6 +209,9 @@ void Koopa::setShellIdle() {
     // 停住水平运动，尺寸缩为壳并保持底边对齐（贴图只有壳高，下移贴地）
     if (const auto move = getComponent<MoveComponent>()) move->setSpeedX(0.f);
     applyStateSize(KoopaState::ShellIdle);
+    // 变壳豁免：马里奥还压在壳上，短暂忽略他的接触（等他反弹离开），
+    // 否则踩中变壳的下一帧就会把壳踢走，壳无法保持静止
+    stomp_grace_timer.start(STOMP_GRACE_MS);
 
     // 权威端静置 5s 复活（客户端等快照 state 变化补流程）
     if (isAuthority()) revive_timer.start(KOOPA_REVIVE_MS);
@@ -211,6 +221,7 @@ void Koopa::kicked(const float dir_x) {
     if (state != KoopaState::ShellIdle) return;   // 幂等：只有静止壳能被踢出
     state = KoopaState::ShellMoving;
     revive_timer.stop();
+    stomp_grace_timer.stop();
     // 客户端预测踢壳成功后上报（附带踢出方向，供服务端复现滑动方向）
     reportKoopaEvent(this, GameEventType::KoopaKicked, dir_x);
 
@@ -243,6 +254,10 @@ void Koopa::reverse() {
 
 bool Koopa::isKickGraceActive() const {
     return state == KoopaState::ShellMoving && kick_grace_timer.getPastTime() < KICK_GRACE_MS;
+}
+
+bool Koopa::isShellGraceActive() const {
+    return state == KoopaState::ShellIdle && stomp_grace_timer.getPastTime() < STOMP_GRACE_MS;
 }
 
 bool Koopa::isAuthority() const {

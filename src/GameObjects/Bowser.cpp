@@ -15,6 +15,7 @@
 #include "EventBus.h"
 #include "BoxCollision.h"
 #include "HealthBar.h"
+#include "Koopa.h"
 #include "Logger.h"
 #include "MoveComponent.h"
 #include "NetworkManager.h"
@@ -216,7 +217,32 @@ void Bowser::handleCollision(const CollisionEvent& event) {
     // 小怪与 BOSS 不做实体交互：互相穿行（小怪侧同步忽略 BOSS，
     // 否则小怪会按贴图全高解析本类带偏移的碰撞盒位置而被压进地面）
     if (other->getClassName() == "Goomba") return;
-    if (other->getClassName() == "Koopa") return;
+    // 滑动龟壳撞 BOSS：扣 1 血（血量为服务端权威模拟，客户端只等快照），
+    // 壳沿命中侧弹开避免持续重叠连扣；静止壳/行走乌龟与 BOSS 穿行
+    if (other->getClassName() == "Koopa") {
+        if (const auto koopa = std::dynamic_pointer_cast<Koopa>(other);
+            koopa && koopa->isShellMoving()) {
+            if (isAuthority()) {
+                const auto& health_bar = getComponent<HealthBar>();
+                health_bar->takeDamage(1);
+                if (health_bar->isDead()) {
+                    // 沿壳的来向炸飞 BOSS
+                    setKilled(event.b_speed.x > 0.f ? 1.f : -1.f);
+                }
+            }
+            // 壳弹开（双端执行，确定性）：推离 BOSS 碰撞盒并反向滑动
+            if (const auto shell_move = other->getComponent<MoveComponent>()) {
+                const float bowser_center_x = event.a_position.x + BOWSER_HITBOX_W * 0.5f;
+                const float shell_center_x = event.b_position.x + other->getSize().x * 0.5f;
+                const float dir = shell_center_x < bowser_center_x ? -1.f : 1.f;
+                shell_move->moveCollisionXTo(dir < 0.f
+                                                 ? event.a_position.x - other->getSize().x
+                                                 : event.a_position.x + BOWSER_HITBOX_W);
+                shell_move->setSpeedX(std::abs(koopa->getSpeed().x) * dir);
+            }
+        }
+        return;
+    }
     // 被炮弹击中：扣血；血量打空沿炮弹飞行方向炸飞坠落（炮弹爆炸由炮弹侧处理）。
     // 客户端不结算：Bowser 血量为服务端权威模拟（客户端木偶），一切等快照
     if (other->getClassName() == "FireBall") {

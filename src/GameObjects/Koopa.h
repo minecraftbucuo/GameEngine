@@ -71,6 +71,10 @@ public:
     // 踢壳豁免期内：滑动壳侧碰马里奥不结算受伤（壳刚被踢出时马里奥仍与其重叠）
     bool isKickGraceActive() const;
 
+    // 变壳豁免期内：刚缩成/踩停成静止壳时马里奥的接触不触发踢出
+    //（否则踩中变壳的下一帧，仍压在壳上的马里奥会立刻把它踢走，壳无法保持静止）
+    bool isShellGraceActive() const;
+
     KoopaState getState() const {
         return state;
     }
@@ -110,4 +114,5 @@ private:
 #endif
     Timer revive_timer;              // 静止壳复活计时（一次性，仅权威端更新）
     Timer kick_grace_timer;          // 踢壳豁免计时（一次性，双端确定性更新）
+    Timer stomp_grace_timer;         // 变壳豁免计时（一次性，双端确定性更新）
 };

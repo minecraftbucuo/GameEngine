@@ -6,7 +6,7 @@
             "frame": [
                 {
                     "textureRect": {
-                        "rectLeft": 90,
+                        "rectLeft": 150,
                         "rectTop": 0,
                         "rectWidth": 16,
                         "rectHeight": 24
@@ -23,7 +23,7 @@
                 },
                 {
                     "textureRect": {
-                        "rectLeft": 120,
+                        "rectLeft": 180,
                         "rectTop": 0,
                         "rectWidth": 16,
                         "rectHeight": 24
@@ -46,7 +46,7 @@
             "frame": [
                 {
                     "textureRect": {
-                        "rectLeft": 240,
+                        "rectLeft": 210,
                         "rectTop": 0,
                         "rectWidth": 16,
                         "rectHeight": 24
@@ -63,7 +63,7 @@
                 },
                 {
                     "textureRect": {
-                        "rectLeft": 270,
+                        "rectLeft": 240,
                         "rectTop": 0,
                         "rectWidth": 16,
                         "rectHeight": 24
