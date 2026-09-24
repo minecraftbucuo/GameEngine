@@ -106,6 +106,12 @@ private:
     // 统一尺寸重建：状态转换保持底边对齐（左上角锚点 y 平移），行走 64×96、壳 64×64
     void applyStateSize(KoopaState new_state);
 
+    // 状态转换的实际执行体（不上报 ClientEvent）：deserialize 的快照差异补流程
+    // 专用。补流程绝不能再上报——权威端已是目标态，补上报会在服务端把更新的
+    // 状态撤销（迟到的 Stomped 报文回退刚落地的 Kicked），造成单侧踢壳失效
+    void applyShellIdle();
+    void applyKicked(float dir_x);
+
     KoopaState state = KoopaState::Walking;
     bool is_killed = false;          // 被火系击毙：坠落中，不再参与任何交互
     bool facing_left = true;

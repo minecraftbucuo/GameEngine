@@ -239,9 +239,13 @@ void Koopa::handleCollision(const CollisionEvent& event) {
 
 void Koopa::setShellIdle() {
     if (state == KoopaState::ShellIdle || is_killed) return;   // 幂等
-    state = KoopaState::ShellIdle;
+    applyShellIdle();
     // 客户端预测踩缩壳/踩停成功后上报（两种踩合并为同一事件，服务端幂等裁决）
     reportKoopaEvent(this, GameEventType::KoopaStomped);
+}
+
+void Koopa::applyShellIdle() {
+    state = KoopaState::ShellIdle;
 
 #ifndef SERVER_BUILD
     if (stomp_track) { MIX_StopTrack(stomp_track, 0); MIX_PlayTrack(stomp_track, 0); }
@@ -260,11 +264,15 @@ void Koopa::setShellIdle() {
 
 void Koopa::kicked(const float dir_x) {
     if (state != KoopaState::ShellIdle || is_killed) return;   // 幂等：只有静止壳能被踢出
+    applyKicked(dir_x);
+    // 客户端预测踢壳成功后上报（附带踢出方向，供服务端复现滑动方向）
+    reportKoopaEvent(this, GameEventType::KoopaKicked, dir_x);
+}
+
+void Koopa::applyKicked(const float dir_x) {
     state = KoopaState::ShellMoving;
     revive_timer.stop();
     stomp_grace_timer.stop();
-    // 客户端预测踢壳成功后上报（附带踢出方向，供服务端复现滑动方向）
-    reportKoopaEvent(this, GameEventType::KoopaKicked, dir_x);
 
 #ifndef SERVER_BUILD
     if (kick_track) { MIX_StopTrack(kick_track, 0); MIX_PlayTrack(kick_track, 0); }
@@ -318,11 +326,15 @@ void Koopa::reverse() {
 }
 
 bool Koopa::isKickGraceActive() const {
-    return state == KoopaState::ShellMoving && kick_grace_timer.getPastTime() < KICK_GRACE_MS;
+    // isActive 守卫：计时从未启动时 past_time 恒 0，直接比对会把"无豁免"误判成
+    // "豁免刚开始"（中途加入静默还原的滑动壳会让该玩家永久免伤）
+    return state == KoopaState::ShellMoving && kick_grace_timer.isActive() &&
+        kick_grace_timer.getPastTime() < KICK_GRACE_MS;
 }
 
 bool Koopa::isShellGraceActive() const {
-    return state == KoopaState::ShellIdle && stomp_grace_timer.getPastTime() < STOMP_GRACE_MS;
+    return state == KoopaState::ShellIdle && stomp_grace_timer.isActive() &&
+        stomp_grace_timer.getPastTime() < STOMP_GRACE_MS;
 }
 
 bool Koopa::isAuthority() const {
@@ -372,15 +384,19 @@ void Koopa::deserialize(eng::Packet& packet) {
     // 被击毙坠落中不再接受快照（服务端随后的 RemoveObject 幂等清理）
     if (is_killed) return;
 
-    // 状态差异走幂等补流程（补走的方法会再次上报 ClientEvent，服务端幂等，
-    // 与 Goomba 现状一致）；补流程含状态转换的底边对齐平移，return 跳过本次
-    // 位移同步，防止平移量与快照位置叠加造成二次偏移
+    // 状态差异走幂等补流程；必须走静默版本（applyShellIdle/applyKicked），
+    // 不能复用交互入口再上报 ClientEvent：权威端已是目标态，补上报纯属多余，
+    // 而且会取消更新的状态——本地预测 ShellMoving 被迟到的 ShellIdle 快照回退
+    // 时若再报 Stomped，服务端会把刚生效的踢出撤销，表现为"某个玩家怎么踢
+    // 壳都没反应"（另一端不经预测回退，所以往往只有一方中招）。
+    // 补流程含状态转换的底边对齐平移，return 跳过本次位移同步，
+    // 防止平移量与快照位置叠加造成二次偏移
     if (remote_state != state) {
         if (remote_state == KoopaState::ShellIdle) {
-            setShellIdle();
+            applyShellIdle();
         }
         else if (remote_state == KoopaState::ShellMoving) {
-            kicked(s_x > 0.f ? 1.f : -1.f);
+            applyKicked(s_x > 0.f ? 1.f : -1.f);
         }
         else {
             // remote Walking：ShellIdle 走正常复活；ShellMoving 属极端失序

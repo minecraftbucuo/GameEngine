@@ -23,6 +23,12 @@ public:
         return this->past_time;
     }
 
+    // 是否处于计时中（start 后未到期未 stop）：区分"计时中"与"从未启动"
+    //（后者 past_time 恒 0，直接比对会误判为计时刚开始）
+    [[nodiscard]] bool isActive() const {
+        return this->started;
+    }
+
     void reset();
 
     void stop();
