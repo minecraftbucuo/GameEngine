@@ -169,18 +169,20 @@ void Mushroom::handleCollision(const CollisionEvent& event) {
         event.a_position.y, event.b_position.y);
 
     if (dx <= dy) {
-        // 水平碰撞：贴合碰撞面并掉头继续走
+        // 水平碰撞：贴合碰撞面；仅相向运动（相对速度朝向对方）才掉头继续走，
+        // 同向追尾不翻转（对静态地形等价于"朝墙运动才反弹"）
         const float right_x = std::abs(
             event.a_position.x + this_->getSize().x - (event.b_position.x + other->getSize().x * 0.5f));
         const float left_x = std::abs(event.a_position.x - (event.b_position.x + other->getSize().x * 0.5f));
+        const float rel_x = this->getSpeed().x - event.b_speed.x;
         if (right_x < left_x) {
             moveComponent->moveCollisionXTo(event.b_position.x - this_->getSize().x);
+            if (rel_x > 0.f) { moveComponent->setSpeedX(-walk_speed); walk_speed = -walk_speed; }
         }
         else {
             moveComponent->moveCollisionXTo(event.b_position.x + other->getSize().x);
+            if (rel_x < 0.f) { moveComponent->setSpeedX(-walk_speed); walk_speed = -walk_speed; }
         }
-        moveComponent->setSpeedX(-walk_speed);
-        walk_speed = -walk_speed;
     }
     else {
         // 垂直碰撞：贴合地面/物体表面并停止垂直运动

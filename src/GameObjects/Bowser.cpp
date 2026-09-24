@@ -286,17 +286,19 @@ void Bowser::handleCollision(const CollisionEvent& event) {
         event.a_position.y, event.b_position.y);
 
     if (dx <= dy) {
-        // 水平碰撞：贴合碰撞面并掉头继续走
+        // 水平碰撞：贴合碰撞面；仅相向运动（朝墙走）才掉头继续走，被推出/
+        // 贴上时不翻转方向（BOSS 的水平解析只对面静态地形，对方速度恒 0）
         const float right_x = std::abs(
             event.a_position.x + BOWSER_HITBOX_W - (event.b_position.x + other->getSize().x * 0.5f));
         const float left_x = std::abs(event.a_position.x - (event.b_position.x + other->getSize().x * 0.5f));
         if (right_x < left_x) {
             moveComponent->moveCollisionXTo(event.b_position.x - BOWSER_HITBOX_W);
+            if (this->getSpeed().x > 0.f) moveComponent->setSpeedX(-this->getSpeed().x);
         }
         else {
             moveComponent->moveCollisionXTo(event.b_position.x + other->getSize().x);
+            if (this->getSpeed().x < 0.f) moveComponent->setSpeedX(-this->getSpeed().x);
         }
-        moveComponent->setSpeedX(-this->getSpeed().x);
     }
     else {
         // 垂直碰撞：贴合地面/物体表面并停止垂直运动

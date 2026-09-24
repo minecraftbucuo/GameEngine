@@ -206,10 +206,16 @@ void Mario::handleCollision(const CollisionEvent& event) {
                     move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
                 return;
             }
-            // 侧面接触：受击并让板栗仔掉头
+            // 侧面接触：受击；仅当板栗仔自身朝马里奥走来（对撞）才掉头弹开——
+            // 不能用"相对速度接近"判定：马里奥推着它走时每帧都相对接近，
+            // 会每帧翻转一次（左右鬼畜）；背后推它时它的速度背向马里奥，不翻转
             applyDamage(1);
-            if (const auto goomba_move = other->getComponent<MoveComponent>())
-                goomba_move->setSpeedX(-goomba->getSpeed().x);
+            if (const auto goomba_move = other->getComponent<MoveComponent>()) {
+                const bool mario_on_left = event.a_position.x + this_->getSize().x * 0.5f <
+                    event.b_position.x + other->getSize().x * 0.5f;
+                if (mario_on_left ? goomba->getSpeed().x < 0.f : goomba->getSpeed().x > 0.f)
+                    goomba_move->setSpeedX(-goomba->getSpeed().x);
+            }
             if (getComponent<HealthBar>()->isDead()) return;
         }
     }
@@ -234,9 +240,16 @@ void Mario::handleCollision(const CollisionEvent& event) {
                         move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
                     return;
                 }
-                // 侧面接触：受击并让乌龟掉头（不 return，交给通用水平解析推出）
+                // 侧面接触：受击；仅当乌龟自身朝马里奥走来（对撞）才掉头（理由同
+                // 板栗仔：相对接近在持续推挤时每帧成立，会翻转鬼畜）
+                //（不 return，交给通用水平解析推出）
                 applyDamage(1);
-                koopa->reverse();
+                {
+                    const bool mario_on_left = event.a_position.x + this_->getSize().x * 0.5f <
+                        event.b_position.x + other->getSize().x * 0.5f;
+                    if (mario_on_left ? koopa->getSpeed().x < 0.f : koopa->getSpeed().x > 0.f)
+                        koopa->reverse();
+                }
                 if (getComponent<HealthBar>()->isDead()) return;
                 break;
             case KoopaState::ShellIdle:

@@ -169,17 +169,21 @@ void Koopa::handleCollision(const CollisionEvent& event) {
         event.a_position.y, event.b_position.y);
 
     if (dx <= dy) {
-        // 水平碰撞：贴合碰撞面并掉头（行走乌龟掉头巡逻；滑动壳即撞墙反向继续滑）
+        // 水平碰撞：贴合碰撞面；仅相向运动（相对速度朝向对方）才掉头——
+        // 行走乌龟撞墙掉头巡逻、滑动壳撞墙反向继续滑都依赖它；同向追尾
+        // 或被同向对象贴上时不翻转（对方速度 0 的静态地形必然相向，照常反弹）
         const float right_x = std::abs(
             event.a_position.x + this_->getSize().x - (event.b_position.x + other->getSize().x * 0.5f));
         const float left_x = std::abs(event.a_position.x - (event.b_position.x + other->getSize().x * 0.5f));
+        const float rel_x = this->getSpeed().x - event.b_speed.x;
         if (right_x < left_x) {
             moveComponent->moveCollisionXTo(event.b_position.x - this_->getSize().x);
+            if (rel_x > 0.f) moveComponent->setSpeedX(-this->getSpeed().x);
         }
         else {
             moveComponent->moveCollisionXTo(event.b_position.x + other->getSize().x);
+            if (rel_x < 0.f) moveComponent->setSpeedX(-this->getSpeed().x);
         }
-        moveComponent->setSpeedX(-this->getSpeed().x);
     }
     else {
         // 垂直碰撞：贴合地面/物体表面并停止垂直运动
