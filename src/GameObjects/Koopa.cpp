@@ -22,6 +22,11 @@
 namespace {
     // 静止壳静置复活时长（毫秒，权威端计时）
     constexpr int KOOPA_REVIVE_MS = 5000;
+    // 碰撞盒相对贴图的收缩比例：贴图含头/壳顶/壳缘留白，全尺寸碰撞盒会
+    // "看着没碰到就受伤"。水平 0.7、垂直 0.8 倍，垂直收缩后底边仍与贴图对齐
+    //（脚下贴地不变），贴图居中绘制，头/壳顶的留白不参与碰撞
+    constexpr float KOOPA_HITBOX_SCALE_X = 0.7f;
+    constexpr float KOOPA_HITBOX_SCALE_Y = 0.8f;
     // 踢壳豁免时长（毫秒，双端确定性）：壳刚被踢出时马里奥仍与其重叠，
     // 豁免期内滑动壳侧碰马里奥不结算受伤
     constexpr int KICK_GRACE_MS = 250;
@@ -101,9 +106,14 @@ void Koopa::switchFacing() {
 }
 
 void Koopa::render(eng::Renderer& renderer) {
+    // 碰撞盒窄于/矮于贴图（水平 0.7、垂直 0.8 倍）：贴图水平居中绘制且底边
+    // 与碰撞盒底边对齐（脚下贴地不变，头/壳顶的留白不参与碰撞）
+    Animation& anim = state == KoopaState::Walking ? walkAnimation : shellAnimation;
+    const float draw_dx = (anim.getFrameWidth() - this->getSize().x) * 0.5f;
+    const float draw_dy = anim.getFrameHeight() - this->getSize().y;
+    const eng::Vec2f draw_pos(this->position.x - draw_dx, this->position.y - draw_dy);
     if (is_killed) {
         // 被火系击毙：180° 翻转贴图坠落（渲染器无 flipY，绕中心旋转等效）
-        Animation& anim = state == KoopaState::Walking ? walkAnimation : shellAnimation;
         const Animation::Frame& f = anim.getFrame();
         const float w = anim.getFrameWidth();
         const float h = anim.getFrameHeight();
@@ -112,15 +122,15 @@ void Koopa::render(eng::Renderer& renderer) {
                                             static_cast<float>(f.textureRect.top),
                                             static_cast<float>(f.textureRect.width),
                                             static_cast<float>(f.textureRect.height)),
-                             eng::FloatRect(this->position.x, this->position.y, w, h),
+                             eng::FloatRect(draw_pos.x, draw_pos.y, w, h),
                              180.f, eng::Vec2f(w * 0.5f, h * 0.5f), eng::Color::White, false);
     }
     else if (state == KoopaState::Walking) {
         switchFacing();
-        walkAnimation.render(renderer, this->position);
+        walkAnimation.render(renderer, draw_pos);
     }
     else {
-        shellAnimation.render(renderer, this->position);
+        shellAnimation.render(renderer, draw_pos);
     }
     GameObject::render(renderer);
 }
@@ -343,10 +353,12 @@ bool Koopa::isAuthority() const {
 }
 
 void Koopa::applyStateSize(const KoopaState new_state) {
-    // 行走 64×96、壳 64×64；左上角锚点平移保持底边对齐（缩壳下移、复活上移）
+    // 贴图行走 64×96、壳 64×64；碰撞盒水平 0.7、垂直 0.8 倍。
+    // 左上角锚点平移保持碰撞盒底边对齐（缩壳下移、复活上移），
+    // 贴图渲染按底边对齐跟随 → 视觉底边与顶边转换前后都不动
     const float block = CONFIG.game.defaultBlockSize;
-    const float new_w = block;
-    const float new_h = new_state == KoopaState::Walking ? block * 1.5f : block;
+    const float new_w = block * KOOPA_HITBOX_SCALE_X;
+    const float new_h = (new_state == KoopaState::Walking ? block * 1.5f : block) * KOOPA_HITBOX_SCALE_Y;
     const float bottom = this->position.y + this->getSize().y;
     this->setSize(new_w, new_h);
     // 同时重设碰撞盒尺寸（马里奥 needGravity 的几何探测不看 active 标志）
@@ -427,10 +439,13 @@ void Koopa::restoreNetworkState(const KoopaState state_, const bool facing_left_
         facing_left ? "koopa_walk_left_frame" : "koopa_walk_right_frame"));
     anim_facing_left = facing_left;
 #endif
-    // 按目标态重设尺寸（不平移：位置由快照直接给出）
+    // 按目标态重设尺寸（不平移：位置由快照直接给出）；碰撞盒收窄/缩高与
+    // applyStateSize 同规则（快照 x/y 即碰撞盒左上角，双端一致）
     const float block = CONFIG.game.defaultBlockSize;
-    this->setSize(block, state == KoopaState::Walking ? block * 1.5f : block);
-    if (const auto box = getComponent<Collision, BoxCollision>()) box->setSize(block, this->getSize().y);
+    const float hit_w = block * KOOPA_HITBOX_SCALE_X;
+    const float hit_h = (state == KoopaState::Walking ? block * 1.5f : block) * KOOPA_HITBOX_SCALE_Y;
+    this->setSize(hit_w, hit_h);
+    if (const auto box = getComponent<Collision, BoxCollision>()) box->setSize(hit_w, hit_h);
     if (const auto& move = getComponent<MoveComponent>()) {
         move->setSpeedX(state == KoopaState::Walking ? patrol_speed_x
                         : state == KoopaState::ShellMoving ? speed_x : 0.f);

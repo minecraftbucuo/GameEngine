@@ -103,7 +103,8 @@ private:
     void switchFacing();
 #endif
 
-    // 统一尺寸重建：状态转换保持底边对齐（左上角锚点 y 平移），行走 64×96、壳 64×64
+    // 统一尺寸重建：状态转换保持碰撞盒底边对齐（左上角锚点 y 平移）。
+    // 贴图行走 64×96、壳 64×64；碰撞盒水平 0.7、垂直 0.8 倍（渲染底边跟随对齐）
     void applyStateSize(KoopaState new_state);
 
     // 状态转换的实际执行体（不上报 ClientEvent）：deserialize 的快照差异补流程
