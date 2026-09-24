@@ -11,6 +11,7 @@
 #include "Scene.h"
 #include "NetworkProtocol.h"
 #include "Goomba.h"
+#include "Koopa.h"
 #include "Mushroom.h"
 
 bool NetworkManager::startServer() {
@@ -368,6 +369,16 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
                                 packet >> blast_dir_x;
                                 LOG_INFO_FMT("client reported mushroom {} killed", target_id);
                                 mushroom->setKilled(blast_dir_x);
+                            }
+                        } else if (const auto koopa = std::dynamic_pointer_cast<Koopa>(obj)) {
+                            if (event_type == GameEventType::KoopaStomped) {
+                                LOG_INFO_FMT("client reported koopa {} stomped", target_id);
+                                koopa->setShellIdle();
+                            } else if (event_type == GameEventType::KoopaKicked) {
+                                float kick_dir_x;
+                                packet >> kick_dir_x;
+                                LOG_INFO_FMT("client reported koopa {} kicked", target_id);
+                                koopa->kicked(kick_dir_x);
                             }
                         }
                     } else {

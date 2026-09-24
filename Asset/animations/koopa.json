@@ -1,0 +1,107 @@
+{
+    "frames": [
+        {
+            "frame_name": "koopa_walk_left_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 90,
+                        "rectTop": 0,
+                        "rectWidth": 16,
+                        "rectHeight": 24
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 120,
+                        "rectTop": 0,
+                        "rectWidth": 16,
+                        "rectHeight": 24
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                }
+            ]
+        },
+        {
+            "frame_name": "koopa_walk_right_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 240,
+                        "rectTop": 0,
+                        "rectWidth": 16,
+                        "rectHeight": 24
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                },
+                {
+                    "textureRect": {
+                        "rectLeft": 270,
+                        "rectTop": 0,
+                        "rectWidth": 16,
+                        "rectHeight": 24
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 130
+                }
+            ]
+        },
+        {
+            "frame_name": "koopa_shell_frame",
+            "texture_name": "smb_enemies_sheet",
+            "frame": [
+                {
+                    "textureRect": {
+                        "rectLeft": 360,
+                        "rectTop": 4,
+                        "rectWidth": 16,
+                        "rectHeight": 16
+                    },
+                    "origin": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "scale": {
+                        "x": 4.0,
+                        "y": 4.0
+                    },
+                    "duration": 200
+                }
+            ]
+        }
+    ]
+}

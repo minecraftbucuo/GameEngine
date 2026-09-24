@@ -14,6 +14,7 @@
 #include "MoveComponent.h"
 #include "FireBall.h"
 #include "Goomba.h"
+#include "Koopa.h"
 #include "Mushroom.h"
 #include "Bowser.h"
 #include "BowserFire.h"
@@ -190,6 +191,21 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
         this->addObjectWithNetwork(bowser_axe);
         return bowser_axe;
     }
+    if (obj_type == ObjectType::Koopa) {
+        float x, y, s_x;
+        KoopaState state;
+        bool facing_left;
+        packet >> x >> y >> s_x >> state >> facing_left;
+        const auto koopa = std::make_shared<Koopa>(x, y, s_x);
+        koopa->setId(id);
+        // 按服务端权威状态还原：新客户端加入时已缩壳/滑动中的乌龟不重放
+        // 音效与状态转换平移（快照 y 即当前态权威左上角）
+        koopa->restoreNetworkState(state, facing_left, s_x);
+        LOG_DEBUG_FMT("Create koopa, id:{}, x:{}, y:{}, s_x:{}, state:{}, facing:{}",
+                      id, x, y, s_x, static_cast<int>(state), facing_left);
+        this->addObjectWithNetwork(koopa);
+        return koopa;
+    }
     LOG_ERROR("Invalid object type");
     return nullptr;
 }
@@ -218,6 +234,10 @@ void SuperMarioSceneMultiplayer::initDynamicObjects() {
             this->addObjectWithNetwork(std::make_shared<Goomba>(spawn.x, spawn.y, spawn.speed));
         }
         LOG_DEBUG_FMT("Created {} goombas", map_data->goombas.size());
+        for (const auto& spawn : map_data->koopas) {
+            this->addObjectWithNetwork(std::make_shared<Koopa>(spawn.x, spawn.y, spawn.speed));
+        }
+        LOG_DEBUG_FMT("Created {} koopas", map_data->koopas.size());
         if (map_data->has_bowser) {
             this->addObjectWithNetwork(
                 std::make_shared<Bowser>(map_data->bowser.x, map_data->bowser.y, map_data->bowser.speed));

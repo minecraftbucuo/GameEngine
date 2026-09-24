@@ -36,6 +36,7 @@ public:
         loadFrameFromJson(CONFIG.assets.frames["box"].c_str());
         loadFrameFromJson(CONFIG.assets.frames["fireball"].c_str());
         loadFrameFromJson(CONFIG.assets.frames["goomba"].c_str());
+        loadFrameFromJson(CONFIG.assets.frames["koopa"].c_str());
         loadFrameFromJson(CONFIG.assets.frames["bowser"].c_str());
         loadFrameFromJson(CONFIG.assets.frames["mushroom"].c_str());
     }

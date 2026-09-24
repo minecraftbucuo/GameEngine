@@ -10,6 +10,7 @@
 #include "EventBus.h"
 #include "BoxCollision.h"
 #include "Logger.h"
+#include "Koopa.h"
 #include "MoveComponent.h"
 #include "Scene.h"
 #include "AssetManager.h"
@@ -141,6 +142,15 @@ void Goomba::handleCollision(const CollisionEvent& event) {
     // 与 BOSS 不做实体交互：互相穿行。BOSS 碰撞盒（80×100）小于贴图且向下对齐脚底，
     // 通用垂直解析按"碰撞盒位置 + 对方贴图全高"贴面，会把小怪压进地面一个偏移量
     if (other->getClassName() == "Bowser") return;
+    // 被滑动龟壳撞中：沿壳的滑动方向炸飞（结算在受害者侧，滑动壳侧对一切小怪穿行；
+    // 静止壳/行走乌龟与板栗仔互不结算，穿行）
+    if (other->getClassName() == "Koopa") {
+        if (const auto koopa = std::dynamic_pointer_cast<Koopa>(other);
+            koopa && koopa->isShellMoving()) {
+            setKilledByFireball(event.b_speed.x > 0.f ? 1.f : -1.f);
+        }
+        return;
+    }
     if (!this_->getMoveAble()) return;
 
     const std::shared_ptr<MoveComponent>& moveComponent = this_->getComponent<MoveComponent>();

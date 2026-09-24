@@ -10,6 +10,7 @@
 #include "EventBus.h"
 #include "BoxCollision.h"
 #include "Logger.h"
+#include "Koopa.h"
 #include "MoveComponent.h"
 #include "Scene.h"
 #include "AssetManager.h"
@@ -142,6 +143,14 @@ void Mushroom::handleCollision(const CollisionEvent& event) {
         const float enemy_center = event.b_position.x + other->getSize().x * 0.5f;
         const float self_center = event.a_position.x + this_->getSize().x * 0.5f;
         setKilled(enemy_center < self_center ? 1.f : -1.f);
+        return;
+    }
+    // 被滑动龟壳撞中：沿壳的滑动方向弹飞（结算在受害者侧；静止壳/行走乌龟穿行）
+    if (other_class == "Koopa") {
+        if (const auto koopa = std::dynamic_pointer_cast<Koopa>(other);
+            koopa && koopa->isShellMoving()) {
+            setKilled(event.b_speed.x > 0.f ? 1.f : -1.f);
+        }
         return;
     }
 

@@ -15,6 +15,7 @@
 #include "Brick.h"
 #include "SceneManager.h"
 #include "Goomba.h"
+#include "Koopa.h"
 #include "Bowser.h"
 #include "Collision.h"
 #include "MapLoader.h"
@@ -75,6 +76,10 @@ void SuperMarioSceneSingle::initDynamicObjects() {
 
     for (const auto& spawn : map_data->goombas) {
         this->addObject(std::make_shared<Goomba>(spawn.x, spawn.y, spawn.speed));
+    }
+
+    for (const auto& spawn : map_data->koopas) {
+        this->addObject(std::make_shared<Koopa>(spawn.x, spawn.y, spawn.speed));
     }
 
     // 乌龟大王 BOSS：放在前段平地方便测试（正式位置为最终楼梯后 x≈13500）

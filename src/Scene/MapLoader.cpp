@@ -109,6 +109,14 @@ std::optional<MapDynamicData> loadDynamicData(const std::string& json_path) {
         data.goombas.push_back(spawn);
     }
 
+    for (const auto& k : dyn.value("koopas", nlohmann::json::array())) {
+        EnemySpawn spawn;
+        spawn.x = k.value("x", 0.f);
+        spawn.y = k.value("y", 793.f);
+        spawn.speed = k.value("speed", -100.f);
+        data.koopas.push_back(spawn);
+    }
+
     if (dyn.contains("bowser")) {
         data.has_bowser = true;
         data.bowser.x = dyn["bowser"].value("x", 0.f);

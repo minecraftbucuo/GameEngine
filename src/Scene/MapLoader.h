@@ -28,6 +28,7 @@ struct MapDynamicData {
     float player_spawn_x = 100.f;
     float player_spawn_y = 100.f;
     std::vector<EnemySpawn> goombas;
+    std::vector<EnemySpawn> koopas;
     bool has_bowser = false;
     EnemySpawn bowser;
 };

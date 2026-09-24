@@ -19,6 +19,7 @@
             "box": "./Asset/animations/box.json",
             "fireball": "./Asset/animations/fireball.json",
             "goomba": "./Asset/animations/goomba.json",
+            "koopa": "./Asset/animations/koopa.json",
             "bowser": "./Asset/animations/bowser.json",
             "mushroom": "./Asset/animations/mushroom.json"
         }

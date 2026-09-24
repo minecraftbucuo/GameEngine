@@ -24,6 +24,7 @@
 #include "EventBus.h"
 #include "FireBall.h"
 #include "Goomba.h"
+#include "Koopa.h"
 #include "Mushroom.h"
 #include "BowserFire.h"
 #include "BowserAxe.h"
@@ -213,6 +214,57 @@ void Mario::handleCollision(const CollisionEvent& event) {
         }
     }
 
+    // 乌龟：按三态结算（踩缩壳/踢壳/踩停/滑动壳受伤；静止壳无伤）
+    if (other->getClassName() == "Koopa") {
+        if (const auto koopa = std::dynamic_pointer_cast<Koopa>(other)) {
+            // 水平重合宽度与垂直中心比较（与板栗仔同款踩踏判定，防擦边误判）
+            const float overlap_x = std::min(event.a_position.x + this_->getSize().x,
+                                             event.b_position.x + other->getSize().x) -
+                std::max(event.a_position.x, event.b_position.x);
+            const bool stomped = overlap_x >= this_->getSize().x * 0.4f &&
+                event.a_position.y + this_->getSize().y * 0.5f <
+                event.b_position.y + other->getSize().y * 0.5f;
+            switch (koopa->getState()) {
+            case KoopaState::Walking:
+                if (stomped) {
+                    // 踩中：缩成静止壳并反弹
+                    koopa->setShellIdle();
+                    if (const auto move = getComponent<MoveComponent>())
+                        move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
+                }
+                else {
+                    // 侧面接触：受击并让乌龟掉头
+                    applyDamage(1);
+                    koopa->reverse();
+                    if (getComponent<HealthBar>()->isDead()) return;
+                }
+                break;
+            case KoopaState::ShellIdle:
+                // 静止壳无伤：踩/侧碰都是踢出，方向 = 马里奥指向壳中心的相反方向
+                koopa->kicked(event.b_position.x + other->getSize().x * 0.5f <
+                              event.a_position.x + this_->getSize().x * 0.5f ? 1.f : -1.f);
+                if (stomped) {
+                    if (const auto move = getComponent<MoveComponent>())
+                        move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
+                }
+                return;   // 壳已飞离，无需几何解析
+            case KoopaState::ShellMoving:
+                if (stomped) {
+                    // 踩停滑动壳并反弹
+                    koopa->setShellIdle();
+                    if (const auto move = getComponent<MoveComponent>())
+                        move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
+                }
+                else if (!koopa->isKickGraceActive()) {
+                    // 滑动壳侧碰受伤（踢壳豁免期内免疫：壳刚离脚马里奥仍与其重叠）
+                    applyDamage(1);
+                    if (getComponent<HealthBar>()->isDead()) return;
+                }
+                return;   // 滑动壳继续滑行，不做几何解析
+            }
+        }
+    }
+
     std::shared_ptr<MoveComponent> moveComponent = this_->getComponent<MoveComponent>();
     if (!moveComponent) return;
 
@@ -227,13 +279,13 @@ void Mario::handleCollision(const CollisionEvent& event) {
     const float top_y = std::abs(event.a_position.y - (event.b_position.y + other->getSize().y * 0.5f));
     const float bottom_y = std::abs(
         event.a_position.y + this_->getSize().y - (event.b_position.y + other->getSize().y * 0.5f));
-    // 活着的板栗仔不是地板：马里奥从上方接触但未踩中时，若按垂直解析会把马里奥
+    // 活着的小怪不是地板：马里奥从上方接触但未踩中时，若按垂直解析会把马里奥
     // 贴到怪头顶并清零速度、关重力、切站立态——活怪被当成地板。必须禁止这种
     // “落地”，强制走水平解析从侧面滑开，马里奥继续下落。
-    const bool is_goomba = other->getClassName() == "Goomba";
+    const bool is_enemy = other->getClassName() == "Goomba" || other->getClassName() == "Koopa";
 
     // 水平碰撞
-    if (dx <= dy || (is_goomba && top_y > bottom_y)) {
+    if (dx <= dy || (is_enemy && top_y > bottom_y)) {
         // const float relativeSpeedX = event.b_speed.x - event.a_speed.x;
         // moveComponent->setSpeedX(relativeSpeedX * 0.28f);
         // if (std::abs(this_->getSpeed().x) <= 2.f) {
