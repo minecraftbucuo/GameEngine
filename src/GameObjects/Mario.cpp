@@ -231,17 +231,18 @@ void Mario::handleCollision(const CollisionEvent& event) {
             switch (koopa->getState()) {
             case KoopaState::Walking:
                 if (stomped) {
-                    // 踩中：缩成静止壳并反弹（第一下不动，再踩/再碰才踢出）
+                    // 踩中：缩成静止壳并反弹（第一下不动，再踩/再碰才踢出）。
+                    // 必须直接 return：若落入下方通用解析，"活怪不是地板"规则
+                    // 会强制水平解析把马里奥横移贴到壳侧（表现为踩中瞬间水平瞬移）
                     koopa->setShellIdle();
                     if (const auto move = getComponent<MoveComponent>())
                         move->setSpeedY(-CONFIG.game.jumpForce * 0.55f);
+                    return;
                 }
-                else {
-                    // 侧面接触：受击并让乌龟掉头
-                    applyDamage(1);
-                    koopa->reverse();
-                    if (getComponent<HealthBar>()->isDead()) return;
-                }
+                // 侧面接触：受击并让乌龟掉头（不 return，交给通用水平解析推出）
+                applyDamage(1);
+                koopa->reverse();
+                if (getComponent<HealthBar>()->isDead()) return;
                 break;
             case KoopaState::ShellIdle:
                 // 变壳豁免期内无视接触：马里奥刚踩中还压在壳上，等他反弹离开，
