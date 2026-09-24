@@ -288,9 +288,9 @@ void Koopa::applyKicked(const float dir_x) {
     if (kick_track) { MIX_StopTrack(kick_track, 0); MIX_PlayTrack(kick_track, 0); }
 #endif
 
-    // 滑动速度与炮弹炸飞同速（0.6 倍玩家速度）
+    // 滑动速度 = 0.78 倍玩家速度（原 0.6 倍 × 1.3 提速）；BOSS 弹开壳复用当前速度模长，自动跟随
     if (const auto move = getComponent<MoveComponent>()) {
-        move->setSpeedX(dir_x * CONFIG.game.playerSpeed * 0.6f);
+        move->setSpeedX(dir_x * CONFIG.game.playerSpeed * 0.78f);
     }
     // 踢壳豁免（双端确定性倒计时，update 中运转）
     kick_grace_timer.start(KICK_GRACE_MS);
