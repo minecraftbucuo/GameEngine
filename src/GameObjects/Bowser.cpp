@@ -218,7 +218,7 @@ void Bowser::handleCollision(const CollisionEvent& event) {
     // 否则小怪会按贴图全高解析本类带偏移的碰撞盒位置而被压进地面）
     if (other->getClassName() == "Goomba") return;
     // 滑动龟壳撞 BOSS：扣 1 血（血量为服务端权威模拟，客户端只等快照），
-    // 壳沿命中侧弹开避免持续重叠连扣；静止壳/行走乌龟与 BOSS 穿行
+    // 物理上互相制约（BOSS 被壳挡住、壳被 BOSS 弹开）；静止壳/行走乌龟与 BOSS 穿行
     if (other->getClassName() == "Koopa") {
         if (const auto koopa = std::dynamic_pointer_cast<Koopa>(other);
             koopa && koopa->isShellMoving()) {
@@ -230,14 +230,25 @@ void Bowser::handleCollision(const CollisionEvent& event) {
                     setKilled(event.b_speed.x > 0.f ? 1.f : -1.f);
                 }
             }
-            // 壳弹开（双端执行，确定性）：推离 BOSS 碰撞盒并反向滑动
+            const float bowser_center_x = event.a_position.x + BOWSER_HITBOX_W * 0.5f;
+            const float shell_center_x = event.b_position.x + other->getSize().x * 0.5f;
+            // 互相制约第一步（双端执行，确定性）：BOSS 先贴到壳的命中面停住——
+            // 本帧的前进被壳抵消，不掉头（AI 方向不变，壳弹开后自然继续前进）。
+            // 否则 BOSS 无视壳继续推进，壳被墙体弹回后夹在中间，会被挤进墙里
+            if (const auto bowser_move = this_->getComponent<MoveComponent>()) {
+                if (shell_center_x < bowser_center_x) {
+                    // 壳在左：BOSS 左脸抵住壳右面
+                    bowser_move->moveCollisionXTo(event.b_position.x + other->getSize().x);
+                }
+                else {
+                    // 壳在右：BOSS 右脸抵住壳左面
+                    bowser_move->moveCollisionXTo(event.b_position.x - BOWSER_HITBOX_W);
+                }
+            }
+            // 互相制约第二步：壳贴着 BOSS 新位置的命中面弹开并反向滑动
+            //（BOSS 已退到壳的来向面之后，壳当前位置已在 BOSS 体外，无需再平移）
             if (const auto shell_move = other->getComponent<MoveComponent>()) {
-                const float bowser_center_x = event.a_position.x + BOWSER_HITBOX_W * 0.5f;
-                const float shell_center_x = event.b_position.x + other->getSize().x * 0.5f;
                 const float dir = shell_center_x < bowser_center_x ? -1.f : 1.f;
-                shell_move->moveCollisionXTo(dir < 0.f
-                                                 ? event.a_position.x - other->getSize().x
-                                                 : event.a_position.x + BOWSER_HITBOX_W);
                 shell_move->setSpeedX(std::abs(koopa->getSpeed().x) * dir);
             }
         }
