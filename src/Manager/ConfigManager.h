@@ -8,7 +8,10 @@
 #include <unordered_map>
 #include <nlohmann/json_fwd.hpp>
 
-#define CONFIG ConfigManager::getInstance()
+// 全局配置访问入口。展开后走 ConfigManager::instance()（可替换），
+// 而非直接取单例——这样测试替换一处实例即对全部 109 个使用点生效。
+// 保留宏是为了不改动既有调用点；后续按需把热点逐步换成构造注入。
+#define CONFIG (ConfigManager::instance())
 
 using json = nlohmann::json;
 
@@ -17,10 +20,27 @@ public:
     // 默认配置文件路径（相对 exe 目录，与历史行为一致）
     static constexpr const char* DEFAULT_PATH = "./Asset/config.json";
 
+    // 进程级单例实例（默认生效者）
     static ConfigManager& getInstance() {
         static ConfigManager instance;
         return instance;
     }
+
+    // 当前生效实例：默认即 getInstance()；测试可用 setInstance() 换成独立实例。
+    // 全部 CONFIG 访问都经此，替换一处即全局生效。
+    static ConfigManager& instance() {
+        return active_instance ? *active_instance : getInstance();
+    }
+
+    // 替换当前生效实例；传 nullptr 恢复默认单例。
+    // 供测试在 setup / teardown 成对调用。非线程安全：仅用于启动期或测试，
+    // 勿在运行中并发调用（读侧是无锁裸指针，换取热路径零开销）。
+    static void setInstance(ConfigManager* cm) {
+        active_instance = cm;
+    }
+
+    // 允许测试/工具构造独立实例（生产代码请一律用 getInstance() / instance()）
+    ConfigManager() = default;
 
     // 用当前 configPath 加载 / 保存
     bool load();
@@ -95,7 +115,9 @@ public:
     }
 
 private:
-    ConfigManager() = default;
+    // 被 setInstance() 替换的实例；nullptr = 使用 getInstance() 的默认单例。
+    // 裸指针 + 无锁读：CONFIG 在游戏热路径上被高频访问，不做原子操作。
+    inline static ConfigManager* active_instance = nullptr;
 
     // load() / save() 共用的路径（原先两处各自硬编码字面量）
     std::string configPath{DEFAULT_PATH};
