@@ -238,7 +238,10 @@ void NetworkManager::verifyClient() {
     // 并且检查客户端是否连接过长时间而没有发送任何 Packet
     for (auto it = unverified.begin(); it != unverified.end();) {
         auto& [client, connectedAt] = *it;
-        if (eng::Packet verifyPacket; client.receive(verifyPacket) == TcpClient::Status::Done) {
+        // receive 只调一次：它内部会消费 socket/拆帧缓冲，重复调用会吞掉后续数据
+        eng::Packet verifyPacket;
+        const auto status = client.receive(verifyPacket);
+        if (status == TcpClient::Status::Done) {
             std::string token;
             verifyPacket >> token;
             if (token == CLIENT_TOKEN) {
@@ -254,6 +257,12 @@ void NetworkManager::verifyClient() {
                 it = unverified.erase(it);
                 LOG_WARN_FMT("Wrong client token with '{}'", token);
             }
+        } else if (status == TcpClient::Status::Error || status == TcpClient::Status::Disconnected) {
+            // 帧长超限（见 MAX_FRAME_BYTES）或流已关闭：立即断开，不必等验证超时。
+            // 这条路径**不需要通过 token 验证**，是伪造长度前缀的主要入口，必须即时收尸
+            client.disconnect();
+            it = unverified.erase(it);
+            LOG_WARN("Unverified connection dropped (bad frame or closed)");
         } else if (const auto elapsed = std::chrono::steady_clock::now() - connectedAt; elapsed >= VERIFY_TIMEOUT) {
             client.disconnect(); // 关闭超时连接，防止 DDoS
             it = unverified.erase(it);

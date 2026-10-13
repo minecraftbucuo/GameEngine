@@ -37,6 +37,15 @@
 // std::bad_alloc 崩溃。32MB ≈ 正常对局流量下数十分钟无读取的积压量。
 inline constexpr std::size_t MAX_PENDING_OUTGOING_BYTES = 32u * 1024u * 1024u;
 
+// 单帧长度前缀上限（接收侧，与上面的发送侧阈值对称）。
+// 4 字节大端长度前缀是**外部输入**，必须当作不可信值处理：
+// 客户端发 FF FF FF FF 时 len = 0xFFFFFFFF，旧代码的 `m_recvBuf.size() < 4 + len`
+// 会因 unsigned 回绕（4 + 0xFFFFFFFF == 3）而失效，随后按 4GB 长度读缓冲区 → 崩服。
+// 且 verifyClient() 对**未验证**连接也会调 receive()，所以无需通过 token 即可触发。
+// 正常帧是「一帧内多条消息」的聚合，量级几百字节～几 KB，64KB 留足余量；
+// 同时该上限也间接给 m_recvBuf 定了界（不再可能被伪造成 4GB 累积）。
+inline constexpr std::uint32_t MAX_FRAME_BYTES = 64u * 1024u;
+
 class TcpClient {
 public:
     // 复刻原四态语义（游戏层只认这个）
@@ -210,7 +219,10 @@ public:
         m_holder->staged.clear();
 
         // 缓冲里还有完整帧则先交付（关连接前的尾巴数据不丢）
-        if (tryExtractPacket(packet) == Status::Done) return Status::Done;
+        // Done / Error 都直接上抛（Error = 帧长超限，见 tryExtractPacket）
+        if (const Status extracted = tryExtractPacket(packet); extracted != Status::NotReady) {
+            return extracted;
+        }
 
         if (m_holder->errored) return Status::Error;
         if (m_holder->closed) return Status::Disconnected;
@@ -219,7 +231,10 @@ public:
 #else
     Status receive(eng::Packet& packet) {
         for (;;) {
-            if (tryExtractPacket(packet) == Status::Done) return Status::Done;
+            // Done / Error 都直接上抛（Error = 帧长超限，见 tryExtractPacket）
+            if (const Status extracted = tryExtractPacket(packet); extracted != Status::NotReady) {
+                return extracted;
+            }
             std::uint8_t buf[4096];
             const int n = isConnected() ? NET_ReadFromStreamSocket(m_holder->sock, buf, sizeof buf) : -1;
             if (n > 0) {
@@ -333,6 +348,16 @@ private:
           | (static_cast<std::uint32_t>(m_recvBuf[1]) << 16)
           | (static_cast<std::uint32_t>(m_recvBuf[2]) << 8)
           | static_cast<std::uint32_t>(m_recvBuf[3]));
+        // 上限检查必须在下方的 `4 + len` 之前：先挡住伪造的巨大长度，
+        // 后一句才不会因 unsigned 回绕而失效（详见 MAX_FRAME_BYTES 注释）。
+        // 超限视为流不可信（伪造或已错位），返回 Error 由 receive() 上抛，
+        // 上层按既有断线路径收尸。
+        if (len > MAX_FRAME_BYTES) {
+            LOG_ERROR_FMT("Frame length {} exceeds limit {} bytes, dropping connection",
+                          len, MAX_FRAME_BYTES);
+            m_recvBuf.clear();
+            return Status::Error;
+        }
         if (m_recvBuf.size() < 4 + len) return Status::NotReady;
 
         packet.clear();
