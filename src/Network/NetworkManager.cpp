@@ -414,16 +414,27 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
     const auto tick_interval_us = static_cast<std::int64_t>(1000000) / CONFIG.network.tickRate;
     if (tick_accum_us < tick_interval_us) return;
     tick_accum_us -= tick_interval_us;
+    if (clients.empty()) return;
+
+    // 广播去重：本 tick 每个对象只序列化一次，N 个客户端复用同一份字节。
+    // 原实现是 for(client) for(obj) serialize —— 同一对象的 UpdateObject 字节
+    // 对所有客户端完全相同，却序列化了 N 遍、新建 N 个 eng::Packet（各带一个
+    // vector）。现降为 O(objects) 次序列化 + O(1) 次分配，每客户端只剩一次
+    // 字节拷贝（append 内部 memcpy），线上字节与改前逐字节一致。
+    eng::Packet broadcast;
+    for (const auto& weak_obj : game_objects) {
+        // 已析构条目 / 非 ISerializable 的空 shared_ptr 都会 lock 失败，跳过
+        //（原实现直接 obj.lock()->serialize(...)，这里是顺带补上的空指针防护）
+        const auto obj = weak_obj.lock();
+        if (!obj) continue;
+        obj->serialize(broadcast, NetworkMsg::UpdateObject);
+    }
+    // 全部对象本次都没产出字节（例如该 tick 无任何可同步对象）：无需广播
+    if (broadcast.getDataSize() == 0) return;
+
     LOG_TRACE("Sending update packets to clients");
     for (const auto& client : clients) {
-        for (const auto& obj : game_objects) {
-            eng::Packet packet;
-            obj.lock()->serialize(packet, NetworkMsg::UpdateObject);
-            if (packet.getDataSize() == 0) {
-                continue;
-            }
-            client->append(packet);
-        }
+        client->append(broadcast);
     }
 }
 

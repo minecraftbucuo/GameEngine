@@ -9,3 +9,4 @@ build/
 SFML-2.6.1-linux/
 build-web/
 build-server/
+.workbuddy-ai/
