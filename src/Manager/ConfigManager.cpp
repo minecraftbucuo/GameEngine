@@ -9,8 +9,13 @@
 #include "Logger.h"
 
 bool ConfigManager::load() {
+    return load(configPath);
+}
+
+bool ConfigManager::load(const std::string& path) {
+    // 先记住路径：load 与 save 共用同一份 configPath（原先两处各自硬编码字面量）
+    configPath = path;
     try {
-        const auto path = "./Asset/config.json";
         std::ifstream file(path);
         if (!file.is_open()) {
             LOG_ERROR_FMT("Failed to open config file: {}", path);
@@ -30,6 +35,14 @@ bool ConfigManager::load() {
         LOG_ERROR_FMT("Config parse error: {}", e.what());
         return false;
     }
+}
+
+void ConfigManager::reset() {
+    // 用声明处的默认成员初始化器重建各段，避免把默认值再抄一遍（抄了就会漂移）
+    window = WindowConfig{};
+    assets = AssetsConfig{};
+    network = NetworkConfig{};
+    game = GameConfig{};
 }
 
 void ConfigManager::parseWindow(const json& j) {
@@ -83,7 +96,7 @@ void ConfigManager::parseGame(const json& j) {
 
 bool ConfigManager::save() {
     try {
-        const auto path = "./Asset/config.json";
+        const auto& path = configPath;
 
         // 先读取现有配置，保留 assets 等未修改的部分
         json config;

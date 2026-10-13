@@ -14,14 +14,32 @@ using json = nlohmann::json;
 
 class ConfigManager {
 public:
+    // 默认配置文件路径（相对 exe 目录，与历史行为一致）
+    static constexpr const char* DEFAULT_PATH = "./Asset/config.json";
+
     static ConfigManager& getInstance() {
         static ConfigManager instance;
         return instance;
     }
 
+    // 用当前 configPath 加载 / 保存
     bool load();
 
     bool save();
+
+    // 指定路径加载，并记住该路径（后续 save() 也写回这里）。
+    // 目的：测试可指向临时 fixture，无需改动进程工作目录、
+    // 也无需把测试文件放到固定的 ./Asset/config.json 位置。
+    bool load(const std::string& path);
+
+    // 恢复全部字段为默认值（不触碰文件）。
+    // 目的：单例状态会跨用例残留，用例前后各 reset() 一次即可干净隔离。
+    void reset();
+
+    // 当前生效的配置文件路径
+    [[nodiscard]] const std::string& getPath() const {
+        return configPath;
+    }
 
     // Window 配置
     struct WindowConfig {
@@ -78,6 +96,9 @@ public:
 
 private:
     ConfigManager() = default;
+
+    // load() / save() 共用的路径（原先两处各自硬编码字面量）
+    std::string configPath{DEFAULT_PATH};
 
     void parseWindow(const json& j);
 
