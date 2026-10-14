@@ -86,7 +86,7 @@ void PhysicsBodyComponent::start() {
     }
 }
 
-void PhysicsBodyComponent::update(const eng::Time& deltaTime) {
+void PhysicsBodyComponent::update(const eng::Time&) {
     if (!body || !owner) return;
     // 把 b2Body 位置（质心，米）回写到 owner->position（左上角，像素）
     b2Vec2 pos = body->GetPosition();

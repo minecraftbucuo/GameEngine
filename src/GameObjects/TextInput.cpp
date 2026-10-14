@@ -38,16 +38,6 @@ static void utf8Append(std::string& s, const char32_t cp) {
     }
 }
 
-// 删除末尾一个 codepoint（退格）
-static void utf8PopBack(std::string& s) {
-    if (s.empty()) return;
-    s.pop_back();
-    // 续字节（10xxxxxx）继续删，直到前导字节被删掉
-    while (!s.empty() && (static_cast<unsigned char>(s.back()) & 0xC0) == 0x80) {
-        s.pop_back();
-    }
-}
-
 // 获取前一个 codepoint 的开头字节偏移
 size_t TextInput::utf8PrevByteOffset(const std::string& s, size_t bytePos) {
     if (bytePos == 0) return 0;

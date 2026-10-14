@@ -18,7 +18,7 @@ CircleCollision::CircleCollision(const float x, const float y, const float radiu
     this->radius = radius;
 }
 
-void CircleCollision::update(const eng::Time& deltaTime) {
+void CircleCollision::update(const eng::Time&) {
     // this->posX = owner->posX + owner->width / 2;
     // this->posY = owner->posY + owner->height / 2;
     // this->position = owner->getPosition() + owner->getSize() * 0.5f;
@@ -30,7 +30,9 @@ void CircleCollision::render(eng::Renderer &renderer) {
 }
 #endif
 
-void CircleCollision::setPosition(const eng::Vec2f &position) {
+// 覆写基类 Collision::setPosition。注意：此处位置恒由 owner 推导，
+// 不使用入参（入参保留仅为对齐基类虚签名，故省略形参名）。
+void CircleCollision::setPosition(const eng::Vec2f &) {
     this->position = owner->getPosition() + owner->getSize() * 0.5f;
 }
 

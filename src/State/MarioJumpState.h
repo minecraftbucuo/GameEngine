@@ -42,7 +42,7 @@ public:
 #endif
     }
 
-    void update(const eng::Time& deltaTime) override {
+    void update(const eng::Time&) override {
         if (owner->getSpeed().x < 0) {
             setIsLeft(true);
         } else if (owner->getSpeed().x > 0) {

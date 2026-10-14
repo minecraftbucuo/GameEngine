@@ -95,7 +95,9 @@ void MarioController::update(const eng::Time& deltaTime) {
     shoot_timer.update(deltaTime);
 }
 
-void MarioController::jump(const bool play_sound) {
+// play_sound 只在非 SERVER_BUILD 分支（音效播放）里使用，服务端构建下必须
+// 保留形参以对齐调用签名，故用 [[maybe_unused]] 抑制该构建下的未使用警告。
+void MarioController::jump([[maybe_unused]] const bool play_sound) {
     std::shared_ptr<MoveComponent> moveComponent = owner->getComponent<MoveComponent>();
     if (!moveComponent) {
         moveComponent = owner->addComponent<MoveComponent>();
@@ -184,7 +186,8 @@ void MarioController::setWisPressed(const bool flag) {
     w_is_pressed = flag;
 }
 
-void MarioController::shoot(const bool play_sound) {
+// 同 jump()：play_sound 仅非 SERVER_BUILD 分支使用
+void MarioController::shoot([[maybe_unused]] const bool play_sound) {
     // 小时候不能发射炮弹：只有吃蘑菇长大后才能射击（本地按键和服务端转发输入都会经过这里）
     if (const auto mario = dynamic_cast<Mario*>(owner); mario && !mario->getIsBig()) return;
     if (!could_shoot) return;

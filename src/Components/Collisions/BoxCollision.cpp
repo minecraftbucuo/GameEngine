@@ -29,7 +29,7 @@ void BoxCollision::start() {
     this->size.y = owner->getSize().y;
 }
 
-void BoxCollision::update(const eng::Time& deltaTime) {
+void BoxCollision::update(const eng::Time&) {
     // this->posX = owner->posX;
     // this->posY = owner->posY;
     // this->position = owner->getPosition();

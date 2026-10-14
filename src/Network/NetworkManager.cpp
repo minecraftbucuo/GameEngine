@@ -333,7 +333,9 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
         while (status == TcpClient::Status::Done) {
             // 客户端会把一帧内产生的多个输入消息合并进同一个 Packet。
             // 这里必须把 Packet 内的消息全部读完，否则松开按键等后续输入会被忽略。
-            NetworkMsg msg_type;
+            // 初值仅为消除 -Wmaybe-uninitialized：读取失败会让 while 条件为假、
+            // 循环体不执行，msg_type 不会被误用，但编译器追踪不到这一点。
+            NetworkMsg msg_type{};
             while (packet >> msg_type) {
                 if (msg_type == NetworkMsg::ClientRespawn) {
                     LOG_INFO("client request to respawn");
@@ -357,7 +359,8 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
                     // 目标对象不存在说明已被移除（如两名客户端同时踩同一只），直接忽略
                     unsigned int target_id;
                     GameEventType event_type;
-                    packet >> target_id >> event_type;
+                    // 读取失败跳出消息循环：operator>> 失败不写目标变量
+                    if (!(packet >> target_id >> event_type)) break;
                     if (const auto& obj = current_scene->findGameObjectById(target_id)) {
                         if (const auto goomba = std::dynamic_pointer_cast<Goomba>(obj)) {
                             if (event_type == GameEventType::GoombaSquashed) {
@@ -447,7 +450,7 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
     }
 }
 
-void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
+void NetworkManager::clientUpdate(const eng::Time&) {
     eng::Packet packet;
     TcpClient::Status status = clientSocket.receive(packet);
     if (status == TcpClient::Status::Error || status == TcpClient::Status::Disconnected) {
@@ -480,7 +483,8 @@ void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
     }
 #endif
     while (status == TcpClient::Status::Done) {
-        NetworkMsg type;
+        // 初值仅为消除 -Wmaybe-uninitialized（读取失败时循环体不执行）
+        NetworkMsg type{};
         while (packet >> type) {
             if (type == NetworkMsg::SpawnObject || type == NetworkMsg::SpawnPlayer) {
                 LOG_INFO_FMT("Received packet, type: SpawnObject, IsPlayer: {}", type == NetworkMsg::SpawnPlayer);

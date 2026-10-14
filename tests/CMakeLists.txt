@@ -15,6 +15,8 @@ add_executable(GameEngineTests
 )
 
 target_compile_features(GameEngineTests PRIVATE cxx_std_20)
+# 警告开关与主目标同源（GAME_WARNING_FLAGS 由根 CMakeLists 定义，向下可见）
+target_compile_options(GameEngineTests PRIVATE ${GAME_WARNING_FLAGS})
 
 target_include_directories(GameEngineTests PRIVATE
         ${CMAKE_SOURCE_DIR}/src

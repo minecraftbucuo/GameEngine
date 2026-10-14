@@ -46,9 +46,6 @@ namespace {
         return value.x * value.x + value.y * value.y;
     }
 
-    float clamp01(const float value) {
-        return std::max(0.f, std::min(1.f, value));
-    }
 }
 
 Mario::Mario(const float x, const float y, const bool isPlayer) {
@@ -483,7 +480,8 @@ void Mario::serialize(eng::Packet& packet, const NetworkMsg type) {
 
 void Mario::deserialize(eng::Packet& packet) {
     NetworkMsg msg_type;
-    packet >> msg_type;
+    // 读取失败立即返回：operator>> 失败不写目标变量，否则用到未初始化栈值
+    if (!(packet >> msg_type)) return;
 
     if (msg_type == NetworkMsg::UpdateObject) {
         float x, y, s_x, s_y;
@@ -514,7 +512,7 @@ void Mario::deserialize(eng::Packet& packet) {
     } else if (msg_type == NetworkMsg::ClientInput) {
         const auto& marioController = this->getComponent<MarioController>();
         InputType type;
-        packet >> type;
+        if (!(packet >> type)) return;
         if (type == InputType::Jump) {
             marioController->jump(false);
         } else if (type == InputType::RunLeft) {

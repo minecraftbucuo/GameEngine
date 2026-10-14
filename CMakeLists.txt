@@ -61,6 +61,28 @@ else ()
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 endif ()
 
+# ── 编译器警告（编译期质量网）────────────────────────────────────
+# 只作用于本项目自有目标：第三方依赖由 FetchContent 以 SYSTEM 引入，
+# 其头文件告警已被 -isystem 抑制，这里再对自有代码显式开警告。
+# 用 target_compile_options 而非 add_compile_options —— 后者会波及
+# 第三方目标，把别人的告警混进本项目构建输出。
+# GAME_WERROR=ON 可把警告升级为错误，供 CI 阻止新代码带回警告。
+option(GAME_WERROR "把编译警告当作错误（CI 用）" OFF)
+
+if (MSVC)
+    set(GAME_WARNING_FLAGS /W4)
+else ()
+    set(GAME_WARNING_FLAGS -Wall -Wextra)
+endif ()
+
+if (GAME_WERROR)
+    if (MSVC)
+        list(APPEND GAME_WARNING_FLAGS /WX)
+    else ()
+        list(APPEND GAME_WARNING_FLAGS -Werror)
+    endif ()
+endif ()
+
 # ── WEB 构建（Emscripten / WASM）：仅 web 预设（EMSCRIPTEN 工具链）时生效 ──
 # 桌面/服务端构建零影响（EMSCRIPTEN 由 Emscripten.cmake 工具链设置）
 # 用法见 docs/wasm-web-port-plan.md 与 scripts/build_web.ps1
@@ -253,6 +275,7 @@ file(GLOB_RECURSE SRC CONFIGURE_DEPENDS ${SRC_DIR}/*.cpp)
 
 add_executable(${PROJECT_NAME} ${SRC})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+target_compile_options(${PROJECT_NAME} PRIVATE ${GAME_WARNING_FLAGS})
 if (BUILD_FOR_SERVER)
     target_compile_definitions(${PROJECT_NAME} PRIVATE SERVER_BUILD)
 endif ()

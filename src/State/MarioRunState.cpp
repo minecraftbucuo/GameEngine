@@ -46,7 +46,9 @@ void MarioRunState::applyForm(const bool big) {
 }
 #endif
 
-void MarioRunState::update(const eng::Time& deltaTime) {
+// deltaTime 只在非 SERVER_BUILD 分支（动画推进）里使用，服务端构建下用
+// [[maybe_unused]] 抑制未使用警告（不能省略形参名，客户端构建还要用它）。
+void MarioRunState::update([[maybe_unused]] const eng::Time& deltaTime) {
     // 防止错误更新
     if (owner->getComponent<StateMachine>()->getCurrentStateName() != this->getName()) return;
     if (owner->getSpeed().x == 0.f) {

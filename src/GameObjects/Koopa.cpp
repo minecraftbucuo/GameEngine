@@ -385,13 +385,15 @@ void Koopa::serialize(eng::Packet& packet, const NetworkMsg type) {
 
 void Koopa::deserialize(eng::Packet& packet) {
     NetworkMsg msg_type;
-    packet >> msg_type;
-    if (msg_type != NetworkMsg::UpdateObject) return;
+    // 读取失败立即返回：operator>> 失败不写目标变量，否则用到未初始化栈值
+    if (!(packet >> msg_type) || msg_type != NetworkMsg::UpdateObject) return;
 
     float x, y, s_x;
-    KoopaState remote_state;
-    bool remote_facing;
-    packet >> x >> y >> s_x >> remote_state >> remote_facing;
+    // 默认初始化仅为消除 -Wmaybe-uninitialized：自定义 operator>> 只在成功时
+    // 写入变量，GCC 无法据此推断失败分支已被上面的 return 挡住。
+    KoopaState remote_state{};
+    bool remote_facing{};
+    if (!(packet >> x >> y >> s_x >> remote_state >> remote_facing)) return;
 
     // 被击毙坠落中不再接受快照（服务端随后的 RemoveObject 幂等清理）
     if (is_killed) return;

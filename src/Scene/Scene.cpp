@@ -43,7 +43,7 @@ void Scene::update(eng::Time deltaTime) {
         }
     }
     // 必须用这种 for 循环，因为 game_objects 可能会改变，扩容导致迭代器失效
-    for (int i = 0; i < game_objects.size(); ++i) {
+    for (size_t i = 0; i < game_objects.size(); ++i) {
         if (const auto& obj = game_objects[i]; obj->isActive()) {
             if (obj->hasStarted()) obj->update(deltaTime);
             else obj->start();
@@ -71,7 +71,7 @@ void Scene::renderObjects(eng::Renderer& _renderer) {
 void Scene::handleEvent(const eng::EngineEvent& event) {
     if (camera) camera->handleEvent(event);
     // 必须用这种 for 循环，因为 game_objects 可能会改变，扩容导致迭代器失效
-    for (int i = 0; i < game_objects.size(); ++i) {
+    for (size_t i = 0; i < game_objects.size(); ++i) {
         const auto& obj = game_objects[i];
         obj->handleEvent(event);
     }

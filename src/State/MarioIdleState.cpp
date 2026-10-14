@@ -50,7 +50,7 @@ void MarioIdleState::start() {
     box_collision->setOffset(eng::Vec2f(0.f, 0.f));
 }
 
-void MarioIdleState::update(const eng::Time& deltaTime) {
+void MarioIdleState::update(const eng::Time&) {
     if (owner->getSpeed().x != 0.f) {
         owner->getComponent<StateMachine>()->setState("MarioRunState");
     }

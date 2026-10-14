@@ -546,8 +546,9 @@ void Bowser::serialize(eng::Packet& packet, const NetworkMsg type) {
 
 void Bowser::deserialize(eng::Packet& packet) {
     NetworkMsg msg_type;
-    packet >> msg_type;
-    if (msg_type != NetworkMsg::UpdateObject) return;
+    // 读取失败必须立即返回：Packet::operator>> 失败时不写入目标变量，
+    // 继续使用会读到未初始化的栈值（-Wmaybe-uninitialized）。
+    if (!(packet >> msg_type) || msg_type != NetworkMsg::UpdateObject) return;
 
     float x, y;
     bool remote_facing_left, remote_activated, remote_breathing, remote_killed;

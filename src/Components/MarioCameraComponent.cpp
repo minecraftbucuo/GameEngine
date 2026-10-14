@@ -22,7 +22,7 @@ void MarioCameraComponent::start() {
     }
 }
 
-void MarioCameraComponent::update(const eng::Time& deltaTime) {
+void MarioCameraComponent::update(const eng::Time&) {
     // 分支必须先判 STOP_X 再判 START_X：马里奥越过 STOP_X 后摄像机
     // 定格在最大跟随位置（STOP_X - START_X），不再跟随
     if (owner->getPosition().x > CAMERA_FOLLOW_STOP_X)

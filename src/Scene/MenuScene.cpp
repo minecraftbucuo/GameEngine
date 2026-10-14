@@ -162,7 +162,6 @@ void MenuScene::relayout() {
     if (renderer) {
         titlePos.x = winW * 0.5f - renderer->measureText(font, titleText, TITLE_FONT_SIZE).x * 0.5f;
     }
-    constexpr float btnW = 280.f;
     constexpr float btnH = 55.f;
     constexpr float spacing = 35.f;
     const float startY = static_cast<float>(getWindowSize().y) * 0.5f;

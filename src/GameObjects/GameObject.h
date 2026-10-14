@@ -108,7 +108,7 @@ public:
         if (const std::type_index componentId(typeid(T));
             components.contains(componentId)) {
             components.erase(componentId);
-            for (int i = 0; i < components_vector.size(); i++) {
+            for (size_t i = 0; i < components_vector.size(); i++) {
                 if (components_vector[i] == componentId) {
                     components_vector.erase(components_vector.begin() + i);
                     break;

@@ -133,8 +133,8 @@ void BowserFire::serialize(eng::Packet& packet, const NetworkMsg type) {
 
 void BowserFire::deserialize(eng::Packet& packet) {
     NetworkMsg msg_type;
-    packet >> msg_type;
-    if (msg_type != NetworkMsg::UpdateObject) return;
+    // 读取失败立即返回：operator>> 失败不写目标变量，否则用到未初始化栈值
+    if (!(packet >> msg_type) || msg_type != NetworkMsg::UpdateObject) return;
 
     float x, y, s_x;
     bool remote_extinguished;

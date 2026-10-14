@@ -84,7 +84,7 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork()
 std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(eng::Packet& packet) {
     unsigned int id;
     ObjectType obj_type;
-    packet >> id >> obj_type;
+    if (!(packet >> id >> obj_type)) return nullptr;
     if (obj_type == ObjectType::MarioPlayer || obj_type == ObjectType::Mario) {
         float x, y, s_x, s_y;
         bool is_jump;
@@ -193,9 +193,10 @@ std::shared_ptr<GameObject> SuperMarioSceneMultiplayer::spawnEntityWithNetwork(e
     }
     if (obj_type == ObjectType::Koopa) {
         float x, y, s_x;
-        KoopaState state;
-        bool facing_left;
-        packet >> x >> y >> s_x >> state >> facing_left;
+        // 默认初始化仅为消除 -Wmaybe-uninitialized（理由同 Koopa::deserialize）
+        KoopaState state{};
+        bool facing_left{};
+        if (!(packet >> x >> y >> s_x >> state >> facing_left)) return nullptr;
         const auto koopa = std::make_shared<Koopa>(x, y, s_x);
         koopa->setId(id);
         // 按服务端权威状态还原：新客户端加入时已缩壳/滑动中的乌龟不重放
@@ -296,7 +297,7 @@ void SuperMarioSceneMultiplayer::handleEvent(const eng::EngineEvent& event) {
 
     if (camera) camera->handleEvent(event);
     // 必须用这种 for 循环，因为 game_objects 可能会改变，扩容导致迭代器失效
-    for (int i = 0; i < game_objects.size(); ++i) {
+    for (size_t i = 0; i < game_objects.size(); ++i) {
         const auto& obj = game_objects[i];
         obj->handleEvent(event);
     }
