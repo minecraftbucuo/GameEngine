@@ -8,10 +8,10 @@
 #include <unordered_map>
 #include <nlohmann/json_fwd.hpp>
 
-// 全局配置访问入口。展开后走 ConfigManager::instance()（可替换），
-// 而非直接取单例——这样测试替换一处实例即对全部 109 个使用点生效。
-// 保留宏是为了不改动既有调用点；后续按需把热点逐步换成构造注入。
-#define CONFIG (ConfigManager::instance())
+// 全局配置访问入口。展开后走 ConfigManager::getInstance()，它返回的是
+// 「当前生效实例」（可被 setInstance 替换），因此测试替换一处即对全部
+// 109 个使用点生效。保留宏是为了不改动既有调用点。
+#define CONFIG (ConfigManager::getInstance())
 
 using json = nlohmann::json;
 
@@ -20,19 +20,15 @@ public:
     // 默认配置文件路径（相对 exe 目录，与历史行为一致）
     static constexpr const char* DEFAULT_PATH = "./Asset/config.json";
 
-    // 进程级单例实例（默认生效者）
+    // 当前生效实例：默认是进程级单例，可用 setInstance() 换成独立实例。
+    // 命名与 EventBus 保持一致——两个类的 getInstance() 都是「当前生效者」，
+    // 不设"默认单例"的独立入口，避免有人误用而绕过替换。
     static ConfigManager& getInstance() {
-        static ConfigManager instance;
-        return instance;
+        static ConfigManager fallback;
+        return active_instance ? *active_instance : fallback;
     }
 
-    // 当前生效实例：默认即 getInstance()；测试可用 setInstance() 换成独立实例。
-    // 全部 CONFIG 访问都经此，替换一处即全局生效。
-    static ConfigManager& instance() {
-        return active_instance ? *active_instance : getInstance();
-    }
-
-    // 替换当前生效实例；传 nullptr 恢复默认单例。
+    // 替换当前生效实例；传 nullptr 恢复默认。
     // 供测试在 setup / teardown 成对调用。非线程安全：仅用于启动期或测试，
     // 勿在运行中并发调用（读侧是无锁裸指针，换取热路径零开销）。
     static void setInstance(ConfigManager* cm) {
