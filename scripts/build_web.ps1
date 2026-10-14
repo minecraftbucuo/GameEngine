@@ -28,7 +28,7 @@ if (-not $env:EMSDK) {
     throw "EMSDK 环境变量未设置（web 预设的 toolchainFile 依赖它）。请先激活 emsdk，或用 -EmsdkEnv 指定 emsdk_env.ps1 的路径。"
 }
 
-cmake --preset web
+cmake --preset web -G "MinGW Makefiles"
 if ($LASTEXITCODE -ne 0) { throw "配置失败（exit=$LASTEXITCODE），请把上方完整日志发我" }
 
 cmake --build --preset web --parallel
