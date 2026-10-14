@@ -27,10 +27,12 @@
 ### Linux（推荐用脚本）
 
 ```bash
-chmod +x scripts/*.sh        # 首次：从 Windows 检出的脚本丢了执行位
 ./scripts/build.sh           # 交互：选构建目标（默认服务器版），再问是否连 Web 版一起构
 ./scripts/start_server.sh    # 一键开服：无头服务端 + websockify 桥（顺带发 WEB 页面）
 ```
+
+> 脚本的执行位已由 git 记录（`scripts/*.sh` 在索引里是 `100755`），克隆/拉取后直接可跑。
+> 若你手上是很早以前的克隆，执行位可能还是旧的，`chmod +x scripts/*.sh` 一次即可。
 
 `build.sh` 两个交互问题的含义：
 
@@ -40,6 +42,18 @@ chmod +x scripts/*.sh        # 首次：从 Windows 检出的脚本丢了执行�
 | **是否构建 Web 版本** | 选 y 则额外产出 WASM 版本，需已安装 [emsdk](https://github.com/emscripten-core/emsdk)——自动探测 `EMSDK_ENV` → `~/emsdk` → `/opt/emsdk`，找不到会报错并给出安装命令 |
 
 免交互写法：`./scripts/build.sh server web`（参数可任意组合 `server` / `desktop` / `web`）。
+
+脚本内部就是调预设，等价于：
+
+```bash
+cmake --preset server && cmake --build --preset server --parallel "$(nproc)"
+```
+
+单元测试（秒级、完全离线：跳过 SDL/Box2D，只编纯逻辑模块）：
+
+```bash
+cmake --preset tests && cmake --build --preset tests && ctest --preset tests
+```
 
 ### Windows
 
@@ -65,7 +79,7 @@ ctest --preset tests
 .\scripts\start_bridge.ps1
 ```
 
-> \[!IMPORTANT]
+> [!IMPORTANT]
 > Web 版预览必须走 http 服务器：`python -m http.server 8000 -d build-web\web`，浏览器访问 `http://localhost:8000/GameEngine.html`。
 > **不能双击 html 用 file:// 打开**——浏览器会拦截 wasm/data 的 fetch。
 
@@ -85,13 +99,15 @@ ctest --preset tests
 **每个构建目录该用什么开关，一律由预设决定**，不再手敲 `-D`：
 
 ```bash
-cmake --preset client|server|web|tests   # 配置（自动选好生成器与 binaryDir）
+cmake --preset client|server|web|tests   # 配置（自动选好 binaryDir 与各项开关）
 cmake --build --preset <同名>             # 编译
 ctest --preset tests                      # 跑测试
 cmake --list-presets                      # 看有哪些
 ```
 
-预设以 `-D` 形式下发，而 `-D` **每次配置都覆盖缓存**——所以预设值即权威值，不会出现「旧 build 目录缓存压过文件默认值」的问题。Linux / Windows 的生成器差异由 `windows-base` / `unix-base` 两个 hidden 预设按 `${hostSystemName}` 自动选择。
+预设以 `-D` 形式下发，而 `-D` **每次配置都覆盖缓存**——所以预设值即权威值，不会出现「旧 build 目录缓存压过文件默认值」的问题。
+
+预设**不指定生成器**，用 CMake 的平台默认。Linux 上默认就是 `Unix Makefiles`；Windows 上默认取决于本机装了什么（本机 CMake 的默认是 Visual Studio，而本项目在 Windows 上只支持 MinGW），所以 **Windows 上首次配置某个构建目录时要显式加 `-G "MinGW Makefiles"`**——一旦该目录的缓存建好了，后续就不用再带。要换别的生成器同理，命令行加 `-G` 即可覆盖。
 
 ### CMake 开关
 
@@ -102,7 +118,7 @@ cmake --list-presets                      # 看有哪些
 | `BUILD_TESTS`       | `OFF` | 构建单元测试目标（`tests` 预设置 ON）            |
 | `BUILD_TESTS_ONLY`  | `OFF` | 只配置测试，跳过全部游戏依赖与主目标（`tests` 预设置 ON）   |
 
-> \[!NOTE]
+> [!NOTE]
 > 依赖要求：C++20 编译器、CMake 3.26+、git 与网络。首次配置 FetchContent 自动拉取 SDL3 全家与 Box2D 静态编译，之后离线可用。
 > 不用预设直接 `cmake -S . -B build` 也仍然可用，只是开关要自己带 `-D`。
 
@@ -139,6 +155,7 @@ flowchart LR
 | 键                              | 说明                                                                                                   |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
 | `window`                       | 窗口宽高、标题、帧率上限                                                                                         |
+| `assets`                       | 纹理 / 音频 / 字体 / 动画 JSON 的路径（`./Asset/...`，相对 exe 所在目录）                                                  |
 | `network.serverIp`             | 服务器地址。桌面客户端直连用；Web 版三形态：`auto`（连页面自身来源，配合桥发页面的拓扑零配置）/ 完整 `ws(s)://` URL / IP（自动拼桥端口 `webBridgePort`） |
 | `network.port`                 | 游戏端口（默认 6666），桌面直连 & 桥的转发目标                                                                          |
 | `network.webBridgePort`        | 桥监听端口（默认 8081）                                                                                       |
@@ -146,7 +163,7 @@ flowchart LR
 | `game.levelMap`                | 当前关卡地图路径（默认 `./Asset/maps/level_1.json`），换关改这里即可，无需重新编译                                               |
 | `game.*`                       | 重力、速度、跳跃力度、火球、Box2D 步长等参数                                                                            |
 
-> \[!TIP]
+> [!TIP]
 > `game.debug: true` 可叠加物理调试图（也可在游戏内「设置」里用调试模式开关）。
 >
 > 改配置有两个入口：
@@ -199,12 +216,15 @@ CMake 在服务端构建时会自动把 `Asset/config.json` 和 `Asset/maps/` �
 
 ## 📚 文档索引
 
-| 文档                                                          | 内容                                             |
-| ----------------------------------------------------------- | ---------------------------------------------- |
-| [web-multiplayer-deploy.md](docs/web-multiplayer-deploy.md) | WEB 联机部署：组件职责、S1 朋友开服、S2 VPS（nginx/systemd）、排障 |
-| [websocket-net-plan.md](docs/websocket-net-plan.md)         | WebSocket 联机方案：选型（A′）、风险、N0-N5 全记录             |
-| [wasm-web-port-plan.md](docs/wasm-web-port-plan.md)         | WASM 移植：决策记录、Step 0-9、体积基线                     |
-| [box2d-integration-plan.md](docs/box2d-integration-plan.md) | Box2D 接入设计与决策                                  |
+| 文档                                                            | 内容                                             |
+| ------------------------------------------------------------- | ---------------------------------------------- |
+| [web-multiplayer-deploy.md](docs/web-multiplayer-deploy.md)   | WEB 联机部署：组件职责、S1 朋友开服、S2 VPS（nginx/systemd）、排障 |
+| [websocket-net-plan.md](docs/websocket-net-plan.md)           | WebSocket 联机方案：选型（A′）、风险、N0-N5 全记录             |
+| [wasm-web-port-plan.md](docs/wasm-web-port-plan.md)           | WASM 移植：决策记录、Step 0-9、体积基线                     |
+| [sdl3-migration-plan.md](docs/sdl3-migration-plan.md)         | SDL3 迁移（一）：窗口/渲染/输入/音频由 SFML 换到 SDL3            |
+| [sdl3-net-migration-plan.md](docs/sdl3-net-migration-plan.md) | SDL3 迁移（二）：网络层换 SDL_net 3，SFML 全仓移除（终章）         |
+| [box2d-integration-plan.md](docs/box2d-integration-plan.md)   | Box2D 接入设计与决策                                  |
+| [settings-scene-plan.md](docs/settings-scene-plan.md)         | 游戏内设置界面（SettingsScene）方案                        |
 
 ***
 
