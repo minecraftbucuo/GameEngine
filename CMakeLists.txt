@@ -25,6 +25,19 @@ resolve_switch(BUILD_FOR_SERVER OFF)
 resolve_switch(BUILD_STATIC ON)
 # ═══════════════════════════════════════════════════════════════
 
+# ── 单元测试开关（这两个刻意用 option()，不用上面的 resolve_switch）──
+# resolve_switch 的语义是「文件里的默认值每次配置都强制回写」，会把
+# -DBUILD_TESTS=ON 在下次 reconfigure 时打回 OFF；而 option() 一旦置 ON
+# 就留在缓存里 —— 正是一个独立测试目录需要的行为。
+#
+# BUILD_TESTS      ：是否构建单元测试目标（默认 OFF ⇒ 既有构建行为不变）
+# BUILD_TESTS_ONLY ：只配置测试，跳过全部游戏依赖与主目标。
+#   单元测试只依赖纯逻辑模块（eng::Packet / ConfigManager），不需要 SDL /
+#   Box2D。跳过它们可让配置从「数分钟（且需联网拉依赖）」降到「数秒且完全
+#   离线」—— CI 的测试 job 就该这么配。
+option(BUILD_TESTS "Build unit tests (Packet / ConfigManager 等纯逻辑模块)" OFF)
+option(BUILD_TESTS_ONLY "只配置单元测试：跳过游戏依赖与主目标（CI / 离线）" OFF)
+
 # 默认 Release：未显式指定构建类型时启用（多配置生成器如 VS 不适用，由 IDE 选择）
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
@@ -95,6 +108,12 @@ else ()
     set(SDL_STATIC OFF CACHE BOOL "" FORCE)
     set(SDL_SHARED ON CACHE BOOL "" FORCE)
 endif ()
+
+# ══════════════════════════════════════════════════════════════════
+# 第三方依赖 + 游戏主目标 + 资源拷贝
+# BUILD_TESTS_ONLY=ON 时整体跳过（单元测试不依赖它们，见上方开关说明）
+# ══════════════════════════════════════════════════════════════════
+if (NOT BUILD_TESTS_ONLY)
 
 # ── 依赖一：Box2D v2.4（物理，引擎核心依赖，两端共用）─────────────
 include(FetchContent)
@@ -297,4 +316,25 @@ elseif (BUILD_FOR_SERVER)
                     ${ASSET_DIR}/maps
                     $<TARGET_FILE_DIR:${PROJECT_NAME}>/Asset/maps
     )
+endif ()
+
+endif ()   # NOT BUILD_TESTS_ONLY
+
+# ── 单元测试（可选，默认 OFF）───────────────────────────────────────
+# 默认 OFF ⇒ 既有 build / build-server / build-web 的行为完全不变。
+#
+# 用法：
+#   cmake -S . -B build-tests -DBUILD_TESTS=ON
+#   cmake --build build-tests
+#   ctest --test-dir build-tests --output-on-failure
+#
+# 刻意用 option() 而非上面的 resolve_switch()：resolve_switch 的语义是
+# 「文件里的默认值每次配置都强制回写」，会把 -DBUILD_TESTS=ON 在下一次
+# reconfigure 时打回 OFF；而 option() 一旦置 ON 就留在缓存里——这正是
+# 一个独立测试目录想要的行为。
+option(BUILD_TESTS "Build unit tests (Packet / ConfigManager 等纯逻辑模块)" OFF)
+
+if (BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
 endif ()
