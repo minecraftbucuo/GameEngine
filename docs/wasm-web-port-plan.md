@@ -128,7 +128,7 @@ MEMFS 写入不持久。方案：`ConfigManager::save` 在 `__EMSCRIPTEN__` 下�
 ### 9. 页面壳与发布
 
 - 自定义 shell HTML（Emscripten `--shell-file`）：居中 canvas、CSS 自适应缩放（保持宽高比）、`.data` 加载进度条、点击 canvas 提示聚焦。
-- 发布目标：GitHub Pages（`application/wasm` MIME 已支持，无 COOP/COEP 要求——见决策 6）。提供 `scripts/build_web.ps1` 一键脚本：emcmake configure → build → 产物归集到 `build-web/web/`。
+- 发布目标：GitHub Pages（`application/wasm` MIME 已支持，无 COOP/COEP 要求——见决策 6）。提供 `scripts/build_web.ps1` 一键脚本：激活 emsdk → `cmake --preset web` → 产物归集到 `build-web/web/`。
 
 ---
 

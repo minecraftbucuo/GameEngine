@@ -61,7 +61,8 @@ else ()
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 endif ()
 
-# ── WEB 构建（Emscripten / WASM）：仅 emcmake 配置时生效，桌面/服务端构建零影响 ──
+# ── WEB 构建（Emscripten / WASM）：仅 web 预设（EMSCRIPTEN 工具链）时生效 ──
+# 桌面/服务端构建零影响（EMSCRIPTEN 由 Emscripten.cmake 工具链设置）
 # 用法见 docs/wasm-web-port-plan.md 与 scripts/build_web.ps1
 #   · 产物在 web/ 下（html/js/wasm/data 四件套），Asset 经 --preload-file 打进虚拟盘
 #     /Asset，与 getExeDir() 的 "/" 约定配套（迁移计划决策 3）
