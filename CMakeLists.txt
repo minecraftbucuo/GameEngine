@@ -72,10 +72,10 @@ option(GAME_WERROR "把编译警告当作错误（CI 用）" OFF)
 if (MSVC)
     set(GAME_WARNING_FLAGS /W4)
 else ()
-    # -Woverloaded-virtual 必须显式写：GCC 13 起这个警告分两档，-Wall 只启用较弱的
-    # -Woverloaded-virtual=1，而裸写的 -Woverloaded-virtual 等价于 =2（更严格）。
-    # 本项目实测（MinGW GCC 13.1）在 =1 下漏报 BoxCollision 的名字隐藏，=2 才报出，
-    # 于是出现「本地全绿、CI 报错」。显式写死可让本地与 CI 看到同一套警告。
+    # -Woverloaded-virtual 显式写死，不依赖 -Wall 带出来。
+    # 本机 MinGW GCC 13.1 实测：该警告分两档，-Wall 只启用较弱的 =1，裸写等价于 =2；
+    # BoxCollision 的名字隐藏在 =1 下漏报、=2 才报出，而 CI 的 GCC 直接报了 —— 于是
+    # 出现「本地全绿、CI 报错」。显式写死让两边看到同一套警告。
     # 该警告指向真问题：派生类的同名重载会把基类虚函数完全遮蔽。
     set(GAME_WARNING_FLAGS -Wall -Wextra -Woverloaded-virtual)
 endif ()
