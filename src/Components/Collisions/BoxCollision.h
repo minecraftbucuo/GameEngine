@@ -33,6 +33,12 @@ public:
 
     [[nodiscard]] float getPosY() const;
 
+    // 基类 Collision::setPosition(const eng::Vec2f&) 是虚函数，本类的
+    // setPosition(float, float) 是另一个重载。C++ 的名字隐藏规则下，派生类的
+    // 同名函数会把基类那一组**全部遮蔽**：box.setPosition(vec2f) 直接编译失败，
+    // 经基类指针调用则静默走基类实现。用 using 把基类重载引入本作用域，两者
+    // 共存（参数个数不同，调用无歧义）。GCC 对此报 -Woverloaded-virtual。
+    using Collision::setPosition;
     void setPosition(float x, float y);
 
     void setSize(float width_, float height_);
