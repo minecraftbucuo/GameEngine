@@ -1,41 +1,28 @@
 cmake_minimum_required(VERSION 3.26)
 
-# ══════════ 用户开关 ═════════════════════════════════════════════
-# option() 的坑：旧 build 目录的缓存值会一直压过文件里改的默认值，
-# 表现为“改了不生效”。这里改用 set(... CACHE ... FORCE) 每次配置强制回写，
-# 文件里改值立即生效；命令行 -D 依旧可用（与上次回写值不同即视为用户指定，
-# 值相同时结果本就相同，无需区分）。
+# ══════════ 构建开关 ═════════════════════════════════════════════
+# 「每个构建目录该用什么开关」统一由 CMakePresets.json 决定：
+#     cmake --preset client | server | web | tests
+# 预设通过 -D 下发，而 -D 在**每次配置**都覆盖缓存 —— 预设值即权威值。
+# 因此不会再出现「改了文件不生效」，也不会再出现 build-server 被静默打回
+# 客户端构建（旧 resolve_switch 的 _LAST_ 启发式无法判断值是谁写的，
+# 只能猜，猜错就悄悄回落到文件默认值）。
+#
+# 下面只声明默认值，作为「不带预设直接 cmake -S . -B xxx」时的兜底。
 #   客户端(OFF)：窗口/渲染/输入/音频/网络全量
 #   服务端(ON) ：纯网络+物理，无渲染无音频（SERVER_BUILD 宏生效）
-#   例：cmake -S . -B build-server -DBUILD_FOR_SERVER=ON
-function(resolve_switch var default)
-    if (DEFINED ${var} AND NOT "${${var}}" STREQUAL "${_LAST_${var}}")
-        set(${var} "${${var}}" CACHE BOOL "" FORCE)
-        set(_LAST_${var} "${${var}}" CACHE INTERNAL "" FORCE)
-    else ()
-        set(${var} "${default}" CACHE BOOL "" FORCE)
-        set(_LAST_${var} "${default}" CACHE INTERNAL "" FORCE)
-    endif ()
-endfunction()
-
-# 客户端/服务端切换（默认 OFF = 客户端）
-resolve_switch(BUILD_FOR_SERVER OFF)
+option(BUILD_FOR_SERVER "构建无头服务端（无渲染/无音频，SERVER_BUILD 宏生效）" OFF)
 # ON ：全部依赖静态链入 exe（单文件发布，编译慢体积大）
 # OFF：动态链接（exe 小、编译快，运行需 SDL3.dll 等陪同）
-resolve_switch(BUILD_STATIC ON)
-# ═══════════════════════════════════════════════════════════════
+option(BUILD_STATIC "全部依赖静态链入 exe（单文件发布）" ON)
 
-# ── 单元测试开关（这两个刻意用 option()，不用上面的 resolve_switch）──
-# resolve_switch 的语义是「文件里的默认值每次配置都强制回写」，会把
-# -DBUILD_TESTS=ON 在下次 reconfigure 时打回 OFF；而 option() 一旦置 ON
-# 就留在缓存里 —— 正是一个独立测试目录需要的行为。
-#
-# BUILD_TESTS      ：是否构建单元测试目标（默认 OFF ⇒ 既有构建行为不变）
+# ── 单元测试开关（默认 OFF ⇒ 不带预设的既有构建行为完全不变）──────
+# BUILD_TESTS      ：是否构建单元测试目标
 # BUILD_TESTS_ONLY ：只配置测试，跳过全部游戏依赖与主目标。
 #   单元测试只依赖纯逻辑模块（eng::Packet / ConfigManager），不需要 SDL /
 #   Box2D。跳过它们可让配置从「数分钟（且需联网拉依赖）」降到「数秒且完全
 #   离线」—— CI 的测试 job 就该这么配。
-option(BUILD_TESTS "Build unit tests (Packet / ConfigManager 等纯逻辑模块)" OFF)
+option(BUILD_TESTS "构建单元测试（Packet / ConfigManager 等纯逻辑模块）" OFF)
 option(BUILD_TESTS_ONLY "只配置单元测试：跳过游戏依赖与主目标（CI / 离线）" OFF)
 
 # 默认 Release：未显式指定构建类型时启用（多配置生成器如 VS 不适用，由 IDE 选择）
@@ -43,7 +30,8 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif ()
 
-# 配置摘要：一眼确认三个关键设定是否如预期（沿用原 message() 风格）
+# 配置摘要：一眼确认关键设定是否如预期（沿用原 message() 风格）
+# —— 之前 build-server 被静默打回客户端构建，就是因为没有这行显式确认。
 if (CMAKE_CONFIGURATION_TYPES)
     message("Build type: <多配置生成器，由 IDE/--config 选择>")
 else ()
@@ -58,6 +46,11 @@ if (BUILD_STATIC)
     message("BUILD_STATIC = ${BUILD_STATIC}  (static)")
 else ()
     message("BUILD_STATIC = ${BUILD_STATIC}  (dynamic)")
+endif ()
+if (BUILD_TESTS_ONLY)
+    message("BUILD_TESTS_ONLY = ${BUILD_TESTS_ONLY}  (只配测试，跳过游戏依赖与主目标)")
+elseif (BUILD_TESTS)
+    message("BUILD_TESTS = ${BUILD_TESTS}  (主目标 + 单元测试)")
 endif ()
 
 if (BUILD_FOR_SERVER)
@@ -320,20 +313,14 @@ endif ()
 
 endif ()   # NOT BUILD_TESTS_ONLY
 
-# ── 单元测试（可选，默认 OFF）───────────────────────────────────────
-# 默认 OFF ⇒ 既有 build / build-server / build-web 的行为完全不变。
-#
+# ── 单元测试（可选，默认 OFF，由 tests 预设置 ON）───────────────────
 # 用法：
-#   cmake -S . -B build-tests -DBUILD_TESTS=ON
-#   cmake --build build-tests
-#   ctest --test-dir build-tests --output-on-failure
+#   cmake --preset tests
+#   cmake --build --preset tests
+#   ctest --preset tests          # 或 ctest --test-dir build-tests --output-on-failure
 #
-# 刻意用 option() 而非上面的 resolve_switch()：resolve_switch 的语义是
-# 「文件里的默认值每次配置都强制回写」，会把 -DBUILD_TESTS=ON 在下一次
-# reconfigure 时打回 OFF；而 option() 一旦置 ON 就留在缓存里——这正是
-# 一个独立测试目录想要的行为。
-option(BUILD_TESTS "Build unit tests (Packet / ConfigManager 等纯逻辑模块)" OFF)
-
+# 不用预设的等价写法：
+#   cmake -S . -B build-tests -DBUILD_TESTS=ON -DBUILD_TESTS_ONLY=ON
 if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)

@@ -38,11 +38,15 @@ jobs:
       - name: Verify Emscripten
         run: emcc --version
 
-      - name: Configure (emcmake)
-        run: emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release
+      - name: Configure
+        # 构建参数统一在 CMakePresets.json 的 web 预设里（含 toolchainFile，
+        # 指向 $env{EMSDK}/upstream/emscripten/...）。setup-emsdk 已导出 EMSDK，
+        # 故无需 emcmake 包装 —— 它同样会追加 -DCMAKE_TOOLCHAIN_FILE，
+        # 与预设里的 toolchainFile 冲突（CMake 会直接报错）。
+        run: cmake --preset web
 
       - name: Build
-        run: cmake --build build-web --parallel $(nproc)
+        run: cmake --build --preset web --parallel $(nproc)
 
       - name: Provide index.html
         # Pages 根路径需要 index.html；复制一份 GameEngine.html 即可

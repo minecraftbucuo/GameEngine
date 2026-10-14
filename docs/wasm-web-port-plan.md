@@ -57,7 +57,7 @@
 ### 1. 工具链：emsdk + emcmake
 
 - 安装 [emsdk](https://emscripten.org/docs/getting_started/downloads.html) 最新稳定版（≥ 3.1.x）。
-- 构建命令：`emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release && cmake --build build-web`。
+- 构建命令：`cmake --preset web && cmake --build --preset web`（预设见根目录 `CMakePresets.json`，`toolchainFile` 指向 `$env{EMSDK}/upstream/emscripten/...`）。**用预设后不再需要 `emcmake` 包装**——`emcmake` 会自己追加 `-DCMAKE_TOOLCHAIN_FILE`，与预设里的 `toolchainFile` 冲突报错。
 - SDL 全家继续走 FetchContent：SDL3 / SDL_image / SDL_ttf / SDL_mixer 官方支持 Emscripten 配置（vendored 后端 libpng/freetype/vorbis 为纯源码，可交叉编译）。**SDL_net 不参与 WEB 构建**。
 - 预期首次配置+编译耗时较长（SDL 全家 + wasm 编译），属正常现象。
 
@@ -166,7 +166,7 @@ MEMFS 写入不持久。方案：`ConfigManager::save` 在 `__EMSCRIPTEN__` 下�
 - [x] `CMakeLists.txt` 增加 `if(EMSCRIPTEN)` 分支（代码已就位，待构建验证）：
   - [x] 目标产物输出到 `build-web/web/`，`CMAKE_EXECUTABLE_SUFFIX=.html` 直接产出入口页（html + js + wasm + data 四件套）
   - [x] 链接选项：`-sALLOW_MEMORY_GROWTH=1`、`-sFORCE_FILESYSTEM=1`、`-fexceptions`、`--preload-file src/Asset@/Asset`、`-sMAX_WEBGL_VERSION=2`（SDL3 GLES2 后端需 WebGL2）
-- [x] 新增 `scripts/build_web.ps1`（激活 emsdk → emcmake 配置 → 编译）
+- [x] 新增 `scripts/build_web.ps1`（激活 emsdk → `cmake --preset web` → 编译）
 - [ ] **验证（由用户执行）**：脚本全流程通过、产物四件套齐全；此时打开页面**预期卡死**属正常现象——阻塞式主循环要到 Step 3 才改造
 - **改动文件**：`CMakeLists.txt`、新增 `scripts/build_web.ps1`
 - **原子性保证**：非 EMSCRIPTEN 分支零改动，桌面/服务端构建不受影响

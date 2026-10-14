@@ -33,16 +33,16 @@ fi
 
 build_server() {
     echo "==> 构建服务器版 -> build-server/"
-    cmake -S . -B build-server -DBUILD_FOR_SERVER=ON -DCMAKE_BUILD_TYPE=Release
-    cmake --build build-server --parallel "$(nproc)"
+    cmake --preset server
+    cmake --build --preset server --parallel "$(nproc)"
     echo "==> 服务器版完成：build-server/server/GameEngineServer"
     echo "    （config.json 与关卡地图 JSON 已由 CMake 随构建拷入同级 Asset/）"
 }
 
 build_desktop() {
     echo "==> 构建桌面版 -> build/"
-    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    cmake --build build --parallel "$(nproc)"
+    cmake --preset client
+    cmake --build --preset client --parallel "$(nproc)"
     echo "==> 桌面版完成：build/bin/GameEngine"
 }
 
@@ -61,13 +61,16 @@ build_web() {
         # shellcheck disable=SC1090
         source "$env_script"
     fi
-    command -v emcmake >/dev/null 2>&1 || {
-        echo "错误：未找到 emcmake。请安装 emsdk 后重试，或先手动 source emsdk_env.sh"
+    # web 预设的 toolchainFile 指向 $env{EMSDK}/upstream/emscripten/...，
+    # 因此不再需要 emcmake 包装（那会和预设重复指定工具链），但必须已激活
+    # emsdk（emsdk_env.sh 会设置 EMSDK 与 PATH 里的 emcc/node/python）。
+    [[ -n "${EMSDK:-}" ]] || {
+        echo "错误：EMSDK 环境变量未设置，请先 source emsdk_env.sh"
         echo "      （安装：git clone https://github.com/emscripten-core/emsdk.git ~/emsdk && ~/emsdk/emsdk install latest && ~/emsdk/emsdk activate latest）"
         exit 1
     }
-    emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release
-    cmake --build build-web --parallel "$(nproc)"
+    cmake --preset web
+    cmake --build --preset web --parallel "$(nproc)"
     echo "==> Web 版完成：build-web/web/（GameEngine.html 四件套）"
 }
 

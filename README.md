@@ -45,9 +45,18 @@ chmod +x scripts/*.sh        # 首次：从 Windows 检出的脚本丢了执行�
 
 ```powershell
 # 桌面版（CMake 会自动把 Asset/ 拷到 exe 旁）
-cmake -S . -B build
-cmake --build build --config Release
+cmake --preset client
+cmake --build --preset client
 .\build\bin\GameEngine.exe
+
+# 无头服务端
+cmake --preset server
+cmake --build --preset server
+
+# 单元测试（秒级、完全离线：跳过 SDL/Box2D，只编纯逻辑模块）
+cmake --preset tests
+cmake --build --preset tests
+ctest --preset tests
 
 # Web 版（WASM，需要 emsdk；产物 build-web\web\ 四件套：html/js/wasm/data）
 .\scripts\build_web.ps1
@@ -64,21 +73,38 @@ cmake --build build --config Release
 
 ## 🧱 构建目标与产物
 
-| 目标                               | 产物路径                                   | 说明                                                                                    |
-| -------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
-| **桌面版**（默认）                      | `build/bin/GameEngine`                 | 全功能客户端，启动进菜单                                                                          |
-| **服务器版** `-DBUILD_FOR_SERVER=ON` | `build-server/server/GameEngineServer` | 无头，**启动即自动开服**（无菜单无渲染）；CMake 随构建自动在 exe 同级建 `Asset/`，拷入 `config.json` 与 `maps/`（服务端运行期只读这两样） |
-| **Web 版**（`emcmake` 配置）          | `build-web/web/` 四件套                   | WASM/Emscripten，资源打进 .data 虚拟盘                                                        |
+| 目标                         | 产物路径                                   | 说明                                                                                    |
+| -------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
+| **桌面版**（`client` 预设）       | `build/bin/GameEngine`                 | 全功能客户端，启动进菜单                                                                          |
+| **服务器版**（`server` 预设）       | `build-server/server/GameEngineServer` | 无头，**启动即自动开服**（无菜单无渲染）；CMake 随构建自动在 exe 同级建 `Asset/`，拷入 `config.json` 与 `maps/`（服务端运行期只读这两样） |
+| **Web 版**（`web` 预设）         | `build-web/web/` 四件套                   | WASM/Emscripten，资源打进 .data 虚拟盘                                                        |
+| **单元测试**（`tests` 预设）        | `build-tests/tests/GameEngineTests`    | 只编纯逻辑模块（Packet / ConfigManager），不依赖 SDL/Box2D                                        |
+
+### 构建预设（CMakePresets.json）
+
+**每个构建目录该用什么开关，一律由预设决定**，不再手敲 `-D`：
+
+```bash
+cmake --preset client|server|web|tests   # 配置（自动选好生成器与 binaryDir）
+cmake --build --preset <同名>             # 编译
+ctest --preset tests                      # 跑测试
+cmake --list-presets                      # 看有哪些
+```
+
+预设以 `-D` 形式下发，而 `-D` **每次配置都覆盖缓存**——所以预设值即权威值，不会出现「旧 build 目录缓存压过文件默认值」的问题。Linux / Windows 的生成器差异由 `windows-base` / `unix-base` 两个 hidden 预设按 `${hostSystemName}` 自动选择。
 
 ### CMake 开关
 
-| 开关                 | 默认    | 说明                             |
-| ------------------ | ----- | ------------------------------ |
-| `BUILD_FOR_SERVER` | `OFF` | `ON` 构建无渲染/音频的无头服务端            |
-| `BUILD_STATIC`     | `ON`  | 依赖全部静态链入 exe（单文件发布）；`OFF` 动态链接 |
+| 开关                  | 默认    | 说明                                  |
+| ------------------- | ----- | ----------------------------------- |
+| `BUILD_FOR_SERVER`  | `OFF` | `ON` 构建无渲染/音频的无头服务端（`server` 预设置 ON） |
+| `BUILD_STATIC`      | `ON`  | 依赖全部静态链入 exe（单文件发布）；`OFF` 动态链接      |
+| `BUILD_TESTS`       | `OFF` | 构建单元测试目标（`tests` 预设置 ON）            |
+| `BUILD_TESTS_ONLY`  | `OFF` | 只配置测试，跳过全部游戏依赖与主目标（`tests` 预设置 ON）   |
 
 > \[!NOTE]
 > 依赖要求：C++20 编译器、CMake 3.26+、git 与网络。首次配置 FetchContent 自动拉取 SDL3 全家与 Box2D 静态编译，之后离线可用。
+> 不用预设直接 `cmake -S . -B build` 也仍然可用，只是开关要自己带 `-D`。
 
 ***
 

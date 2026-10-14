@@ -1,0 +1,118 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 26,
+    "patch": 0
+  },
+
+  "configurePresets": [
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "displayName": "Windows 基础配置（MinGW Makefiles）",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "MinGW Makefiles"
+    },
+    {
+      "name": "unix-base",
+      "hidden": true,
+      "displayName": "Linux / macOS 基础配置（Unix Makefiles）",
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Unix Makefiles"
+    },
+
+    {
+      "name": "client",
+      "displayName": "桌面客户端 -> build/",
+      "description": "窗口 / 渲染 / 输入 / 音频 / 网络全量",
+      "inherits": ["windows-base", "unix-base"],
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_FOR_SERVER": "OFF",
+        "BUILD_STATIC": "ON"
+      }
+    },
+    {
+      "name": "server",
+      "displayName": "无头服务端 -> build-server/",
+      "description": "纯网络 + 物理，无渲染无音频（SERVER_BUILD 宏生效）",
+      "inherits": ["windows-base", "unix-base"],
+      "binaryDir": "${sourceDir}/build-server",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_FOR_SERVER": "ON",
+        "BUILD_STATIC": "ON"
+      }
+    },
+    {
+      "name": "web",
+      "displayName": "Web (Emscripten / WASM) -> build-web/",
+      "description": "需先激活 emsdk（要求 EMSDK 环境变量存在，emsdk_env 会设置它）",
+      "inherits": ["windows-base", "unix-base"],
+      "binaryDir": "${sourceDir}/build-web",
+      "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_FOR_SERVER": "OFF",
+        "BUILD_STATIC": "ON"
+      }
+    },
+    {
+      "name": "tests",
+      "displayName": "单元测试 -> build-tests/",
+      "description": "只配置纯逻辑模块，跳过 SDL / Box2D：秒级且完全离线",
+      "inherits": ["windows-base", "unix-base"],
+      "binaryDir": "${sourceDir}/build-tests",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "BUILD_TESTS_ONLY": "ON"
+      }
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "name": "client",
+      "displayName": "编译桌面客户端",
+      "configurePreset": "client"
+    },
+    {
+      "name": "server",
+      "displayName": "编译无头服务端",
+      "configurePreset": "server"
+    },
+    {
+      "name": "web",
+      "displayName": "编译 Web 版",
+      "configurePreset": "web"
+    },
+    {
+      "name": "tests",
+      "displayName": "编译单元测试",
+      "configurePreset": "tests",
+      "targets": ["GameEngineTests"]
+    }
+  ],
+
+  "testPresets": [
+    {
+      "name": "tests",
+      "displayName": "运行单元测试",
+      "configurePreset": "tests",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
