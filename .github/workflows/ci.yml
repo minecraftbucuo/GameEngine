@@ -1,0 +1,56 @@
+# Linux 构建验证（CI）
+# 目的：每次 push 后自动在 ubuntu-latest 上验证「Linux 能否构建成功」，
+#       免去手动登服务器试错。
+# 覆盖两个此前没有自动验证的目标：
+#   1. tests  纯逻辑单元测试（秒级、完全离线、无第三方依赖）
+#   2. server 无头服务端完整构建（含 SDL / SDL_net / Box2D 的拉取与编译）
+# web 目标（WASM）的验证由 deploy-pages.yml 承担 —— 它每次 push 都会编译一遍。
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    name: 单元测试（纯逻辑 / 秒级）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset tests
+
+      - name: Build
+        run: cmake --build --preset tests --parallel "$(nproc)"
+
+      - name: Run tests
+        run: ctest --preset tests
+
+  server-build:
+    name: Linux 服务端构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 缓存 FetchContent 拉下来的第三方源码与构建产物（SDL / SDL_net / Box2D）。
+      # 首次运行仍是全量编译；之后只要 CMakeLists / 预设 / patch 没变就命中缓存，
+      # 省掉大头时间（SDL 单独编译就要数分钟）。
+      - name: Cache third-party deps
+        uses: actions/cache@v4
+        with:
+          path: build-server/_deps
+          key: deps-server-${{ hashFiles('CMakeLists.txt', 'CMakePresets.json', 'cmake/**') }}
+
+      - name: Configure
+        run: cmake --preset server
+
+      - name: Build
+        run: cmake --build --preset server --parallel "$(nproc)"
+
+      - name: Verify binary
+        run: |
+          ls -lh build-server/server/GameEngineServer
+          file build-server/server/GameEngineServer
