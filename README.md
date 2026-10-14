@@ -43,22 +43,18 @@ chmod +x scripts/*.sh        # 首次：从 Windows 检出的脚本丢了执行�
 
 ### Windows
 
-> 预设文件不指定生成器，CMake 使用平台默认。你的机器默认可能是 MinGW Makefiles
->（本项目开发环境）也可能是 Visual Studio。以下命令已带 `-G "MinGW Makefiles"`；
-> 如果你的默认就是 MinGW，省略 `-G` 也行。
-
 ```powershell
 # 桌面版（CMake 会自动把 Asset/ 拷到 exe 旁）
-cmake --preset client -G "MinGW Makefiles"
+cmake --preset client
 cmake --build --preset client
 .\build\bin\GameEngine.exe
 
 # 无头服务端
-cmake --preset server -G "MinGW Makefiles"
+cmake --preset server
 cmake --build --preset server
 
 # 单元测试（秒级、完全离线：跳过 SDL/Box2D，只编纯逻辑模块）
-cmake --preset tests -G "MinGW Makefiles"
+cmake --preset tests
 cmake --build --preset tests
 ctest --preset tests
 
