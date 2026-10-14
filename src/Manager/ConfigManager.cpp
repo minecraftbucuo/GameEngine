@@ -46,6 +46,11 @@ void ConfigManager::reset() {
 }
 
 void ConfigManager::parseWindow(const json& j) {
+    // 该段整体缺失时 config["window"] 是 null —— 直接 value() 会抛
+    // type_error.306，导致整份配置加载失败。按「缺段即保留当前值」处理，
+    // 与下方 value(key, 默认值) 的容错语义保持一致。
+    if (!j.is_object()) return;
+
     window.width = j.value("width", window.width);
     window.height = j.value("height", window.height);
     window.title = j.value("title", window.title);
@@ -53,6 +58,8 @@ void ConfigManager::parseWindow(const json& j) {
 }
 
 void ConfigManager::parseAssets(const json& j) {
+    if (!j.is_object()) return;
+
     if (j.contains("textures")) {
         for (auto& [key, value] : j["textures"].items()) {
             assets.textures[key] = value.get<std::string>();
@@ -72,6 +79,8 @@ void ConfigManager::parseAssets(const json& j) {
 }
 
 void ConfigManager::parseNetwork(const json& j) {
+    if (!j.is_object()) return;
+
     network.serverIp = j.value("serverIp", network.serverIp);
     network.port = j.value("port", network.port);
     network.webBridgePort = j.value("webBridgePort", network.webBridgePort);
@@ -80,6 +89,8 @@ void ConfigManager::parseNetwork(const json& j) {
 }
 
 void ConfigManager::parseGame(const json& j) {
+    if (!j.is_object()) return;
+
     game.levelMap = j.value("levelMap", game.levelMap);
     game.gravity = j.value("gravity", game.gravity);
     game.playerSpeed = j.value("playerSpeed", game.playerSpeed);
