@@ -21,6 +21,7 @@
 #include "BowserAxe.h"
 #include "Collision.h"
 #include "Core/Types.h"
+#include "ConfigManager.h"
 #include "MapLoader.h"
 #include <string>
 #ifndef SERVER_BUILD
@@ -259,7 +260,7 @@ void SuperMarioSceneMultiplayer::render(eng::Renderer& _renderer) {
     // SDL3 迁移 6c：对象循环走新虚链（原 Scene::render(_renderer) 会虚转发回旧签名，
     // 使 Mario 等无旧 override 的对象收不到新签名组件渲染）
     renderObjects(_renderer);
-    renderNetworkStats(_renderer);
+    renderDebugHud(_renderer);
     if (show_death_screen) {
         showDeathScreen(_renderer);
     }
@@ -268,26 +269,44 @@ void SuperMarioSceneMultiplayer::render(eng::Renderer& _renderer) {
     }
 }
 
-void SuperMarioSceneMultiplayer::renderNetworkStats(eng::Renderer& renderer) const {
+void SuperMarioSceneMultiplayer::renderDebugHud(eng::Renderer& renderer) {
+    if (!CONFIG.game.debug) return;   // 只在调试模式显示
+
     const float rtt = simple_network.getRttMs();
-    if (rtt < 0.f) return;   // 尚无样本：未连接或首包未回
 
     // 固定屏幕坐标：切默认视图，画完恢复原相机（与死亡屏同一套处理）
     const eng::Renderer::CameraState oldCamera = renderer.getCamera();
     renderer.resetCamera();
 
     const eng::Vec2u win = renderer.getSize();
-    const std::string text = "Ping " + std::to_string(static_cast<int>(rtt + 0.5f)) + " ms";
-    // 阈值按手感定：<80ms 基本无感，<150ms 可接受，再高就会明显看到回拉
-    const eng::Color color = rtt < 80.f   ? eng::Color::Green
-                           : rtt < 150.f  ? eng::Color::Yellow
-                                          : eng::Color::Red;
     const eng::FontHandle font = AssetManager::getInstance().getFontHandle();
     constexpr float font_size = 20.f;
-    const eng::Vec2f size = renderer.measureText(font, text, font_size);
-    renderer.drawText(font, text,
-                      eng::Vec2f(static_cast<float>(win.x) - size.x - 16.f, 12.f),
-                      font_size, color);
+    constexpr float right_margin = 16.f;
+    constexpr float line_height = 24.f;
+    const float right_edge = static_cast<float>(win.x) - right_margin;
+    float y = 12.f;
+
+    auto drawLine = [&](const std::string& text, const eng::Color& color) {
+        const eng::Vec2f size = renderer.measureText(font, text, font_size);
+        renderer.drawText(font, text, eng::Vec2f(right_edge - size.x, y), font_size, color);
+        y += line_height;
+    };
+
+    // 帧率：掉到 50 以下说明主线程被拖慢（渲染/物理/网络处理），
+    // 若帧率稳定但画面顿挫，问题就在同步而不是本机性能
+    const int fps = static_cast<int>(fps_value + 0.5f);
+    drawLine("FPS " + std::to_string(fps),
+             fps < 50 ? eng::Color::Red
+             : fps < 100 ? eng::Color::Yellow
+                         : eng::Color::White);
+
+    // 延迟：仅客户端且已有样本（<80ms 基本无感，<150ms 可接受，再高会明显回拉）
+    if (rtt >= 0.f) {
+        drawLine("Ping " + std::to_string(static_cast<int>(rtt + 0.5f)) + " ms",
+                 rtt < 80.f ? eng::Color::Green
+                 : rtt < 150.f ? eng::Color::Yellow
+                               : eng::Color::Red);
+    }
 
     renderer.setCamera(oldCamera);
 }

@@ -77,8 +77,8 @@ public:
     // N4 断线反馈：与死亡屏同构的提示层（半透明遮罩 + ESC 回菜单），桌面/WEB 共用
     static void showDisconnectScreen(eng::Renderer& renderer);
 
-    // 网络状态 HUD（右上角）：显示与服务端的往返延迟，按阈值着色
-    void renderNetworkStats(eng::Renderer& renderer) const;
+    // 网络状态 HUD（右上角）：帧率 + 与服务端的往返延迟，按阈值着色
+    void renderDebugHud(eng::Renderer& renderer) override;
 #endif
 
 private:

@@ -57,6 +57,10 @@ public:
     // 对象循环：遍历活跃对象调 render(eng::Renderer&)
     void renderObjects(eng::Renderer& _renderer);
 
+    // 调试 HUD：帧率（受 CONFIG.game.debug 控制），场景在 render 末尾调用。
+    // 联机场景 override 后追加延迟信息
+    virtual void renderDebugHud(eng::Renderer& renderer);
+
     // 场景事件处理方法
     virtual void handleEvent(const eng::EngineEvent& event);
 #endif
@@ -149,6 +153,12 @@ public:
 protected:
     std::vector<std::shared_ptr<GameObject>> game_objects;
     std::unordered_map<unsigned int, std::shared_ptr<GameObject>> game_objects_map;
+
+    // 帧率统计（半秒平均，避免数字逐帧跳动）：Scene::update 每帧调用
+    void updateFpsStats(const eng::Time& deltaTime);
+    float fps_value = 0.f;
+    float fps_accum = 0.f;
+    int fps_frames = 0;
 
 #ifndef SERVER_BUILD
     eng::Renderer* renderer{};

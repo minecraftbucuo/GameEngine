@@ -98,6 +98,7 @@ void SuperMarioSceneSingle::render(eng::Renderer& _renderer) {
     // SDL3 迁移 6c：对象循环走新虚链（原 Scene::render(_renderer) 会虚转发回旧签名，
     // 使 Mario 等无旧 override 的对象收不到新签名组件渲染）
     renderObjects(_renderer);
+    renderDebugHud(_renderer);
     if (show_death_screen) {
         showDeathScreen(_renderer);
     }

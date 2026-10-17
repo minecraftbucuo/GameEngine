@@ -5,6 +5,7 @@
 #include <Scene.h>
 #include "PhysicsWorld.h"
 #include "ConfigManager.h"
+#include "AssetManager.h"
 #include "Core/Types.h"
 #include "Core/Input.h"
 
@@ -26,6 +27,7 @@ void Scene::init() {
 }
 
 void Scene::update(eng::Time deltaTime) {
+    updateFpsStats(deltaTime);
     // 物理世界推进（在对象 update 前，保证 PhysicsBodyComponent 同步最新位置）
     if (physics_world) {
         physics_world->step(deltaTime);
@@ -51,6 +53,17 @@ void Scene::update(eng::Time deltaTime) {
     }
 }
 
+void Scene::updateFpsStats(const eng::Time& deltaTime) {
+    fps_accum += deltaTime.asSeconds();
+    ++fps_frames;
+    // 半秒结算一次：窗口太短数字乱跳，太长看不出瞬时掉帧
+    if (fps_accum >= 0.5f) {
+        fps_value = static_cast<float>(fps_frames) / fps_accum;
+        fps_accum = 0.f;
+        fps_frames = 0;
+    }
+}
+
 #ifndef SERVER_BUILD
 // 渲染签名（SDL3 迁移 6e：旧 sf::RenderWindow 签名已删除）。
 // 基类默认 = 对象循环；场景级 override（Menu/Settings/SuperMario）
@@ -66,6 +79,29 @@ void Scene::renderObjects(eng::Renderer& _renderer) {
             obj->render(_renderer);
         }
     }
+}
+
+void Scene::renderDebugHud(eng::Renderer& renderer) {
+    if (!CONFIG.game.debug) return;   // 只在调试模式显示
+
+    // 固定屏幕坐标：切默认视图，画完恢复原相机
+    const eng::Renderer::CameraState oldCamera = renderer.getCamera();
+    renderer.resetCamera();
+
+    const eng::Vec2u win = renderer.getSize();
+    const eng::FontHandle font = AssetManager::getInstance().getFontHandle();
+    constexpr float font_size = 20.f;
+    const int fps = static_cast<int>(fps_value + 0.5f);
+    const std::string text = "FPS " + std::to_string(fps);
+    const eng::Vec2f size = renderer.measureText(font, text, font_size);
+    renderer.drawText(font, text,
+                      eng::Vec2f(static_cast<float>(win.x) - size.x - 16.f, 12.f),
+                      font_size,
+                      fps < 50 ? eng::Color::Red
+                      : fps < 100 ? eng::Color::Yellow
+                                  : eng::Color::White);
+
+    renderer.setCamera(oldCamera);
 }
 
 void Scene::handleEvent(const eng::EngineEvent& event) {
