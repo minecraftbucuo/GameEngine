@@ -17,7 +17,9 @@ enum class NetworkMsg : uint8_t {
     SpawnFireBall = 5,
     ClientRespawn = 6,
     ClientDeath = 7,   // 客户端本地判死上报：伤害判定为客户端预测，服务端据此移除权威对象
-    ClientEvent = 8    // 方案 B：客户端预测交互结果后上报（踩扁/炸飞小怪），服务端落到权威对象并广播移除
+    ClientEvent = 8,   // 方案 B：客户端预测交互结果后上报（踩扁/炸飞小怪），服务端落到权威对象并广播移除
+    ClientPing = 9,    // 延迟探测：客户端定期发出，服务端原样回 ServerPong（无附加数据）
+    ServerPong = 10    // 延迟探测应答：客户端收到后用本地时钟算往返
 };
 
 // ClientEvent 的事件类型（附加数据见注释，服务端按类型读取）

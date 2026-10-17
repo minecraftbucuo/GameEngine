@@ -86,6 +86,11 @@ public:
 
     TcpClient& getClientSocket();
 
+    // 往返延迟（毫秒）：客户端每 PING_INTERVAL 秒探测一次，服务端原样回包。
+    // 返回负数表示尚无样本（未连接 / 首包未回）。含服务端帧节拍与 TCP 排队时间，
+    // 即玩家实际感受到的同步延迟。
+    [[nodiscard]] float getRttMs() const { return rtt_ms; }
+
 private:
     inline static const std::string CLIENT_TOKEN = "minecraftbucuo/mario";
     inline static const std::chrono::steady_clock::duration VERIFY_TIMEOUT = std::chrono::seconds(10);
@@ -105,4 +110,14 @@ private:
     bool verifyPending = false;
     bool connectionLost = false;   // N4：断线一次性标志，场景重进时 clear
     Scene* current_scene{};
+
+    // ── 延迟探测（仅客户端）─────────────────────────────────
+    // 同一时刻最多一个 ping 在途，收到 ServerPong 才置回 false；
+    // 超过 PING_TIMEOUT 无应答也复位，避免一次丢包后永久停发。
+    inline static constexpr float PING_INTERVAL = 0.5f;   // 探测间隔（秒）
+    inline static constexpr float PING_TIMEOUT = 3.0f;    // 在途超时（秒）
+    float rtt_ms = -1.f;
+    float ping_accum = 0.f;
+    bool ping_pending = false;
+    std::chrono::steady_clock::time_point ping_sent_at{};
 };

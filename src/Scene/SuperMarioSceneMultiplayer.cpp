@@ -22,6 +22,7 @@
 #include "Collision.h"
 #include "Core/Types.h"
 #include "MapLoader.h"
+#include <string>
 #ifndef SERVER_BUILD
 #include "Render/Renderer.h"
 #endif
@@ -258,12 +259,37 @@ void SuperMarioSceneMultiplayer::render(eng::Renderer& _renderer) {
     // SDL3 迁移 6c：对象循环走新虚链（原 Scene::render(_renderer) 会虚转发回旧签名，
     // 使 Mario 等无旧 override 的对象收不到新签名组件渲染）
     renderObjects(_renderer);
+    renderNetworkStats(_renderer);
     if (show_death_screen) {
         showDeathScreen(_renderer);
     }
     if (show_disconnect_screen) {
         showDisconnectScreen(_renderer);
     }
+}
+
+void SuperMarioSceneMultiplayer::renderNetworkStats(eng::Renderer& renderer) const {
+    const float rtt = simple_network.getRttMs();
+    if (rtt < 0.f) return;   // 尚无样本：未连接或首包未回
+
+    // 固定屏幕坐标：切默认视图，画完恢复原相机（与死亡屏同一套处理）
+    const eng::Renderer::CameraState oldCamera = renderer.getCamera();
+    renderer.resetCamera();
+
+    const eng::Vec2u win = renderer.getSize();
+    const std::string text = "Ping " + std::to_string(static_cast<int>(rtt + 0.5f)) + " ms";
+    // 阈值按手感定：<80ms 基本无感，<150ms 可接受，再高就会明显看到回拉
+    const eng::Color color = rtt < 80.f   ? eng::Color::Green
+                           : rtt < 150.f  ? eng::Color::Yellow
+                                          : eng::Color::Red;
+    const eng::FontHandle font = AssetManager::getInstance().getFontHandle();
+    constexpr float font_size = 20.f;
+    const eng::Vec2f size = renderer.measureText(font, text, font_size);
+    renderer.drawText(font, text,
+                      eng::Vec2f(static_cast<float>(win.x) - size.x - 16.f, 12.f),
+                      font_size, color);
+
+    renderer.setCamera(oldCamera);
 }
 #endif
 

@@ -148,6 +148,9 @@ void NetworkManager::resetSession() {
     tick_accum_us = 0;
     verifyPending = false;
     connectionLost = false;
+    rtt_ms = -1.f;        // 延迟探测状态随会话清空，重连后重新采样
+    ping_accum = 0.f;
+    ping_pending = false;
     network_type = NetworkType::None;   // 由随后的 startServer/connectToServer 重新置位
 }
 
@@ -353,6 +356,12 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
                     if (player) {
                         player->deserialize(packet);
                     }
+                } else if (msg_type == NetworkMsg::ClientPing) {
+                    // 延迟探测：立即原样回包（无负载）。客户端用自己的时钟算往返，
+                    // 服务端无需记录任何时间戳。
+                    eng::Packet pong;
+                    pong << NetworkMsg::ServerPong;
+                    client->append(pong);
                 } else if (msg_type == NetworkMsg::ClientEvent) {
                     // 方案 B：客户端预测交互（踩扁/炸飞小怪）后上报，服务端把事件落到
                     // 权威对象上（幂等）；对象随后走自身销毁流程触发 RemoveObject 广播。
@@ -450,7 +459,23 @@ void NetworkManager::serverUpdate(const eng::Time& deltaTime) {
     }
 }
 
-void NetworkManager::clientUpdate(const eng::Time&) {
+void NetworkManager::clientUpdate(const eng::Time& deltaTime) {
+    // 延迟探测：每 PING_INTERVAL 秒发一个，同一时刻只有一个在途。
+    // 超时未回（应答丢失/连接假死）强制复位，避免一次丢包后永久停发。
+    ping_accum += deltaTime.asSeconds();
+    const auto now = std::chrono::steady_clock::now();
+    if (ping_pending && now - ping_sent_at > std::chrono::duration<float>(PING_TIMEOUT)) {
+        ping_pending = false;
+    }
+    if (!ping_pending && ping_accum >= PING_INTERVAL) {
+        ping_accum = 0.f;
+        ping_pending = true;
+        ping_sent_at = now;
+        eng::Packet ping;
+        ping << NetworkMsg::ClientPing;
+        clientSocket.append(ping);
+    }
+
     eng::Packet packet;
     TcpClient::Status status = clientSocket.receive(packet);
     if (status == TcpClient::Status::Error || status == TcpClient::Status::Disconnected) {
@@ -523,6 +548,14 @@ void NetworkManager::clientUpdate(const eng::Time&) {
             else if (type == NetworkMsg::SpawnFireBall) {
                 LOG_TRACE("Received packet, type: SpawnFireBall");
                 current_scene->spawnEntityWithNetwork(packet);
+            }
+            else if (type == NetworkMsg::ServerPong) {
+                // 应答无负载：用本地时钟算往返，含服务端处理与 TCP 排队时间
+                if (ping_pending) {
+                    rtt_ms = std::chrono::duration<float, std::milli>(
+                        std::chrono::steady_clock::now() - ping_sent_at).count();
+                    ping_pending = false;
+                }
             }
         }
         status = clientSocket.receive(packet);
