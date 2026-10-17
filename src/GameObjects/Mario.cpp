@@ -107,9 +107,12 @@ void Mario::update(eng::Time deltaTime) {
         }
     }
     GameObject::update(deltaTime);
+    // 掉出关卡底部：直接判定死亡（原设定是瞬移到顶部重新落下，已废弃）
     if (this->getPosition().y > static_cast<float>(getScene()->getWindowSize().y)) {
         if (this->getComponent<HealthBar>()->isDead()) return;
-        this->getComponent<MoveComponent>()->setPositionY(-this->getSize().y);
+        // 血量清零置死亡标志：坠坑必死，不走 applyDamage（大马里奥受击只会缩小而不死）
+        this->getComponent<HealthBar>()->syncHealth(0);
+        this->getComponent<StateMachine>()->setState("MarioDeadState");
     }
 }
 
