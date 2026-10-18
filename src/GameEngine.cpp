@@ -20,6 +20,9 @@
 #include "SuperMarioSceneMultiplayer.h"
 #include "FrameManager.h"
 #include "Core/Types.h"
+#ifdef SERVER_BUILD
+#include "Debug/ServerDebugPanel.h"
+#endif
 
 static std::filesystem::path getExeDir() {
 #if defined(__EMSCRIPTEN__)
@@ -78,6 +81,16 @@ void GameEngine::init() {
 #else
     scene_manager->addScene<SuperMarioSceneMultiplayer>();
     scene_manager->loadScene("SuperMarioSceneMultiplayer");
+
+    // 面板必须在 current_path(getExeDir()) 与 CONFIG.load() 之后启动：
+    // 前者决定 webRoot 相对路径的基准，后者提供 debugPanel 配置。
+    // 起不来（端口占用等）就彻底关掉，不留半初始化状态，游戏服务照常运行。
+    if (CONFIG.debugPanel.enabled) {
+        debug_panel = std::make_unique<ServerDebugPanel>();
+        if (!debug_panel->start(CONFIG.debugPanel)) {
+            debug_panel.reset();
+        }
+    }
 #endif
 }
 
@@ -139,6 +152,13 @@ bool GameEngine::frameStep() {
             std::chrono::duration<float>(frameStart - last).count());
         last = frameStart;
         scene_manager->update(deltaTime);
+
+#ifdef SERVER_BUILD
+        // 采样点在本帧全部结算之后（对象更新/碰撞/网络发包/销毁清理都已完成）
+        if (debug_panel) {
+            debug_panel->onFrame(scene_manager->getCurrentScene().get(), deltaTime.asSeconds());
+        }
+#endif
 
         // 帧耗时不足目标节拍则睡眠剩余时间
         if (const auto elapsed = std::chrono::steady_clock::now() - frameStart; frameTime > elapsed) {
