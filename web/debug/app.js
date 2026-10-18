@@ -137,6 +137,7 @@ function render(snap) {
     `seq ${meta.seq} · 帧 ${meta.frame} · 运行 ${meta.uptimeSec.toFixed(0)}s · 构建 ${meta.buildCostUs}µs`;
 
   renderCards(snap);
+  renderClients(snap);
   renderTable(snap);
 }
 
@@ -154,12 +155,23 @@ function renderCards(snap) {
     .map(([name, n]) => `${escapeHtml(name)} ${n}`)
     .join(' · ');
 
+  // 物理统计：物理子系统未接入时 bodyCount 恒为 0，此时不要拿 0 去误导人
+  const phys = snap.physics || { enabled: false };
+  const physCard = phys.enabled
+    ? {
+      label: '物理',
+      value: `${phys.bodyCount} body`,
+      cls: phys.nonFiniteBodies > 0 ? 'bad' : '',
+    }
+    : { label: '物理', value: '未启用', cls: '' };
+
   const cards = [
     { label: '对象总数', value: objs.length, cls: '' },
     { label: '可疑', value: suspect, cls: suspect > 0 ? 'warn' : '' },
     { label: '非有限值', value: snap.meta.nonFiniteObjects, cls: snap.meta.nonFiniteObjects > 0 ? 'bad' : '' },
     { label: '平均帧耗时', value: snap.meta.avgFrameMs.toFixed(2) + ' ms', cls: '' },
     { label: '快照频率', value: snap.meta.snapshotHz + ' Hz', cls: '' },
+    physCard,
     { label: '场景', value: snap.meta.scene, cls: '' },
   ];
 
@@ -169,9 +181,63 @@ function renderCards(snap) {
       <div class="card-value">${escapeHtml(c.value)}</div>
     </div>`).join('');
 
+  // 物理启用后把明细补在类型分布旁边，未启用就只显示一行说明
+  const physDetail = phys.enabled
+    ? `静 ${phys.staticBodies} · 动 ${phys.dynamicBodies} · 运动学 ${phys.kinematicBodies}`
+      + ` · 唤醒 ${phys.awakeBodies} · 睡眠 ${phys.sleepingBodies}`
+      + ` · 接触 ${phys.touchingContacts}/${phys.contactCount}`
+      + (phys.nonFiniteBodies > 0 ? ` · 坐标非有限 ${phys.nonFiniteBodies}` : '')
+    : '场景 usePhysics=false，未创建 b2World（统计全 0 是真实状态）';
+
   el('cards').innerHTML =
     html + `<div class="card wide"><div class="card-label">类型分布</div>
-            <div class="card-value small">${dist || '—'}</div></div>`;
+            <div class="card-value small">${dist || '—'}</div></div>
+            <div class="card wide"><div class="card-label">物理明细</div>
+            <div class="card-value small">${escapeHtml(physDetail)}</div></div>`;
+}
+
+// ── 客户端列表 ──────────────────────────────────────────────────────
+
+function clientRowHtml(c) {
+  // 超过 2s 没收到包就标黄：TCP 还连着但对方可能已经卡死
+  const stale = c.lastRecvAgeMs !== null && c.lastRecvAgeMs > 2000;
+  const rowCls = !c.connected ? 'row-inactive' : (stale ? 'row-stuck' : '');
+
+  const status = [];
+  status.push(c.connected ? '已连接' : '已断开');
+  status.push(c.verified ? '已验证' : '未验证');
+
+  // 刚收过包时显示毫秒，避免「0.0s 前」这种看不出差别的写法
+  const age = c.lastRecvAgeMs === null
+    ? '从未'
+    : (c.lastRecvAgeMs < 1000 ? `${c.lastRecvAgeMs}ms 前` : `${(c.lastRecvAgeMs / 1000).toFixed(1)}s 前`);
+
+  return `<tr class="${rowCls}">
+    <td class="mono">${escapeHtml(c.address)}</td>
+    <td class="state">${status.join(' · ')}</td>
+    <td class="num">${c.playerId === null ? '—' : c.playerId}</td>
+    <td class="mono cls">${escapeHtml(c.playerClass || '—')}</td>
+    <td class="num">${age}</td>
+    <td class="num">${c.packetsRecv}</td>
+    <td class="num">${c.bytesRecv}</td>
+  </tr>`;
+}
+
+function renderClients(snap) {
+  const clients = snap.clients || { count: 0, unverified: 0, list: [] };
+  const countNode = el('clients-count');
+  const table = el('clients-table');
+
+  if (clients.count === 0) {
+    countNode.textContent = '无连接';
+    table.classList.add('hidden');
+    return;
+  }
+
+  const unverified = clients.unverified > 0 ? `（${clients.unverified} 个未通过验证）` : '';
+  countNode.textContent = `${clients.count} 个${unverified}`;
+  table.classList.remove('hidden');
+  el('clients-tbody').innerHTML = clients.list.map(clientRowHtml).join('');
 }
 
 function compsHtml(c) {
@@ -186,6 +252,31 @@ function compsHtml(c) {
     parts.push(`<span class="chip col">${escapeHtml(label)}</span>`);
   }
   return parts.length > 0 ? parts.join('') : '<span class="muted">无</span>';
+}
+
+// 类型私有状态。这些字段在 API 里是按类型裁剪过的，不能假定同时存在。
+function typeHtml(t) {
+  if (!t) return '<span class="muted">—</span>';
+
+  const parts = [];
+  if (t.kind === 'Mario') {
+    const hpCls = t.health <= 1 ? 'chip chip-bad' : 'chip';
+    parts.push(`<span class="${hpCls}">HP ${t.health}</span>`);
+    parts.push(`<span class="chip">${t.isBig ? '大' : '小'}</span>`);
+    if (!t.isPlayer) parts.push('<span class="chip">NPC</span>');
+    if (t.transforming) parts.push('<span class="chip chip-warn">变身中</span>');
+  } else if (t.kind === 'Goomba') {
+    if (t.squashed) parts.push('<span class="chip chip-warn">被踩扁</span>');
+    if (t.killedByFireball) parts.push('<span class="chip chip-bad">炮弹击毙</span>');
+    if (!t.squashed && !t.killedByFireball) parts.push('<span class="chip">活着</span>');
+  } else if (t.kind === 'Koopa') {
+    const label = { Walking: '行走', ShellIdle: '静止壳', ShellMoving: '滑行壳' }[t.state] || t.state;
+    parts.push(`<span class="chip ${t.shellMoving ? 'chip-warn' : ''}">${escapeHtml(label)}</span>`);
+    if (t.killed) parts.push('<span class="chip chip-bad">击毙</span>');
+  } else {
+    parts.push(`<span class="chip">${escapeHtml(t.kind)}</span>`);
+  }
+  return parts.join('');
 }
 
 function rowHtml(obj) {
@@ -209,6 +300,7 @@ function rowHtml(obj) {
     <td class="mono cls">${escapeHtml(obj.class)}</td>
     <td class="tag">${escapeHtml(obj.tag)}</td>
     <td class="state">${stateText}</td>
+    <td class="type">${typeHtml(obj.typeData)}</td>
     <td class="num">${num(obj.x)}</td>
     <td class="num">${num(obj.y)}</td>
     <td class="num">${num(obj.vx)}</td>

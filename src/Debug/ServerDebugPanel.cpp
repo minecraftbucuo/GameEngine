@@ -109,8 +109,12 @@ struct ServerDebugPanel::Impl {
     std::thread thread;
 
     std::atomic<bool> running{false};
-    std::atomic<std::int64_t> last_request_ms{0};   // 供 B4 的 idleSkip 使用
+    std::atomic<std::int64_t> last_request_ms{0};   // 空闲跳采的判据
     std::atomic<std::uint64_t> frame_count{0};
+
+    // 有请求进来时置位，让主线程下一帧立刻重建快照（否则最长要等一个采样周期）
+    std::atomic<bool> force_build{false};
+    std::atomic<std::uint64_t> idle_skips{0};       // 因空闲跳过的构建次数
 
     // ── 快照（主线程写，HTTP 线程读）──────────────────────────────
     // 锁只保护一次 shared_ptr 交换；旧快照在最后一个读者释放后自动回收，
@@ -125,6 +129,10 @@ struct ServerDebugPanel::Impl {
     steady_clock::time_point last_build{};
     milliseconds build_interval{100};
     float avg_frame_ms = 0.f;
+    int slow_builds = 0;            // 连续"构建过慢"次数，用于自动降级
+
+    // 实际生效的采样频率：配置值可能被自动降级改写，所以单独记一份
+    std::atomic<int> effective_hz{10};
 
     steady_clock::time_point started_at{};
 
@@ -137,6 +145,27 @@ struct ServerDebugPanel::Impl {
             return panel_auth::tokenEquals(req.get_param_value("token"), token);
         }
         return false;
+    }
+
+    // 是否该跳过本帧的快照构建。调用方已完成限频，这里只管"没人看就别算"。
+    // 返回 true 时不能顺手消费 force_build —— 只在该真正跳过的路径上消费。
+    [[nodiscard]] bool shouldSkipIdle() {
+        if (cfg.idleSkipSeconds <= 0) return false;
+
+        {
+            std::lock_guard<std::mutex> lock(snapshot_mutex);
+            if (!snapshot) return false;   // 一份都还没有：先产一份，否则首次访问会 503
+        }
+
+        const std::int64_t last_req = last_request_ms.load(std::memory_order_relaxed);
+        const bool idle = last_req == 0 ||
+                          nowMs() - last_req > static_cast<std::int64_t>(cfg.idleSkipSeconds) * 1000;
+        if (!idle) return false;
+
+        // 空闲期间来了请求：这一帧必须重建，把旧数据换成新的
+        if (force_build.exchange(false, std::memory_order_relaxed)) return false;
+
+        return true;
     }
 };
 
@@ -154,6 +183,7 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
     impl_->token = cfg.token.empty() ? panel_auth::generateToken() : cfg.token;
 
     const int hz = std::clamp(cfg.snapshotHz, 1, 60);
+    impl_->effective_hz.store(hz, std::memory_order_relaxed);
     impl_->build_interval = milliseconds(1000 / hz);
 
     Impl* impl = impl_.get();
@@ -162,6 +192,8 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
     impl->server.set_pre_routing_handler(
         [impl](const httplib::Request& req, httplib::Response& res) {
             impl->last_request_ms.store(nowMs(), std::memory_order_relaxed);
+            // 空闲跳采期间有人来访问，通知主线程立刻重建，别让人盯着旧数据
+            impl->force_build.store(true, std::memory_order_relaxed);
 
             const bool is_api = req.path.rfind("/api/", 0) == 0;
             if (is_api && !impl->authorized(req)) {
@@ -173,7 +205,7 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
             return httplib::Server::HandlerResponse::Unhandled;
         });
 
-    impl->server.Get("/api/health", [impl](const httplib::Request&, httplib::Response& res) {
+    impl->server.Get("/api/health", [impl](const httplib::Request& req, httplib::Response& res) {
         const double uptime = duration<double>(steady_clock::now() - impl->started_at).count();
 
         nlohmann::json j;
@@ -183,6 +215,14 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
         j["uptimeSec"] = uptime;
         j["frames"] = impl->frame_count.load(std::memory_order_relaxed);
         j["port"] = impl->cfg.port;
+
+        // 配置值与实际生效值分开报：自动降级后两者会不一致
+        j["snapshotHz"] = impl->cfg.snapshotHz;
+        j["effectiveHz"] = impl->effective_hz.load(std::memory_order_relaxed);
+        j["idleSkips"] = impl->idle_skips.load(std::memory_order_relaxed);
+        j["idleSkipSeconds"] = impl->cfg.idleSkipSeconds;
+        j["buildCostUs"] = impl->build_cost_us.load(std::memory_order_relaxed);
+
         const auto built = impl->snapshot_built_ms.load(std::memory_order_relaxed);
         if (built == 0) {
             j["snapshotAgeMs"] = nullptr;   // 第一份快照还没产出
@@ -191,10 +231,10 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
         }
 
         applyApiHeaders(res);
-        res.set_content(j.dump(), "application/json");
+        res.set_content(req.has_param("pretty") ? j.dump(2) : j.dump(), "application/json");
     });
 
-    impl->server.Get("/api/snapshot", [impl](const httplib::Request&, httplib::Response& res) {
+    impl->server.Get("/api/snapshot", [impl](const httplib::Request& req, httplib::Response& res) {
         // 锁窗口只有一次 shared_ptr 拷贝，之后在锁外读取内容
         std::shared_ptr<const std::string> snap;
         {
@@ -206,6 +246,17 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
         if (!snap) {
             res.status = 503;
             res.set_content(R"({"error":"snapshot_not_ready"})", "application/json");
+            return;
+        }
+
+        // 快照本体是压缩过的单行 JSON。?pretty=1 只给人眼看，重新解析一遍的
+        // 开销（38KB 量级）远小于一次构建，不值得为它缓存两份。
+        if (req.has_param("pretty")) {
+            try {
+                res.set_content(nlohmann::json::parse(*snap).dump(2), "application/json");
+            } catch (const nlohmann::json::exception&) {
+                res.set_content(*snap, "application/json");   // 理论上不可能，降级直出
+            }
             return;
         }
         res.set_content(*snap, "application/json");
@@ -270,6 +321,10 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
     });
 
     LOG_INFO_FMT("Debug panel: http://{}:{}/  token={}", cfg.host, cfg.port, impl->token);
+    LOG_INFO_FMT("Debug panel: {}Hz, maxObjects={}, idleSkip={}s{}",
+                 impl->effective_hz.load(std::memory_order_relaxed), cfg.maxObjects,
+                 cfg.idleSkipSeconds,
+                 cfg.idleSkipSeconds > 0 ? " (skip building while nobody watches)" : "");
     return true;
 }
 
@@ -307,6 +362,12 @@ void ServerDebugPanel::onFrame(Scene* scene, float dtSec) {
 
     if (scene == nullptr) return;
 
+    // 没人看就不算：省掉的是主线程上遍历全部对象 + 序列化的开销
+    if (impl_->shouldSkipIdle()) {
+        impl_->idle_skips.fetch_add(1, std::memory_order_relaxed);
+        return;
+    }
+
     DebugSnapshotContext ctx;
     ctx.seq = impl_->seq.fetch_add(1, std::memory_order_relaxed) + 1;
     ctx.frame = impl_->frame_count.load(std::memory_order_relaxed);
@@ -314,7 +375,7 @@ void ServerDebugPanel::onFrame(Scene* scene, float dtSec) {
     ctx.dtMs = dtMs;
     ctx.avgFrameMs = impl_->avg_frame_ms;
     ctx.lastBuildCostUs = impl_->build_cost_us.load(std::memory_order_relaxed);
-    ctx.snapshotHz = impl_->cfg.snapshotHz;
+    ctx.snapshotHz = impl_->effective_hz.load(std::memory_order_relaxed);
     ctx.maxObjects = impl_->cfg.maxObjects;
 
     std::uint64_t cost = 0;
@@ -326,6 +387,31 @@ void ServerDebugPanel::onFrame(Scene* scene, float dtSec) {
     }
     impl_->build_cost_us.store(cost, std::memory_order_relaxed);
     impl_->snapshot_built_ms.store(nowMs(), std::memory_order_relaxed);
+
+    // ── 开销过高时自动降采样 ──────────────────────────────────────
+    // 判据是「构建耗时超过半个帧预算」，而不是绝对毫秒数：机器慢、帧长的时候
+    // 同样 3ms 并不算贵。连续 3 次才动手，避免被偶发的一次抖动带偏。
+    // 只降不升：升回去会在临界点来回抖，收益不抵复杂度。
+    constexpr int kMinAutoHz = 2;
+    const double costMs = static_cast<double>(cost) / 1000.0;
+    const double frameMs = impl_->avg_frame_ms > 0.01f ? impl_->avg_frame_ms : 16.0;
+
+    if (costMs > frameMs * 0.5) {
+        if (++impl_->slow_builds >= 3) {
+            const int current = impl_->effective_hz.load(std::memory_order_relaxed);
+            if (current > kMinAutoHz) {
+                const int next = std::max(kMinAutoHz, current / 2);
+                impl_->effective_hz.store(next, std::memory_order_relaxed);
+                impl_->build_interval = milliseconds(1000 / next);
+                LOG_WARN_FMT("Debug panel: snapshot build takes {:.2f}ms on a {:.2f}ms frame, "
+                             "auto-degraded to {}Hz (was {}Hz)",
+                             costMs, frameMs, next, current);
+            }
+            impl_->slow_builds = 0;
+        }
+    } else {
+        impl_->slow_builds = 0;
+    }
 }
 
 #endif // SERVER_BUILD

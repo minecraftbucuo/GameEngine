@@ -113,6 +113,30 @@ header {
 .card.warn .card-value { color: var(--warn); }
 .card.bad .card-value { color: var(--bad); }
 
+/* ── 客户端区块 ─────────────────────────────────────────── */
+
+.clients {
+  flex: 0 0 auto;
+  padding: 0 16px 10px;
+  max-height: 190px;
+  overflow: auto;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.section-title { font-size: 12px; color: var(--text); }
+.section-head .muted { font-size: 12px; }
+
+/* 客户端表比对象表窄，不需要 sticky 表头抢层级 */
+.clients table { font-size: 12px; }
+.clients thead th { position: static; background: transparent; padding: 4px 10px; }
+.clients tbody td { padding: 4px 10px; }
+
 /* ── 工具栏 ─────────────────────────────────────────────── */
 
 .toolbar {
@@ -218,6 +242,11 @@ tbody tr:hover { background: var(--panel-2); }
   font-size: 11px;
 }
 .chip.col { background: rgba(63, 185, 80, .12); color: var(--ok); }
+.chip-warn { background: rgba(210, 153, 34, .14); color: var(--warn); }
+.chip-bad { background: rgba(248, 81, 73, .14); color: var(--bad); }
+
+/* 类型状态列：只有 Mario/Goomba/Koopa 有内容，宽度不必抢太多 */
+.type { white-space: nowrap; }
 
 /* ── 异常行高亮 ─────────────────────────────────────────── */
 

@@ -142,3 +142,11 @@ private:
 
     void parseDebugPanel(const json& j);
 };
+
+// 用环境变量覆盖 debugPanel 配置。设计意图：
+//   - config.json 在构建时被拷到 exe 旁，MinGW 下改源文件不一定触发重新拷贝，
+//     临时调端口/关面板用环境变量比改配置再重编译省事
+//   - 非法值只告警、保留原值，绝不因为一个环境变量写错就让服务起不来
+// 与 parseDebugPanel 分开是刻意的：load() 不调用它，只有 GameEngine 显式调用，
+// 否则测试会被运行环境里残留的 MARIO_PANEL_* 影响。
+void applyDebugPanelEnvOverrides(ConfigManager::DebugPanelConfig& cfg);

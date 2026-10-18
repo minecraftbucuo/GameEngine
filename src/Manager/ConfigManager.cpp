@@ -4,7 +4,11 @@
 
 #include "ConfigManager.h"
 #include <algorithm>
+#include <cctype>
+#include <charconv>
+#include <cstdlib>
 #include <fstream>
+#include <system_error>
 #include <type_traits>
 #include <nlohmann/json.hpp>
 
@@ -206,6 +210,95 @@ void ConfigManager::parseDebugPanel(const json& j) {
     debugPanel.snapshotHz = std::clamp(debugPanel.snapshotHz, 1, 60);
     debugPanel.maxObjects = std::clamp(debugPanel.maxObjects, 1, 100000);
     debugPanel.idleSkipSeconds = std::clamp(debugPanel.idleSkipSeconds, 0, 3600);
+}
+
+namespace {
+
+// 未设置与设为空串统一按"没给"处理，简化各调用点判断
+std::string readEnv(const char* name) {
+    const char* value = std::getenv(name);
+    return value == nullptr ? std::string{} : std::string(value);
+}
+
+bool parseEnvBool(const std::string& text, bool* out) {
+    std::string lowered;
+    lowered.reserve(text.size());
+    for (const char c : text) {
+        lowered.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+    }
+
+    if (lowered == "1" || lowered == "true" || lowered == "on" || lowered == "yes") {
+        *out = true;
+        return true;
+    }
+    if (lowered == "0" || lowered == "false" || lowered == "off" || lowered == "no") {
+        *out = false;
+        return true;
+    }
+    return false;
+}
+
+// 整段解析：多余字符（"8090abc"）算非法，避免 "8090.5" 之类被静默截断
+bool parseEnvInt(const std::string& text, int* out) {
+    const char* begin = text.data();
+    const char* end = begin + text.size();
+    int value = 0;
+    const auto result = std::from_chars(begin, end, value);
+    if (result.ec != std::errc{} || result.ptr != end) return false;
+    *out = value;
+    return true;
+}
+
+} // namespace
+
+void applyDebugPanelEnvOverrides(ConfigManager::DebugPanelConfig& cfg) {
+    if (const std::string v = readEnv("MARIO_PANEL_ENABLE"); !v.empty()) {
+        bool enabled = false;
+        if (parseEnvBool(v, &enabled)) {
+            cfg.enabled = enabled;
+        } else {
+            LOG_WARN_FMT("MARIO_PANEL_ENABLE='{}' is not a boolean, ignored", v);
+        }
+    }
+
+    if (const std::string v = readEnv("MARIO_PANEL_HOST"); !v.empty()) {
+        cfg.host = v;
+    }
+
+    if (const std::string v = readEnv("MARIO_PANEL_PORT"); !v.empty()) {
+        int port = 0;
+        if (parseEnvInt(v, &port)) {
+            cfg.port = std::clamp(port, 1, 65535);
+        } else {
+            LOG_WARN_FMT("MARIO_PANEL_PORT='{}' is not a valid port, ignored", v);
+        }
+    }
+
+    if (const std::string v = readEnv("MARIO_PANEL_TOKEN"); !v.empty()) {
+        cfg.token = v;
+    }
+
+    if (const std::string v = readEnv("MARIO_PANEL_HZ"); !v.empty()) {
+        int hz = 0;
+        if (parseEnvInt(v, &hz)) {
+            cfg.snapshotHz = std::clamp(hz, 1, 60);
+        } else {
+            LOG_WARN_FMT("MARIO_PANEL_HZ='{}' is not an integer, ignored", v);
+        }
+    }
+
+    if (const std::string v = readEnv("MARIO_PANEL_IDLE_SKIP"); !v.empty()) {
+        int seconds = 0;
+        if (parseEnvInt(v, &seconds)) {
+            cfg.idleSkipSeconds = std::clamp(seconds, 0, 3600);
+        } else {
+            LOG_WARN_FMT("MARIO_PANEL_IDLE_SKIP='{}' is not an integer, ignored", v);
+        }
+    }
+
+    if (const std::string v = readEnv("MARIO_PANEL_WEBROOT"); !v.empty()) {
+        cfg.webRoot = v;
+    }
 }
 
 

@@ -9,6 +9,7 @@
 
 #include "ConfigManager.h"
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -343,4 +344,128 @@ TEST_CASE("ConfigManager: reset() 恢复 debugPanel 默认值") {
     CHECK(cm.debugPanel.enabled == false);
     CHECK(cm.debugPanel.port == 8090);
     CHECK(cm.debugPanel.token.empty());
+}
+
+// ── 环境变量覆盖 ────────────────────────────────────────────────────
+// 用 RAII 保证用例失败提前返回时也能把环境变量清干净，
+// 否则残留的 MARIO_PANEL_* 会污染同进程里其他用例。
+namespace {
+
+void setEnvVar(const char* name, const char* value) {
+#ifdef _WIN32
+    _putenv_s(name, value);
+#else
+    setenv(name, value, 1);
+#endif
+}
+
+void unsetEnvVar(const char* name) {
+#ifdef _WIN32
+    _putenv_s(name, "");
+#else
+    unsetenv(name);
+#endif
+}
+
+class EnvGuard {
+public:
+    EnvGuard(const char* name, const char* value) : name_(name) { setEnvVar(name_, value); }
+    ~EnvGuard() { unsetEnvVar(name_); }
+
+    EnvGuard(const EnvGuard&) = delete;
+    EnvGuard& operator=(const EnvGuard&) = delete;
+
+private:
+    const char* name_;
+};
+
+} // namespace
+
+TEST_CASE("ConfigManager: 环境变量覆盖 debugPanel") {
+    ConfigManager::DebugPanelConfig cfg;
+
+    EnvGuard enable("MARIO_PANEL_ENABLE", "1");
+    EnvGuard host("MARIO_PANEL_HOST", "127.0.0.1");
+    EnvGuard port("MARIO_PANEL_PORT", "9999");
+    EnvGuard token("MARIO_PANEL_TOKEN", "from-env");
+    EnvGuard hz("MARIO_PANEL_HZ", "2");
+    EnvGuard idle("MARIO_PANEL_IDLE_SKIP", "30");
+    EnvGuard webroot("MARIO_PANEL_WEBROOT", "/tmp/web");
+
+    applyDebugPanelEnvOverrides(cfg);
+
+    CHECK(cfg.enabled == true);
+    CHECK(cfg.host == "127.0.0.1");
+    CHECK(cfg.port == 9999);
+    CHECK(cfg.token == "from-env");
+    CHECK(cfg.snapshotHz == 2);
+    CHECK(cfg.idleSkipSeconds == 30);
+    CHECK(cfg.webRoot == "/tmp/web");
+}
+
+TEST_CASE("ConfigManager: 环境变量布尔值接受常见写法") {
+    const struct {
+        const char* text;
+        bool expected;
+    } cases[] = {
+        {"1", true},   {"0", false},
+        {"true", true}, {"false", false},
+        {"TRUE", true}, {"False", false},
+        {"on", true},  {"off", false},
+        {"yes", true}, {"no", false},
+    };
+
+    for (const auto& c : cases) {
+        ConfigManager::DebugPanelConfig cfg;
+        cfg.enabled = false;
+
+        EnvGuard g("MARIO_PANEL_ENABLE", c.text);
+        applyDebugPanelEnvOverrides(cfg);
+
+        CHECK_MESSAGE(cfg.enabled == c.expected, "input: ", c.text);
+    }
+}
+
+TEST_CASE("ConfigManager: 非法环境变量被忽略并保留原值") {
+    ConfigManager::DebugPanelConfig cfg;
+    cfg.enabled = true;
+    cfg.port = 8090;
+    cfg.snapshotHz = 10;
+
+    // 非布尔 / 非整数 / 带小数 / 带尾巴，全部应原值不动
+    EnvGuard enable("MARIO_PANEL_ENABLE", "maybe");
+    EnvGuard port("MARIO_PANEL_PORT", "80abc");
+    EnvGuard hz("MARIO_PANEL_HZ", "10.5");
+
+    applyDebugPanelEnvOverrides(cfg);
+
+    CHECK(cfg.enabled == true);
+    CHECK(cfg.port == 8090);
+    CHECK(cfg.snapshotHz == 10);
+}
+
+TEST_CASE("ConfigManager: 环境变量端口与频率越界被夹紧") {
+    ConfigManager::DebugPanelConfig cfg;
+
+    EnvGuard port("MARIO_PANEL_PORT", "70000");
+    EnvGuard hz("MARIO_PANEL_HZ", "0");
+
+    applyDebugPanelEnvOverrides(cfg);
+
+    CHECK(cfg.port == 65535);
+    CHECK(cfg.snapshotHz == 1);
+}
+
+TEST_CASE("ConfigManager: 空环境变量不覆盖") {
+    ConfigManager::DebugPanelConfig cfg;
+    cfg.host = "0.0.0.0";
+    cfg.token = "keep";
+
+    EnvGuard host("MARIO_PANEL_HOST", "");
+    EnvGuard token("MARIO_PANEL_TOKEN", "");
+
+    applyDebugPanelEnvOverrides(cfg);
+
+    CHECK(cfg.host == "0.0.0.0");
+    CHECK(cfg.token == "keep");
 }

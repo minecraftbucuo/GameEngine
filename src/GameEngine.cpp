@@ -57,6 +57,12 @@ void GameEngine::init() {
         LOG_WARN("Config file load fail, using default config");
     }
 
+#ifdef SERVER_BUILD
+    // 环境变量覆盖放在 load 之后、所有消费者之前。load() 内部刻意不调用它，
+    // 否则测试会被运行环境里残留的 MARIO_PANEL_* 影响。
+    applyDebugPanelEnvOverrides(CONFIG.debugPanel);
+#endif
+
 #ifndef SERVER_BUILD
     // 加载 SuperMarioScene 的资源
     LOG_INFO("Loading SuperMarioScene resources...");

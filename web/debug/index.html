@@ -32,6 +32,28 @@
 
   <section id="cards" class="cards"></section>
 
+  <!-- 客户端连接：无连接时只占一行，有连接时展开成小表 -->
+  <section class="clients">
+    <div class="section-head">
+      <span class="section-title">客户端</span>
+      <span id="clients-count" class="muted"></span>
+    </div>
+    <table id="clients-table" class="hidden">
+      <thead>
+        <tr>
+          <th>地址</th>
+          <th>状态</th>
+          <th class="num">playerId</th>
+          <th>角色</th>
+          <th class="num">上次收包</th>
+          <th class="num">收包数</th>
+          <th class="num">字节数</th>
+        </tr>
+      </thead>
+      <tbody id="clients-tbody"></tbody>
+    </table>
+  </section>
+
   <section class="toolbar">
     <input id="filter-text" type="search" placeholder="按 class / tag / id 过滤">
     <label class="check"><input id="filter-suspect" type="checkbox"> 只看可疑</label>
@@ -46,6 +68,7 @@
           <th>Class</th>
           <th>Tag</th>
           <th>状态</th>
+          <th>类型状态</th>
           <th class="num">x</th>
           <th class="num">y</th>
           <th class="num">vx</th>
