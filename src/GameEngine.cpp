@@ -166,9 +166,15 @@ bool GameEngine::frameStep() {
         }
 #endif
 
-        // 帧耗时不足目标节拍则睡眠剩余时间
+        // 帧耗时不足目标节拍则睡眠剩余时间。
+        // 必须用 SDL_DelayPrecise：Windows 默认定时器精度 15.6ms，std::this_thread::sleep_for
+        // 睡 6ms 实际睡出 10~25ms 的锯齿，变步长物理吃到剧烈波动的 dt，
+        // 堆叠对象（Mario 站 Mario）会反复穿透-弹起。Linux nanosleep 天生亚毫秒
+        // 精度所以同代码无此问题；客户端开房间时 SDL 全初始化已隐式提升精度，
+        // 只有无头服务端踩中。SDL_DelayPrecise 内部处理了这些，跨平台一致。
         if (const auto elapsed = std::chrono::steady_clock::now() - frameStart; frameTime > elapsed) {
-            std::this_thread::sleep_for(frameTime - elapsed);
+            const auto remainNs = std::chrono::duration_cast<std::chrono::nanoseconds>(frameTime - elapsed).count();
+            SDL_DelayPrecise(static_cast<Uint64>(remainNs));
         }
     }
 }
