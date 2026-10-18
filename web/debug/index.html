@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameEngine · 服务端调试面板</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- 鉴权层：token 只存 sessionStorage，不进 URL -->
+<div id="auth" class="auth hidden">
+  <form id="auth-form" autocomplete="off">
+    <h1>服务端调试面板</h1>
+    <p>输入服务端启动日志里打印的 token</p>
+    <input id="token-input" type="password" placeholder="token" spellcheck="false" autocomplete="off">
+    <button type="submit">连接</button>
+    <div id="auth-error" class="err"></div>
+  </form>
+</div>
+
+<!-- 主界面 -->
+<div id="app" class="hidden">
+  <header>
+    <div class="brand">服务端调试面板</div>
+    <div id="conn" class="conn">未连接</div>
+    <div class="spacer"></div>
+    <div id="meta" class="meta"></div>
+    <button id="btn-pause" class="ghost">暂停</button>
+    <button id="btn-logout" class="ghost">退出</button>
+  </header>
+
+  <section id="cards" class="cards"></section>
+
+  <section class="toolbar">
+    <input id="filter-text" type="search" placeholder="按 class / tag / id 过滤">
+    <label class="check"><input id="filter-suspect" type="checkbox"> 只看可疑</label>
+    <span id="visible-count" class="muted"></span>
+  </section>
+
+  <main>
+    <table id="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Class</th>
+          <th>Tag</th>
+          <th>状态</th>
+          <th class="num">x</th>
+          <th class="num">y</th>
+          <th class="num">vx</th>
+          <th class="num">vy</th>
+          <th>组件</th>
+          <th class="num">net</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty" class="empty hidden">没有匹配的对象</div>
+  </main>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

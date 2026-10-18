@@ -338,6 +338,18 @@ elseif (BUILD_FOR_SERVER)
                     ${ASSET_DIR}/maps
                     $<TARGET_FILE_DIR:${PROJECT_NAME}>/Asset/maps
     )
+
+    # 调试面板前端：随构建同步到 exe 旁的 web/debug（部署用）。
+    # 开发时面板优先读源码树 ../../web/debug，改前端刷新即生效、不必重新构建。
+    # 用独立 target 而非 PRE_BUILD：MinGW Makefiles 下 PRE_BUILD 等价 PRE_LINK，
+    # 目标已最新时不会执行，前端改动不会被同步。
+    add_custom_target(copy_panel_web ALL
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${CMAKE_SOURCE_DIR}/web/debug
+                    $<TARGET_FILE_DIR:${PROJECT_NAME}>/web/debug
+            COMMENT "Syncing debug panel web assets"
+    )
+    add_dependencies(${PROJECT_NAME} copy_panel_web)
 endif ()
 
 endif ()   # NOT BUILD_TESTS_ONLY

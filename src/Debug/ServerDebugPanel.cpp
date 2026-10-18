@@ -29,10 +29,14 @@
 #include "PanelAuth.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <mutex>
+#include <sstream>
 #include <thread>
 #include <nlohmann/json.hpp>
 
@@ -50,6 +54,51 @@ void applyApiHeaders(httplib::Response& res) {
     res.set_header("X-Content-Type-Options", "nosniff");
     res.set_header("Referrer-Policy", "no-referrer");
 }
+
+// 前端目录解析顺序，取第一个存在的：
+//   1. config 里显式配置的 webRoot
+//   2. ../../web/debug —— 相对 exe 目录，命中源码树（开发场景，改完刷新即生效）
+//   3. ./web/debug     —— 相对 exe 目录，命中 CMake 拷贝的部署副本
+// 基准是 exe 目录：GameEngine::init 已把 cwd 设过去，面板在其之后启动。
+std::string resolveWebRoot(const std::string& configured) {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+
+    if (!configured.empty()) {
+        if (fs::is_directory(configured, ec)) {
+            return fs::weakly_canonical(configured, ec).string();
+        }
+        LOG_WARN_FMT("Debug panel: configured webRoot not found: {}", configured);
+    }
+
+    const std::array<const char*, 2> candidates = {"../../web/debug", "./web/debug"};
+    for (const char* candidate : candidates) {
+        if (fs::is_directory(candidate, ec)) {
+            return fs::weakly_canonical(candidate, ec).string();
+        }
+    }
+    return {};
+}
+
+constexpr const char* PLACEHOLDER_HTML = R"HTML(<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8">
+<title>调试面板 · 前端未找到</title>
+<style>
+body{background:#0d1117;color:#e6edf3;font-family:system-ui,-apple-system,sans-serif;
+     padding:40px;line-height:1.7;max-width:720px}
+h2{margin:0 0 16px;font-size:18px;font-weight:500}
+code{background:#161b22;border:1px solid #30363d;padding:2px 6px;border-radius:4px;
+     font-family:ui-monospace,Consolas,monospace;font-size:13px}
+p{color:#8b949e;margin:12px 0}
+</style>
+<h2>调试面板前端目录未找到</h2>
+<p>HTTP 服务已经起来了，但没找到前端文件。</p>
+<p>请确认以下任一目录存在：</p>
+<p><code>./web/debug</code>（exe 旁，CMake 构建时拷贝）<br>
+<code>../../web/debug</code>（源码树，开发时使用）</p>
+<p>或在 <code>Asset/config.json</code> 的 <code>debugPanel.webRoot</code> 里显式指定路径。</p>
+<p>服务端日志里有实际尝试的路径。</p>
+</html>)HTML";
 
 } // namespace
 
@@ -160,6 +209,36 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
             return;
         }
         res.set_content(*snap, "application/json");
+    });
+
+    // 静态资源也禁止缓存：开发时改 HTML/JS 刷新即生效，不用清缓存
+    impl->server.set_post_routing_handler([](const httplib::Request&, httplib::Response& res) {
+        res.set_header("Cache-Control", "no-store");
+    });
+
+    // ── 静态前端 ──────────────────────────────────────────────────
+    const std::string web_root = resolveWebRoot(cfg.webRoot);
+    if (!web_root.empty()) {
+        if (!impl->server.set_mount_point("/", web_root)) {
+            LOG_WARN_FMT("Debug panel: set_mount_point failed for {}", web_root);
+        }
+        LOG_INFO_FMT("Debug panel web root: {}", web_root);
+    } else {
+        LOG_WARN("Debug panel: web root not found (web/debug), serving placeholder page");
+    }
+
+    impl->server.Get("/", [web_root](const httplib::Request&, httplib::Response& res) {
+        if (!web_root.empty()) {
+            std::ifstream in(web_root + "/index.html", std::ios::binary);
+            if (in) {
+                std::ostringstream ss;
+                ss << in.rdbuf();
+                res.set_content(ss.str(), "text/html; charset=utf-8");
+                return;
+            }
+        }
+        res.status = 503;
+        res.set_content(PLACEHOLDER_HTML, "text/html; charset=utf-8");
     });
 
 #ifdef _WIN32
