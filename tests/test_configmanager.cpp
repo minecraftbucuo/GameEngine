@@ -207,3 +207,140 @@ TEST_CASE("ConfigManager: setInstance 替换生效且互不污染") {
     CHECK(CONFIG.network.port == 6666);                          // 回到默认单例
     CHECK(detached.network.port == 9999);                        // 被替换的实例未被改动
 }
+
+// ── 调试面板配置（debugPanel）─────────────────────────────────────
+
+TEST_CASE("ConfigManager: debugPanel 默认值 —— 未配置时不启动面板") {
+    ConfigManager cm;
+
+    CHECK(cm.debugPanel.enabled == false);   // 默认关闭：不能让测试或别的配置意外起服务
+    CHECK(cm.debugPanel.host == "0.0.0.0");
+    CHECK(cm.debugPanel.port == 8090);
+    CHECK(cm.debugPanel.token.empty());
+    CHECK(cm.debugPanel.snapshotHz == 10);
+    CHECK(cm.debugPanel.maxObjects == 2000);
+    CHECK(cm.debugPanel.idleSkipSeconds == 5);
+    CHECK(cm.debugPanel.webRoot.empty());
+}
+
+TEST_CASE("ConfigManager: debugPanel 完整段生效") {
+    TempJsonFile f(R"({
+        "debugPanel": {
+            "enabled": true,
+            "host": "127.0.0.1",
+            "port": 9001,
+            "token": "abc123",
+            "snapshotHz": 20,
+            "maxObjects": 500,
+            "idleSkipSeconds": 30,
+            "webRoot": "./web/debug"
+        }
+    })", "panel_full");
+
+    ConfigManager cm;
+    REQUIRE(cm.load(f.path()));
+
+    CHECK(cm.debugPanel.enabled == true);
+    CHECK(cm.debugPanel.host == "127.0.0.1");
+    CHECK(cm.debugPanel.port == 9001);
+    CHECK(cm.debugPanel.token == "abc123");
+    CHECK(cm.debugPanel.snapshotHz == 20);
+    CHECK(cm.debugPanel.maxObjects == 500);
+    CHECK(cm.debugPanel.idleSkipSeconds == 30);
+    CHECK(cm.debugPanel.webRoot == "./web/debug");
+}
+
+TEST_CASE("ConfigManager: debugPanel 段缺失保留默认") {
+    TempJsonFile f(R"({ "window": { "width": 640 } })", "panel_absent");
+
+    ConfigManager cm;
+    REQUIRE(cm.load(f.path()));
+
+    CHECK(cm.debugPanel.enabled == false);
+    CHECK(cm.debugPanel.port == 8090);
+}
+
+TEST_CASE("ConfigManager: debugPanel 上界越界值被 clamp") {
+    TempJsonFile f(R"({
+        "debugPanel": {
+            "port": 99999,
+            "snapshotHz": 999,
+            "maxObjects": -5,
+            "idleSkipSeconds": -1
+        }
+    })", "panel_clamp_high");
+
+    ConfigManager cm;
+    REQUIRE(cm.load(f.path()));
+
+    CHECK(cm.debugPanel.port == 65535);
+    CHECK(cm.debugPanel.snapshotHz == 60);
+    CHECK(cm.debugPanel.maxObjects == 1);
+    CHECK(cm.debugPanel.idleSkipSeconds == 0);
+}
+
+TEST_CASE("ConfigManager: debugPanel 下界越界值被 clamp") {
+    TempJsonFile f(R"({ "debugPanel": { "port": 0, "snapshotHz": 0 } })", "panel_clamp_low");
+
+    ConfigManager cm;
+    REQUIRE(cm.load(f.path()));
+
+    CHECK(cm.debugPanel.port == 1);
+    CHECK(cm.debugPanel.snapshotHz == 1);
+}
+
+TEST_CASE("ConfigManager: debugPanel 字段类型错误不拖垮整份配置") {
+    // 与其余各段的裸 value() 不同：debugPanel 走 readField()，类型不符的字段
+    // 视同未提供。理由是面板是可选功能，写错一个字段不该让整份游戏配置回落默认值。
+    TempJsonFile f(R"({
+        "window": { "width": 640 },
+        "debugPanel": {
+            "enabled": "yes",
+            "port": "not-a-number",
+            "snapshotHz": [1, 2],
+            "host": 123
+        }
+    })", "panel_badtype");
+
+    ConfigManager cm;
+    REQUIRE(cm.load(f.path()));               // 关键：仍返回 true
+
+    CHECK(cm.window.width == 640);            // 其他段照常生效
+    CHECK(cm.debugPanel.enabled == false);    // 类型错的字段保留默认
+    CHECK(cm.debugPanel.port == 8090);
+    CHECK(cm.debugPanel.snapshotHz == 10);
+    CHECK(cm.debugPanel.host == "0.0.0.0");
+}
+
+TEST_CASE("ConfigManager: debugPanel 浮点写法按整数截断") {
+    TempJsonFile f(R"({ "debugPanel": { "port": 8090.0, "snapshotHz": 12.9 } })", "panel_float");
+
+    ConfigManager cm;
+    REQUIRE(cm.load(f.path()));
+
+    CHECK(cm.debugPanel.port == 8090);
+    CHECK(cm.debugPanel.snapshotHz == 12);
+}
+
+TEST_CASE("ConfigManager: debugPanel 段不是对象时保留默认") {
+    TempJsonFile f(R"({ "debugPanel": [1, 2, 3] })", "panel_array");
+
+    ConfigManager cm;
+    REQUIRE(cm.load(f.path()));
+
+    CHECK(cm.debugPanel.port == 8090);
+    CHECK(cm.debugPanel.enabled == false);
+}
+
+TEST_CASE("ConfigManager: reset() 恢复 debugPanel 默认值") {
+    ConfigManager cm;
+    cm.debugPanel.enabled = true;
+    cm.debugPanel.port = 1;
+    cm.debugPanel.token = "dirty";
+
+    cm.reset();
+
+    CHECK(cm.debugPanel.enabled == false);
+    CHECK(cm.debugPanel.port == 8090);
+    CHECK(cm.debugPanel.token.empty());
+}

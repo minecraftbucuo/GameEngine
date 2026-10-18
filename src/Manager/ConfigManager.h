@@ -99,6 +99,20 @@ public:
         float physicsFixedStep = 1.0f / 60.0f;
     } game{};
 
+    // Debug Panel 配置（服务端 Web 调试面板，仅 SERVER_BUILD 下使用）
+    // 整段缺失时全部保持默认值，不影响游戏启动。enabled 默认 false：
+    // 只有 config.json 显式写 true 才启动面板，避免测试或别的配置意外起服务。
+    struct DebugPanelConfig {
+        bool enabled = false;
+        std::string host = "0.0.0.0";
+        int port = 8090;
+        std::string token;          // 空 = 启动时自动生成并打印到控制台
+        int snapshotHz = 10;        // 快照采样频率（clamp 1-60）
+        int maxObjects = 2000;      // 单次快照最多导出的对象数（clamp 1-100000）
+        int idleSkipSeconds = 5;    // 无请求超过此时长则不构建快照（clamp 0-3600）
+        std::string webRoot;        // 空 = 启动时按约定顺序解析
+    } debugPanel{};
+
     // 便捷访问方法
     std::string getTexturePath(const std::string& name) const {
         const auto it = assets.textures.find(name);
@@ -125,4 +139,6 @@ private:
     void parseNetwork(const json& j);
 
     void parseGame(const json& j);
+
+    void parseDebugPanel(const json& j);
 };

@@ -41,5 +41,15 @@
         "shootDelay": 300,
         "fireBallTTL": 10000,
         "debug": true
+    },
+    "debugPanel": {
+        "enabled": true,
+        "host": "0.0.0.0",
+        "port": 8090,
+        "token": "",
+        "snapshotHz": 10,
+        "maxObjects": 2000,
+        "idleSkipSeconds": 5,
+        "webRoot": ""
     }
 }

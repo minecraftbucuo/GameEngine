@@ -3,7 +3,9 @@
 //
 
 #include "ConfigManager.h"
+#include <algorithm>
 #include <fstream>
+#include <type_traits>
 #include <nlohmann/json.hpp>
 
 #include "Logger.h"
@@ -29,6 +31,7 @@ bool ConfigManager::load(const std::string& path) {
         parseAssets(config["assets"]);
         parseNetwork(config["network"]);
         parseGame(config["game"]);
+        parseDebugPanel(config["debugPanel"]);
 
         return true;
     } catch (const std::exception& e) {
@@ -43,6 +46,7 @@ void ConfigManager::reset() {
     assets = AssetsConfig{};
     network = NetworkConfig{};
     game = GameConfig{};
+    debugPanel = DebugPanelConfig{};
 }
 
 void ConfigManager::parseWindow(const json& j) {
@@ -156,6 +160,52 @@ bool ConfigManager::save() {
         LOG_ERROR_FMT("Config save error: {}", e.what());
         return false;
     }
+}
+
+namespace {
+
+// 逐字段读取：类型不符时保留原值，而不是抛到 load() 的 catch 里。
+// 其余各段用的是裸 value()，写错一个字段就会让整份配置加载失败、全部回落默认值。
+// 调试面板是纯可选功能，配错不应该连累游戏启动，所以这里单独做容错。
+template <typename T>
+void readField(const json& j, const char* key, T& out) {
+    const auto it = j.find(key);
+    if (it == j.end() || it->is_null()) return;
+
+    try {
+        if constexpr (std::is_integral_v<T>) {
+            // 手写配置里 8090.0 这种写法很常见，按整数截断而不是判定为类型错误
+            if (it->is_number_float()) {
+                out = static_cast<T>(it->get<double>());
+                return;
+            }
+        }
+        out = it->get<T>();
+    } catch (const json::exception&) {
+        // 类型不符的字段视同未提供，保留默认值
+    }
+}
+
+} // namespace
+
+void ConfigManager::parseDebugPanel(const json& j) {
+    // 整段缺失时 config["debugPanel"] 是 null，保持默认值即可
+    if (!j.is_object()) return;
+
+    readField(j, "enabled", debugPanel.enabled);
+    readField(j, "host", debugPanel.host);
+    readField(j, "port", debugPanel.port);
+    readField(j, "token", debugPanel.token);
+    readField(j, "snapshotHz", debugPanel.snapshotHz);
+    readField(j, "maxObjects", debugPanel.maxObjects);
+    readField(j, "idleSkipSeconds", debugPanel.idleSkipSeconds);
+    readField(j, "webRoot", debugPanel.webRoot);
+
+    // 越界值会让 bind 失败或快照开销失控，统一夹到安全区间
+    debugPanel.port = std::clamp(debugPanel.port, 1, 65535);
+    debugPanel.snapshotHz = std::clamp(debugPanel.snapshotHz, 1, 60);
+    debugPanel.maxObjects = std::clamp(debugPanel.maxObjects, 1, 100000);
+    debugPanel.idleSkipSeconds = std::clamp(debugPanel.idleSkipSeconds, 0, 3600);
 }
 
 
