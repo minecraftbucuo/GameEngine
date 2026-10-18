@@ -153,6 +153,52 @@ TEST_CASE("DebugSnapshotJson: 空对象列表产出合法结构") {
     CHECK_NOTHROW(j.dump());
 }
 
+TEST_CASE("DebugSnapshotJson: 碰撞体几何单独输出") {
+    SUBCASE("没有碰撞组件时为 null") {
+        debug_panel::ObjectView v;
+        CHECK(debug_panel::objectViewToJson(v)["collisionBox"].is_null());
+    }
+
+    SUBCASE("矩形碰撞体") {
+        debug_panel::ObjectView v;
+        v.w = 48.f;
+        v.h = 64.f;
+        v.collision = "BoxCollision";
+        v.collisionGeom.shape = debug_panel::CollisionGeom::Shape::Box;
+        v.collisionGeom.x = 100.f;
+        v.collisionGeom.y = 200.f;
+        v.collisionGeom.w = 33.6f;
+        v.collisionGeom.h = 51.2f;
+
+        const auto g = debug_panel::objectViewToJson(v)["collisionBox"];
+
+        CHECK(g["shape"] == "box");
+        CHECK(g["x"].get<float>() == doctest::Approx(100.f));
+        CHECK(g["w"].get<float>() == doctest::Approx(33.6f));
+        // 碰撞盒比对象小，这正是要单独输出的原因
+        CHECK(g["w"].get<float>() < v.w);
+        CHECK_FALSE(g.contains("r"));
+    }
+
+    SUBCASE("圆形碰撞体折算成外接矩形") {
+        debug_panel::ObjectView v;
+        v.collision = "CircleCollision";
+        v.collisionGeom.shape = debug_panel::CollisionGeom::Shape::Circle;
+        v.collisionGeom.r = 12.f;
+        v.collisionGeom.x = 88.f;   // 圆心 100 - 半径 12
+        v.collisionGeom.y = 88.f;
+        v.collisionGeom.w = 24.f;
+        v.collisionGeom.h = 24.f;
+
+        const auto g = debug_panel::objectViewToJson(v)["collisionBox"];
+
+        CHECK(g["shape"] == "circle");
+        CHECK(g["r"].get<float>() == doctest::Approx(12.f));
+        CHECK(g["w"].get<float>() == doctest::Approx(24.f));
+        CHECK(g["h"].get<float>() == doctest::Approx(24.f));
+    }
+}
+
 TEST_CASE("DebugSnapshotJson: typeData 只输出对应类型的字段") {
     using Kind = debug_panel::ObjectView::TypeData::Kind;
 

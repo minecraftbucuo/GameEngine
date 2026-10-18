@@ -17,6 +17,7 @@ const state = {
   prevPositions: new Map(),
   filterText: '',
   onlySuspect: false,
+  view: 'map',        // 'map' | 'table'
 };
 
 function escapeHtml(value) {
@@ -59,6 +60,28 @@ function showAuth(message) {
 function showApp() {
   el('auth').classList.add('hidden');
   el('app').classList.remove('hidden');
+  // 画布在 app 隐藏时尺寸为 0，显示出来必须重新适配一次
+  if (mapState.canvas === null) mapInit();
+  else mapOnShow();
+}
+
+// ── 视图切换 ────────────────────────────────────────────────────────
+
+function switchView(view) {
+  state.view = view;
+
+  el('tab-map').classList.toggle('active', view === 'map');
+  el('tab-table').classList.toggle('active', view === 'table');
+  el('view-map').classList.toggle('hidden', view !== 'map');
+  el('view-table').classList.toggle('hidden', view !== 'table');
+  el('map-toolbar').classList.toggle('hidden', view !== 'map');
+  el('table-toolbar').classList.toggle('hidden', view !== 'table');
+
+  if (view === 'map') {
+    mapOnShow();
+  } else if (state.lastSnapshot) {
+    renderTable(state.lastSnapshot);
+  }
 }
 
 function setConn(text, cls) {
@@ -138,7 +161,12 @@ function render(snap) {
 
   renderCards(snap);
   renderClients(snap);
-  renderTable(snap);
+
+  if (state.view === 'map') {
+    mapRender(snap);
+  } else {
+    renderTable(snap);
+  }
 }
 
 function renderCards(snap) {
@@ -365,6 +393,19 @@ el('filter-suspect').addEventListener('change', (event) => {
   state.onlySuspect = event.target.checked;
   if (state.lastSnapshot) renderTable(state.lastSnapshot);
 });
+
+// ── 标签页与地图控件 ────────────────────────────────────────────────
+
+el('tab-map').addEventListener('click', () => switchView('map'));
+el('tab-table').addEventListener('click', () => switchView('table'));
+
+el('ov-velocity').addEventListener('change', (e) => mapSetOverlay('velocity', e.target.checked));
+el('ov-boxes').addEventListener('change', (e) => mapSetOverlay('boxes', e.target.checked));
+el('ov-grid').addEventListener('change', (e) => mapSetOverlay('grid', e.target.checked));
+el('ov-centers').addEventListener('change', (e) => mapSetOverlay('centers', e.target.checked));
+
+el('btn-fit').addEventListener('click', () => mapRefit());
+el('btn-fit-all').addEventListener('click', () => mapFitAll());
 
 // 切到后台时暂停轮询，避免多标签页把线程池占满
 document.addEventListener('visibilitychange', () => {

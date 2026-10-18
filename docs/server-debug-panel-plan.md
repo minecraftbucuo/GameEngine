@@ -309,6 +309,7 @@ GameEngine::start()
 | `src/Debug/ServerDebugPanel.cpp` | HTTP 路由、鉴权、线程、快照发布 | 是 |
 | `web/debug/index.html` | 页面骨架 | — |
 | `web/debug/app.js` | 轮询、表格渲染、过滤、异常高亮 | — |
+| `web/debug/map.js` | 地图视图：canvas 绘制、缩放平移、跟随、叠加层（后续追加） | — |
 | `web/debug/style.css` | 样式 | — |
 | `docs/server-debug-panel-plan.md` | 本设计文档 | — |
 | `docs/server-debug-panel.md` | 使用说明（端口 / token / 排查手法） | — |

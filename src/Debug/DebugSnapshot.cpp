@@ -54,10 +54,26 @@ void collectComponents(GameObject& obj, debug_panel::ObjectView& v) {
     v.hasHealthBar = obj.tryGetComponent<HealthBar>() != nullptr;
 
     if (const auto col = obj.tryGetComponent<Collision>()) {
-        if (dynamic_cast<BoxCollision*>(col.get()) != nullptr) {
+        if (auto* box = dynamic_cast<BoxCollision*>(col.get())) {
             v.collision = "BoxCollision";
-        } else if (dynamic_cast<CircleCollision*>(col.get()) != nullptr) {
+            // getPosX/getPosY 已含 offset，就是实际参与碰撞的矩形左上角
+            v.collisionGeom.shape = debug_panel::CollisionGeom::Shape::Box;
+            v.collisionGeom.x = box->getPosX();
+            v.collisionGeom.y = box->getPosY();
+            v.collisionGeom.w = box->getWidth();
+            v.collisionGeom.h = box->getHeight();
+        } else if (auto* circle = dynamic_cast<CircleCollision*>(col.get())) {
             v.collision = "CircleCollision";
+            // 圆的 getPosX/getPosY 是圆心，折算成外接矩形，前端统一按矩形处理
+            const float cx = circle->getPosX();
+            const float cy = circle->getPosY();
+            const float r = circle->getRadius();
+            v.collisionGeom.shape = debug_panel::CollisionGeom::Shape::Circle;
+            v.collisionGeom.r = r;
+            v.collisionGeom.x = cx - r;
+            v.collisionGeom.y = cy - r;
+            v.collisionGeom.w = r * 2.f;
+            v.collisionGeom.h = r * 2.f;
         } else {
             v.collision = "unknown";
         }

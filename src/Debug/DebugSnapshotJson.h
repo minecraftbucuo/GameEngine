@@ -16,6 +16,20 @@
 
 namespace debug_panel {
 
+// 碰撞体的真实几何。与对象自身的 w/h 不一定相同：
+// Mario 长大后碰撞盒会放大，Koopa 从行走换到龟壳时尺寸也变。
+// 只输出左上角 + 宽高（圆也折算成外接矩形），前端画起来统一。
+struct CollisionGeom {
+    enum class Shape { None, Box, Circle };
+
+    Shape shape = Shape::None;
+    float x = 0.f;
+    float y = 0.f;
+    float w = 0.f;
+    float h = 0.f;
+    float r = 0.f;   // 仅 Circle 有意义
+};
+
 // 单个对象的快照视图：字段全部是采集好的值，不含任何指针
 struct ObjectView {
     unsigned int id = 0;
@@ -42,6 +56,7 @@ struct ObjectView {
     bool hasHealthBar = false;
     std::string collision;        // 空 = 没有碰撞组件；否则是具体形状名
     std::string collisionHandle;  // 空 = 没有碰撞句柄
+    CollisionGeom collisionGeom;  // 碰撞体真实几何（可能与 w/h 不同）
 
     struct TypeData {
         enum class Kind { None, Mario, Goomba, Koopa };
@@ -138,6 +153,19 @@ inline nlohmann::json typeDataToJson(const ObjectView::TypeData& t) {
     return j;
 }
 
+inline nlohmann::json collisionGeomToJson(const CollisionGeom& g) {
+    if (g.shape == CollisionGeom::Shape::None) return nullptr;
+
+    nlohmann::json j = nlohmann::json::object();
+    j["shape"] = g.shape == CollisionGeom::Shape::Box ? "box" : "circle";
+    j["x"] = g.x;
+    j["y"] = g.y;
+    j["w"] = g.w;
+    j["h"] = g.h;
+    if (g.shape == CollisionGeom::Shape::Circle) j["r"] = g.r;
+    return j;
+}
+
 inline nlohmann::json objectViewToJson(const ObjectView& v) {
     nlohmann::json j = nlohmann::json::object();
 
@@ -174,6 +202,8 @@ inline nlohmann::json objectViewToJson(const ObjectView& v) {
     c["CollisionHandle"] =
         v.collisionHandle.empty() ? nlohmann::json(nullptr) : nlohmann::json(v.collisionHandle);
     j["components"] = std::move(c);
+
+    j["collisionBox"] = collisionGeomToJson(v.collisionGeom);
 
     j["typeData"] = typeDataToJson(v.type);
 

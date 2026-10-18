@@ -55,34 +55,64 @@
   </section>
 
   <section class="toolbar">
-    <input id="filter-text" type="search" placeholder="按 class / tag / id 过滤">
-    <label class="check"><input id="filter-suspect" type="checkbox"> 只看可疑</label>
-    <span id="visible-count" class="muted"></span>
+    <nav class="tabs">
+      <button id="tab-map" class="tab active" data-view="map">地图</button>
+      <button id="tab-table" class="tab" data-view="table">表格</button>
+    </nav>
+
+    <!-- 地图工具条 -->
+    <div id="map-toolbar" class="map-toolbar">
+      <label class="check"><input id="ov-velocity" type="checkbox" checked> 速度</label>
+      <label class="check"><input id="ov-boxes" type="checkbox" checked> 碰撞盒</label>
+      <label class="check"><input id="ov-grid" type="checkbox" checked> 网格</label>
+      <label class="check"><input id="ov-centers" type="checkbox"> 中心点</label>
+      <button id="btn-fit" class="ghost">适应视野</button>
+      <button id="btn-fit-all" class="ghost">全览</button>
+      <span id="follow-hint" class="muted"></span>
+    </div>
+
+    <!-- 表格工具条 -->
+    <div id="table-toolbar" class="table-toolbar hidden">
+      <input id="filter-text" type="search" placeholder="按 class / tag / id 过滤">
+      <label class="check"><input id="filter-suspect" type="checkbox"> 只看可疑</label>
+      <span id="visible-count" class="muted"></span>
+    </div>
   </section>
 
-  <main>
-    <table id="table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Class</th>
-          <th>Tag</th>
-          <th>状态</th>
-          <th>类型状态</th>
-          <th class="num">x</th>
-          <th class="num">y</th>
-          <th class="num">vx</th>
-          <th class="num">vy</th>
-          <th>组件</th>
-          <th class="num">net</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div id="empty" class="empty hidden">没有匹配的对象</div>
-  </main>
+  <!-- 地图视图 -->
+  <section id="view-map" class="view">
+    <canvas id="map-canvas"></canvas>
+    <div id="map-tooltip" class="map-tooltip hidden"></div>
+    <div class="map-hint">滚轮缩放 · 拖动平移 · 点击对象跟随 · 黄闪=卡住 洋红=NaN 橙虚线=未start</div>
+  </section>
+
+  <!-- 表格视图 -->
+  <section id="view-table" class="view hidden">
+    <main>
+      <table id="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Class</th>
+            <th>Tag</th>
+            <th>状态</th>
+            <th>类型状态</th>
+            <th class="num">x</th>
+            <th class="num">y</th>
+            <th class="num">vx</th>
+            <th class="num">vy</th>
+            <th>组件</th>
+            <th class="num">net</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty" class="empty hidden">没有匹配的对象</div>
+    </main>
+  </section>
 </div>
 
+<script src="/map.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

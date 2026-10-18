@@ -147,6 +147,89 @@ header {
   padding: 0 16px 10px;
 }
 
+/* ── 标签页 ─────────────────────────────────────────────── */
+
+.tabs { display: flex; gap: 4px; }
+
+.tab {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 5px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.tab:hover { color: var(--text); filter: none; }
+.tab.active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(88, 166, 255, .10);
+}
+
+.map-toolbar,
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.map-toolbar button.ghost { padding: 4px 10px; font-size: 12px; }
+
+/* ── 视图容器 ───────────────────────────────────────────── */
+
+.view {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: 0 16px 16px;
+}
+
+/* ── 地图画布 ───────────────────────────────────────────── */
+
+#map-canvas {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  display: block;
+  background: #0b0f14;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: crosshair;
+}
+
+.map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  background: rgba(22, 27, 34, .97);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  max-width: 260px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+}
+.map-tooltip b { color: var(--accent); font-weight: 500; }
+.tip-warn { color: var(--warn); }
+.tip-bad { color: var(--magenta); }
+
+.map-hint {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  pointer-events: none;
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(13, 17, 23, .78);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
 .toolbar input[type="search"] { width: 280px; }
 
 .check {
@@ -194,8 +277,9 @@ button.ghost.active { color: var(--warn); border-color: var(--warn); }
 
 main {
   flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
-  padding: 0 16px 16px;
+  padding: 0;   /* 外边距由 .view 统一给，避免表格视图双重缩进 */
 }
 
 table {
