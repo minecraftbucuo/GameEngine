@@ -91,6 +91,23 @@ public:
     // 即玩家实际感受到的同步延迟。
     [[nodiscard]] float getRttMs() const { return rtt_ms; }
 
+#ifdef SERVER_BUILD
+    // 调试面板：在线客户端快照。只在服务端编译，客户端零开销。
+    struct ClientDebugInfo {
+        std::string address;
+        bool connected = false;
+        bool verified = false;          // 已完成 token 验证并绑定玩家对象
+        unsigned int playerId = 0;
+        std::string playerClass;
+        std::int64_t lastRecvAgeMs = -1; // -1 = 从未收到过包
+        std::uint64_t packetsRecv = 0;
+        std::uint64_t bytesRecv = 0;
+    };
+
+    [[nodiscard]] std::vector<ClientDebugInfo> collectClientDebugInfo() const;
+    [[nodiscard]] std::size_t getUnverifiedCount() const { return unverified.size(); }
+#endif
+
 private:
     inline static const std::string CLIENT_TOKEN = "minecraftbucuo/mario";
     inline static const std::chrono::steady_clock::duration VERIFY_TIMEOUT = std::chrono::seconds(10);

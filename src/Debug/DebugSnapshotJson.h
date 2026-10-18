@@ -42,6 +42,52 @@ struct ObjectView {
     bool hasHealthBar = false;
     std::string collision;        // 空 = 没有碰撞组件；否则是具体形状名
     std::string collisionHandle;  // 空 = 没有碰撞句柄
+
+    struct TypeData {
+        enum class Kind { None, Mario, Goomba, Koopa };
+
+        Kind kind = Kind::None;
+
+        // Mario
+        int health = -1;
+        bool isBig = false;
+        bool isPlayer = false;
+        bool transforming = false;
+
+        // Goomba
+        bool squashed = false;
+        bool killedByFireball = false;
+
+        // Koopa
+        int stateCode = 0;
+        std::string stateName;
+        bool shellMoving = false;
+        bool killed = false;
+    } type;
+};
+
+struct PhysicsStats {
+    bool enabled = false;        // false = 场景没启用物理（usePhysics 未开）
+    int bodyCount = 0;
+    int staticBodies = 0;
+    int kinematicBodies = 0;
+    int dynamicBodies = 0;
+    int awakeBodies = 0;
+    int sleepingBodies = 0;
+    int contactCount = 0;
+    int touchingContacts = 0;
+    int nonFiniteBodies = 0;
+};
+
+struct ClientView {
+    std::string address;
+    bool connected = false;
+    bool verified = false;
+    unsigned int playerId = 0;
+    std::string playerClass;
+    std::int64_t lastRecvAgeMs = -1;   // -1 = 从未收到过包
+    std::uint64_t packetsRecv = 0;
+    std::uint64_t bytesRecv = 0;
 };
 
 struct SnapshotMeta {
@@ -56,7 +102,41 @@ struct SnapshotMeta {
     std::size_t objectCount = 0;
     bool truncated = false;
     int nonFiniteObjects = 0;
+
+    PhysicsStats physics;
+    std::vector<ClientView> clients;
+    std::size_t unverifiedClients = 0;
 };
+
+inline nlohmann::json typeDataToJson(const ObjectView::TypeData& t) {
+    if (t.kind == ObjectView::TypeData::Kind::None) return nullptr;
+
+    nlohmann::json j = nlohmann::json::object();
+    switch (t.kind) {
+        case ObjectView::TypeData::Kind::Mario:
+            j["kind"] = "Mario";
+            j["health"] = t.health;
+            j["isBig"] = t.isBig;
+            j["isPlayer"] = t.isPlayer;
+            j["transforming"] = t.transforming;
+            break;
+        case ObjectView::TypeData::Kind::Goomba:
+            j["kind"] = "Goomba";
+            j["squashed"] = t.squashed;
+            j["killedByFireball"] = t.killedByFireball;
+            break;
+        case ObjectView::TypeData::Kind::Koopa:
+            j["kind"] = "Koopa";
+            j["state"] = t.stateName;
+            j["stateCode"] = t.stateCode;
+            j["shellMoving"] = t.shellMoving;
+            j["killed"] = t.killed;
+            break;
+        case ObjectView::TypeData::Kind::None:
+            break;
+    }
+    return j;
+}
 
 inline nlohmann::json objectViewToJson(const ObjectView& v) {
     nlohmann::json j = nlohmann::json::object();
@@ -95,9 +175,48 @@ inline nlohmann::json objectViewToJson(const ObjectView& v) {
         v.collisionHandle.empty() ? nlohmann::json(nullptr) : nlohmann::json(v.collisionHandle);
     j["components"] = std::move(c);
 
-    j["typeData"] = nullptr;   // B5 接入类型特有字段
+    j["typeData"] = typeDataToJson(v.type);
 
     return j;
+}
+
+inline nlohmann::json physicsToJson(const PhysicsStats& p) {
+    return nlohmann::json::object({
+        {"enabled", p.enabled},
+        {"bodyCount", p.bodyCount},
+        {"staticBodies", p.staticBodies},
+        {"kinematicBodies", p.kinematicBodies},
+        {"dynamicBodies", p.dynamicBodies},
+        {"awakeBodies", p.awakeBodies},
+        {"sleepingBodies", p.sleepingBodies},
+        {"contactCount", p.contactCount},
+        {"touchingContacts", p.touchingContacts},
+        {"nonFiniteBodies", p.nonFiniteBodies},
+    });
+}
+
+inline nlohmann::json clientsToJson(const SnapshotMeta& m) {
+    nlohmann::json list = nlohmann::json::array();
+
+    for (const auto& c : m.clients) {
+        nlohmann::json item = nlohmann::json::object();
+        item["address"] = c.address;
+        item["connected"] = c.connected;
+        item["verified"] = c.verified;
+        item["playerId"] = c.verified ? nlohmann::json(c.playerId) : nlohmann::json(nullptr);
+        item["playerClass"] = c.playerClass;
+        item["lastRecvAgeMs"] =
+            c.lastRecvAgeMs < 0 ? nlohmann::json(nullptr) : nlohmann::json(c.lastRecvAgeMs);
+        item["packetsRecv"] = c.packetsRecv;
+        item["bytesRecv"] = c.bytesRecv;
+        list.push_back(std::move(item));
+    }
+
+    return nlohmann::json::object({
+        {"count", m.clients.size()},
+        {"unverified", m.unverifiedClients},
+        {"list", std::move(list)},
+    });
 }
 
 inline nlohmann::json snapshotToJson(const SnapshotMeta& m,
@@ -124,14 +243,8 @@ inline nlohmann::json snapshotToJson(const SnapshotMeta& m,
     nlohmann::json root = nlohmann::json::object();
     root["meta"] = std::move(meta);
     root["objects"] = std::move(arr);
-
-    // 物理与客户端列表在 B5 接入，先给稳定结构，前端不必做字段存在性判断
-    root["physics"] = nlohmann::json::object({{"enabled", false}});
-    root["clients"] = nlohmann::json::object({
-        {"count", 0},
-        {"unverified", 0},
-        {"list", nlohmann::json::array()},
-    });
+    root["physics"] = physicsToJson(m.physics);
+    root["clients"] = clientsToJson(m);
 
     return root;
 }

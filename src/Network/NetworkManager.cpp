@@ -601,3 +601,38 @@ bool NetworkManager::isClient() const {
 TcpClient& NetworkManager::getClientSocket() {
     return clientSocket;
 }
+
+#ifdef SERVER_BUILD
+std::vector<NetworkManager::ClientDebugInfo> NetworkManager::collectClientDebugInfo() const {
+    std::vector<ClientDebugInfo> out;
+    out.reserve(clients.size());
+
+    for (const auto& client : clients) {
+        if (!client) continue;
+
+        ClientDebugInfo info;
+        info.address = client->getRemoteAddress();
+        info.connected = client->isConnected();
+
+        const auto stats = client->getRecvStats();
+        info.packetsRecv = stats.packets;
+        info.bytesRecv = stats.bytes;
+        info.lastRecvAgeMs = stats.lastRecvAgeMs;
+
+        if (const auto it = players.find(client.get()); it != players.end()) {
+            if (const auto player = it->second.lock()) {
+                info.verified = true;
+                info.playerId = player->getNetworkId();
+                // ISerializable 与 GameObject 是两条继承链，需要交叉转换
+                if (const auto* obj = dynamic_cast<const GameObject*>(player.get())) {
+                    info.playerClass = obj->getClassName();
+                }
+            }
+        }
+
+        out.push_back(std::move(info));
+    }
+
+    return out;
+}
+#endif

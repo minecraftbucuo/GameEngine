@@ -152,3 +152,142 @@ TEST_CASE("DebugSnapshotJson: 空对象列表产出合法结构") {
     CHECK(j["objects"].empty());
     CHECK_NOTHROW(j.dump());
 }
+
+TEST_CASE("DebugSnapshotJson: typeData 只输出对应类型的字段") {
+    using Kind = debug_panel::ObjectView::TypeData::Kind;
+
+    SUBCASE("Mario") {
+        debug_panel::ObjectView v;
+        v.className = "Mario";
+        v.type.kind = Kind::Mario;
+        v.type.health = 2;
+        v.type.isBig = true;
+        v.type.isPlayer = true;
+        v.type.transforming = true;
+        // 其他类型的字段即使被误填也不该出现
+        v.type.squashed = true;
+        v.type.stateName = "Walking";
+
+        const auto t = debug_panel::objectViewToJson(v)["typeData"];
+
+        CHECK(t["kind"] == "Mario");
+        CHECK(t["health"] == 2);
+        CHECK(t["isBig"] == true);
+        CHECK(t["isPlayer"] == true);
+        CHECK(t["transforming"] == true);
+        CHECK_FALSE(t.contains("squashed"));
+        CHECK_FALSE(t.contains("state"));
+    }
+
+    SUBCASE("Goomba") {
+        debug_panel::ObjectView v;
+        v.className = "Goomba";
+        v.type.kind = Kind::Goomba;
+        v.type.squashed = true;
+        v.type.killedByFireball = true;
+
+        const auto t = debug_panel::objectViewToJson(v)["typeData"];
+
+        CHECK(t["kind"] == "Goomba");
+        CHECK(t["squashed"] == true);
+        CHECK(t["killedByFireball"] == true);
+        CHECK_FALSE(t.contains("health"));
+        CHECK_FALSE(t.contains("state"));
+    }
+
+    SUBCASE("Koopa") {
+        debug_panel::ObjectView v;
+        v.className = "Koopa";
+        v.type.kind = Kind::Koopa;
+        v.type.stateCode = 2;
+        v.type.stateName = "ShellMoving";
+        v.type.shellMoving = true;
+        v.type.killed = false;
+
+        const auto t = debug_panel::objectViewToJson(v)["typeData"];
+
+        CHECK(t["kind"] == "Koopa");
+        CHECK(t["state"] == "ShellMoving");
+        CHECK(t["stateCode"] == 2);
+        CHECK(t["shellMoving"] == true);
+        CHECK(t["killed"] == false);
+        CHECK_FALSE(t.contains("squashed"));
+    }
+
+    SUBCASE("未知类型为 null") {
+        debug_panel::ObjectView v;
+        v.className = "Brick";
+
+        CHECK(debug_panel::objectViewToJson(v)["typeData"].is_null());
+    }
+}
+
+TEST_CASE("DebugSnapshotJson: physics 字段完整") {
+    debug_panel::PhysicsStats p;
+    p.enabled = true;
+    p.bodyCount = 12;
+    p.staticBodies = 7;
+    p.kinematicBodies = 1;
+    p.dynamicBodies = 4;
+    p.awakeBodies = 3;
+    p.sleepingBodies = 9;
+    p.contactCount = 5;
+    p.touchingContacts = 2;
+    p.nonFiniteBodies = 1;
+
+    const auto j = debug_panel::physicsToJson(p);
+
+    CHECK(j["enabled"] == true);
+    CHECK(j["bodyCount"] == 12);
+    CHECK(j["staticBodies"] == 7);
+    CHECK(j["kinematicBodies"] == 1);
+    CHECK(j["dynamicBodies"] == 4);
+    CHECK(j["awakeBodies"] == 3);
+    CHECK(j["sleepingBodies"] == 9);
+    CHECK(j["contactCount"] == 5);
+    CHECK(j["touchingContacts"] == 2);
+    CHECK(j["nonFiniteBodies"] == 1);
+}
+
+TEST_CASE("DebugSnapshotJson: 客户端列表与未验证计数") {
+    debug_panel::SnapshotMeta m;
+    m.unverifiedClients = 2;
+
+    debug_panel::ClientView a;
+    a.address = "127.0.0.1:50001";
+    a.connected = true;
+    a.verified = true;
+    a.playerId = 77;
+    a.playerClass = "Mario";
+    a.lastRecvAgeMs = 12;
+    a.packetsRecv = 1000;
+    a.bytesRecv = 64000;
+    m.clients.push_back(a);
+
+    // 未验证的连接：没有 playerId，也还没收到过包
+    debug_panel::ClientView b;
+    b.address = "192.168.1.9:50002";
+    b.connected = true;
+    b.verified = false;
+    b.lastRecvAgeMs = -1;
+    m.clients.push_back(b);
+
+    const auto j = debug_panel::clientsToJson(m);
+
+    CHECK(j["count"] == 2);
+    CHECK(j["unverified"] == 2);
+    REQUIRE(j["list"].is_array());
+    REQUIRE(j["list"].size() == 2);
+
+    CHECK(j["list"][0]["address"] == "127.0.0.1:50001");
+    CHECK(j["list"][0]["verified"] == true);
+    CHECK(j["list"][0]["playerId"].get<unsigned>() == 77);
+    CHECK(j["list"][0]["playerClass"] == "Mario");
+    CHECK(j["list"][0]["lastRecvAgeMs"].get<std::int64_t>() == 12);
+    CHECK(j["list"][0]["packetsRecv"].get<std::uint64_t>() == 1000);
+
+    // 未验证客户端不暴露 playerId，未收包时 lastRecvAgeMs 为 null（不是 -1）
+    CHECK(j["list"][1]["verified"] == false);
+    CHECK(j["list"][1]["playerId"].is_null());
+    CHECK(j["list"][1]["lastRecvAgeMs"].is_null());
+}

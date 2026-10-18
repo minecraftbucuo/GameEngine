@@ -363,6 +363,11 @@ private:
         packet.clear();
         packet.append(m_recvBuf.data() + 4, len);
         m_recvBuf.erase(m_recvBuf.begin(), m_recvBuf.begin() + 4 + static_cast<std::ptrdiff_t>(len));
+#ifdef SERVER_BUILD
+        last_receive_at = std::chrono::steady_clock::now();
+        ++packets_received;
+        bytes_received += len;
+#endif
         return Status::Done;
     }
 
@@ -370,4 +375,34 @@ private:
     eng::Packet m_outgoing;               // 帧聚合缓冲
     std::vector<std::uint8_t> m_recvBuf;  // 接收缓冲（拆帧状态机）
     std::vector<std::uint8_t> m_sendBuf;  // 发送缓冲（底层不可写时暂存）
+
+#ifdef SERVER_BUILD
+public:
+    // 调试面板用的收包统计（只读快照）。只在服务端编译，客户端零开销。
+    struct RecvStats {
+        bool everReceived = false;   // false = 至今一个完整帧都没收到过
+        std::int64_t lastRecvAgeMs = -1;
+        std::uint64_t packets = 0;
+        std::uint64_t bytes = 0;
+    };
+
+    [[nodiscard]] RecvStats getRecvStats() const {
+        RecvStats s;
+        s.packets = packets_received;
+        s.bytes = bytes_received;
+        // 默认构造的 time_point 纪元计数为 0，用来区分"没收到过"和"很久以前收到过"
+        if (last_receive_at.time_since_epoch().count() != 0) {
+            s.everReceived = true;
+            s.lastRecvAgeMs = static_cast<std::int64_t>(
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - last_receive_at).count());
+        }
+        return s;
+    }
+
+private:
+    std::chrono::steady_clock::time_point last_receive_at{};
+    std::uint64_t packets_received = 0;
+    std::uint64_t bytes_received = 0;
+#endif
 };

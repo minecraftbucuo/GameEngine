@@ -16,6 +16,10 @@
 #include "Scene.h"
 #include "GameObject.h"
 #include "ISerializable.h"
+#include "Mario.h"
+#include "Goomba.h"
+#include "Koopa.h"
+#include "PhysicsWorld.h"
 
 #include "Components/MoveComponent.h"
 #include "Components/GravityComponent.h"
@@ -66,6 +70,95 @@ void collectComponents(GameObject& obj, debug_panel::ObjectView& v) {
     }
 }
 
+const char* koopaStateName(KoopaState s) {
+    switch (s) {
+        case KoopaState::Walking:     return "Walking";
+        case KoopaState::ShellIdle:   return "ShellIdle";
+        case KoopaState::ShellMoving: return "ShellMoving";
+    }
+    return "Unknown";
+}
+
+// 具体类型的私有状态。这些字段没有统一接口，只能 dynamic_cast 后逐个读；
+// 不认识的类保持 Kind::None，JSON 里 typeData 就是 null。
+void collectTypeData(GameObject& obj, debug_panel::ObjectView& v) {
+    using Kind = debug_panel::ObjectView::TypeData::Kind;
+
+    if (auto* mario = dynamic_cast<Mario*>(&obj)) {
+        v.type.kind = Kind::Mario;
+        v.type.isBig = mario->getIsBig();
+        v.type.isPlayer = mario->getIsPlayer();
+        v.type.transforming = mario->isTransforming();
+
+        // 血量在组件里，不在 Mario 自己身上
+        if (const auto hp = obj.tryGetComponent<HealthBar>()) {
+            v.type.health = hp->getHealth();
+        }
+        return;
+    }
+
+    if (auto* goomba = dynamic_cast<Goomba*>(&obj)) {
+        v.type.kind = Kind::Goomba;
+        v.type.squashed = goomba->isDead();
+        v.type.killedByFireball = goomba->isKilledByFireball();
+        return;
+    }
+
+    if (auto* koopa = dynamic_cast<Koopa*>(&obj)) {
+        v.type.kind = Kind::Koopa;
+        const KoopaState st = koopa->getState();
+        v.type.stateCode = static_cast<int>(st);
+        v.type.stateName = koopaStateName(st);
+        v.type.shellMoving = koopa->isShellMoving();
+        v.type.killed = koopa->isKilled();
+        return;
+    }
+}
+
+// 物理统计。当前工程 usePhysics 从未被置 true，getPhysicsWorld() 恒为 nullptr，
+// 所以正常跑起来 enabled=false、其余全是 0——这是真实状态，不是采集失败。
+debug_panel::PhysicsStats collectPhysics(Scene* scene) {
+    debug_panel::PhysicsStats st;
+
+    if (scene == nullptr) return st;
+
+    physics::PhysicsWorld* pw = scene->getPhysicsWorld();
+    if (pw == nullptr) return st;
+
+    b2World* world = pw->getWorld();
+    if (world == nullptr) return st;
+
+    st.enabled = true;
+
+    for (b2Body* body = world->GetBodyList(); body != nullptr; body = body->GetNext()) {
+        ++st.bodyCount;
+
+        switch (body->GetType()) {
+            case b2_staticBody:    ++st.staticBodies;    break;
+            case b2_kinematicBody: ++st.kinematicBodies; break;
+            case b2_dynamicBody:   ++st.dynamicBodies;   break;
+        }
+
+        if (body->IsAwake()) {
+            ++st.awakeBodies;
+        } else {
+            ++st.sleepingBodies;
+        }
+
+        const b2Vec2 pos = body->GetPosition();
+        if (!std::isfinite(pos.x) || !std::isfinite(pos.y)) {
+            ++st.nonFiniteBodies;
+        }
+    }
+
+    for (b2Contact* c = world->GetContactList(); c != nullptr; c = c->GetNext()) {
+        ++st.contactCount;
+        if (c->IsTouching()) ++st.touchingContacts;
+    }
+
+    return st;
+}
+
 debug_panel::ObjectView collectObject(GameObject& obj) {
     debug_panel::ObjectView v;
 
@@ -103,6 +196,7 @@ debug_panel::ObjectView collectObject(GameObject& obj) {
     }
 
     collectComponents(obj, v);
+    collectTypeData(obj, v);
 
     return v;
 }
@@ -136,6 +230,29 @@ std::string buildDebugSnapshot(Scene* scene, const DebugSnapshotContext& ctx,
             if (!list[i]) continue;   // 理论上不该有 null，防御一下
             views.push_back(collectObject(*list[i]));
             if (!views.back().finite) ++meta.nonFiniteObjects;
+        }
+    }
+
+    meta.physics = collectPhysics(scene);
+
+    // 客户端列表只在服务端有意义；没有 NetworkManager 就留空
+    if (scene != nullptr) {
+        if (const NetworkManager* nm = scene->getNetworkManager()) {
+            const auto infos = nm->collectClientDebugInfo();
+            meta.clients.reserve(infos.size());
+            for (const auto& c : infos) {
+                debug_panel::ClientView cv;
+                cv.address = c.address;
+                cv.connected = c.connected;
+                cv.verified = c.verified;
+                cv.playerId = c.playerId;
+                cv.playerClass = c.playerClass;
+                cv.lastRecvAgeMs = c.lastRecvAgeMs;
+                cv.packetsRecv = c.packetsRecv;
+                cv.bytesRecv = c.bytesRecv;
+                meta.clients.push_back(std::move(cv));
+            }
+            meta.unverifiedClients = nm->getUnverifiedCount();
         }
     }
 

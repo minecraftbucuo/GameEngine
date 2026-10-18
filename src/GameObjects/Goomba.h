@@ -38,6 +38,11 @@ public:
         return is_squashed;
     }
 
+    // 是否被炮弹击毙（与"被踩扁"区分：击毙是抛飞坠落，踩扁是原地压扁）
+    bool isKilledByFireball() const {
+        return killed_by_fireball;
+    }
+
     void serialize(eng::Packet& packet, NetworkMsg type) override;
 
     void deserialize(eng::Packet& packet) override;

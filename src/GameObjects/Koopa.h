@@ -83,6 +83,11 @@ public:
         return state;
     }
 
+    // 被火系击毙后处于坠落中（不再参与任何交互）
+    bool isKilled() const {
+        return is_killed;
+    }
+
     // ISerializable：SpawnObject 快照支持中途加入还原，UpdateObject 供客户端同步
     void serialize(eng::Packet& packet, NetworkMsg type) override;
     void deserialize(eng::Packet& packet) override;
