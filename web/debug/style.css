@@ -102,9 +102,10 @@ header {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 14px;
-  min-width: 108px;
+  /* 固定宽度：数值位数变化不再撑开/收窄卡片，相邻卡不会左右挪 */
+  width: 122px;
 }
-.card.wide { flex: 1; min-width: 240px; }
+.card.wide { flex: 1; width: auto; min-width: 240px; }
 
 .card-label { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
 .card-value { font-size: 18px; font-variant-numeric: tabular-nums; }
@@ -113,29 +114,12 @@ header {
 .card.warn .card-value { color: var(--warn); }
 .card.bad .card-value { color: var(--bad); }
 
-/* ── 客户端区块 ─────────────────────────────────────────── */
-
-.clients {
-  flex: 0 0 auto;
-  padding: 0 16px 10px;
-  max-height: 190px;
-  overflow: auto;
-}
-
-.section-head {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.section-title { font-size: 12px; color: var(--text); }
-.section-head .muted { font-size: 12px; }
+/* ── 客户端表（在表格视图的「客户端」子页里） ───────────── */
 
 /* 客户端表比对象表窄，不需要 sticky 表头抢层级 */
-.clients table { font-size: 12px; }
-.clients thead th { position: static; background: transparent; padding: 4px 10px; }
-.clients tbody td { padding: 4px 10px; }
+#clients-table { font-size: 12px; }
+#clients-table thead th { position: static; background: transparent; padding: 4px 10px; }
+#clients-table tbody td { padding: 4px 10px; }
 
 /* ── 工具栏 ─────────────────────────────────────────────── */
 
@@ -166,8 +150,7 @@ header {
   background: rgba(88, 166, 255, .10);
 }
 
-.map-toolbar,
-.table-toolbar {
+.map-toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -273,6 +256,49 @@ button.ghost {
 button.ghost:hover { color: var(--text); border-color: var(--muted); filter: none; }
 button.ghost.active { color: var(--warn); border-color: var(--warn); }
 
+/* ── 表格子页 ───────────────────────────────────────────────── */
+
+.subtabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 0 8px;
+}
+
+.sub-view {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 筛选按钮行 */
+.filter-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 8px;
+}
+
+.filter-label { color: var(--muted); font-size: 12px; }
+
+.filter-btn {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.filter-btn:hover { color: var(--text); filter: none; }
+.filter-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(88, 166, 255, .12);
+}
+
+.filter-row input[type="search"] { margin-left: auto; width: 220px; }
+
 /* ── 对象表 ─────────────────────────────────────────────── */
 
 main {
@@ -287,6 +313,7 @@ table {
   border-collapse: separate;
   border-spacing: 0;
   font-variant-numeric: tabular-nums;
+  table-layout: fixed;
 }
 
 thead th {
@@ -301,15 +328,47 @@ thead th {
   color: var(--muted);
   padding: 8px 10px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* ── 对象表列宽（固定，防止数字跳动时整列左右晃） ─────────────── */
+/* 类型状态常有多个 chip（HP/大小/变身/被踩扁…），给足宽度；
+   组件固定宽不吃剩余，别让它把类型状态挤扁。表格 width:100% 时
+   剩余空间按各列宽度比例摊，均摊后类型状态更宽。 */
+#table thead th:nth-child(1) { width: 50px; }   /* ID */
+#table thead th:nth-child(2) { width: 92px; }   /* Class */
+#table thead th:nth-child(3) { width: 60px; }   /* Tag */
+#table thead th:nth-child(4) { width: 72px; }   /* 状态 */
+#table thead th:nth-child(5) { width: 175px; }  /* 类型状态 */
+#table thead th:nth-child(6) { width: 84px; }   /* x */
+#table thead th:nth-child(7) { width: 84px; }   /* y */
+#table thead th:nth-child(8) { width: 72px; }   /* vx */
+#table thead th:nth-child(9) { width: 72px; }   /* vy */
+#table thead th:nth-child(10) { width: 170px; } /* 组件 */
+#table thead th:nth-child(11) { width: 56px; }  /* NetID */
+
+/* ── 客户端表列宽 ───────────────────────────────────────────── */
+#clients-table thead th:nth-child(1) { width: 130px; } /* 地址 */
+#clients-table thead th:nth-child(2) { width: 80px; }  /* 状态 */
+#clients-table thead th:nth-child(3) { width: 78px; }  /* playerId */
+#clients-table thead th:nth-child(4) { width: 90px; }  /* 角色 */
+#clients-table thead th:nth-child(5) { width: 95px; }  /* 上次收包 */
+#clients-table thead th:nth-child(6) { width: 85px; }  /* 收包数 */
+#clients-table thead th:nth-child(7) { width: 95px; }  /* 字节数 */
 
 tbody td {
   padding: 5px 10px;
   border-bottom: 1px solid rgba(48, 54, 61, .5);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 tbody tr:hover { background: var(--panel-2); }
+
+/* 双击行跟随会顺带选中单元格文字，蓝色选区很碍眼，禁掉 */
+#table tbody, #clients-table tbody { user-select: none; }
 
 .mono { font-family: ui-monospace, Consolas, "Courier New", monospace; }
 .num { text-align: right; font-family: ui-monospace, Consolas, monospace; }

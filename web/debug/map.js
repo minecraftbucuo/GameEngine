@@ -321,11 +321,15 @@ function mapDrawObject(ctx, obj, time) {
     const cy = mapW2SY(obj.cy);
     const speed = Math.hypot(obj.vx, obj.vy);
     const ang = Math.atan2(obj.vy, obj.vx);
-    // 太短会看成一道杂线，太长会横穿屏幕，两头都夹一下
-    const len = Math.max(20, Math.min(110, speed * 0.3));
+    // 箭头长度 = 1 秒的位移(世界单位) × 缩放，跟着地图一起缩放：
+    // 放大地图箭头变长、缩小变短，长短直接反映快慢。
+    // 只夹屏幕像素的上下限（太短看成杂线，太长横穿屏幕）。
+    let len = speed * mapState.scale;
+    len = Math.max(14, Math.min(150, len));
     const ex = cx + Math.cos(ang) * len;
     const ey = cy + Math.sin(ang) * len;
-    const head = 7;
+    // 箭头头部跟线长一起缩，否则放大后头太小学不成比例
+    const head = Math.max(5, Math.min(12, len * 0.22));
 
     // 先画一遍深色描边，白箭头压在浅色对象上也能看清
     for (const pass of [{ color: 'rgba(13,17,23,0.85)', width: 4.5 },
@@ -641,6 +645,20 @@ function mapUpdateFollowHint() {
 }
 
 // ── 对外入口 ────────────────────────────────────────────────────────
+
+// 表格双击跳转过来用：直接跟随指定对象。fitPending 必须清掉，
+// 否则切到地图后第一次绘制会先做视野适配，把跟随目标甩出屏幕。
+function mapFollowById(id) {
+  if (!mapState.canvas) return;
+  mapState.fitPending = false;
+  // 从表格跳过来时视野往往还是全局缩放（scale≈0.06），对象只有几个像素，
+  // "跟随了"但根本看不清——拉到能看清对象的级别再开始跟
+  if (mapState.scale < 0.8) mapState.scale = 1.2;
+  mapState.followId = id;
+  mapUpdateFollowHint();
+  mapStartLoop();
+  mapDraw();
+}
 
 function mapInit() {
   mapState.canvas = mapEl('map-canvas');

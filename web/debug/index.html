@@ -32,28 +32,6 @@
 
   <section id="cards" class="cards"></section>
 
-  <!-- 客户端连接：无连接时只占一行，有连接时展开成小表 -->
-  <section class="clients">
-    <div class="section-head">
-      <span class="section-title">客户端</span>
-      <span id="clients-count" class="muted"></span>
-    </div>
-    <table id="clients-table" class="hidden">
-      <thead>
-        <tr>
-          <th>地址</th>
-          <th>状态</th>
-          <th class="num">playerId</th>
-          <th>角色</th>
-          <th class="num">上次收包</th>
-          <th class="num">收包数</th>
-          <th class="num">字节数</th>
-        </tr>
-      </thead>
-      <tbody id="clients-tbody"></tbody>
-    </table>
-  </section>
-
   <section class="toolbar">
     <nav class="tabs">
       <button id="tab-map" class="tab active" data-view="map">地图</button>
@@ -70,13 +48,6 @@
       <button id="btn-fit-all" class="ghost">全览</button>
       <span id="follow-hint" class="muted"></span>
     </div>
-
-    <!-- 表格工具条 -->
-    <div id="table-toolbar" class="table-toolbar hidden">
-      <input id="filter-text" type="search" placeholder="按 class / tag / id 过滤">
-      <label class="check"><input id="filter-suspect" type="checkbox"> 只看可疑</label>
-      <span id="visible-count" class="muted"></span>
-    </div>
   </section>
 
   <!-- 地图视图 -->
@@ -86,29 +57,78 @@
     <div class="map-hint">滚轮缩放 · 拖动平移 · 点击对象跟随 · 黄闪=卡住 洋红=NaN 橙虚线=未start</div>
   </section>
 
-  <!-- 表格视图 -->
+  <!-- 表格视图：对象 / 客户端 两个子页 -->
   <section id="view-table" class="view hidden">
-    <main>
-      <table id="table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Class</th>
-            <th>Tag</th>
-            <th>状态</th>
-            <th>类型状态</th>
-            <th class="num">x</th>
-            <th class="num">y</th>
-            <th class="num">vx</th>
-            <th class="num">vy</th>
-            <th>组件</th>
-            <th class="num">net</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-      <div id="empty" class="empty hidden">没有匹配的对象</div>
-    </main>
+    <div class="subtabs">
+      <button id="subtab-objects" class="tab active" data-sub="objects">对象</button>
+      <button id="subtab-clients" class="tab" data-sub="clients">客户端</button>
+    </div>
+
+    <!-- 对象子页 -->
+    <div id="sub-objects" class="sub-view">
+      <div class="filter-row">
+        <span class="filter-label">筛选</span>
+        <button class="filter-btn active" data-filter="all">全部</button>
+        <button class="filter-btn" data-filter="moving" title="|vx| 或 |vy| &gt; 1">移动中</button>
+        <button class="filter-btn" data-filter="stuck" title="有速度但位置不动">卡住</button>
+        <button class="filter-btn" data-filter="abnormal" title="NaN / 未start / 已销毁 / inactive">异常</button>
+        <button class="filter-btn" data-filter="enemy" title="Goomba / Koopa / Bowser">敌人</button>
+        <button class="filter-btn" data-filter="mario">Mario</button>
+        <span id="visible-count" class="muted"></span>
+        <span class="muted" style="margin-left:auto">双击行 → 地图跟随</span>
+      </div>
+      <main>
+        <table id="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Class</th>
+              <th>Tag</th>
+              <th>状态</th>
+              <th>类型状态</th>
+              <th class="num">x</th>
+              <th class="num">y</th>
+              <th class="num">vx</th>
+              <th class="num">vy</th>
+              <th>组件</th>
+              <th class="num" title="网络同步 ID（只有动态对象有）">NetID</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div id="empty" class="empty hidden">没有匹配的对象</div>
+      </main>
+    </div>
+
+    <!-- 客户端子页 -->
+    <div id="sub-clients" class="sub-view hidden">
+      <div class="filter-row">
+        <span class="filter-label">筛选</span>
+        <button class="filter-btn active" data-cfilter="all">全部</button>
+        <button class="filter-btn" data-cfilter="connected">已连接</button>
+        <button class="filter-btn" data-cfilter="disconnected">已断开</button>
+        <button class="filter-btn" data-cfilter="unverified" title="未通过 token 验证">未验证</button>
+        <button class="filter-btn" data-cfilter="stale" title="超过 2s 没收到包">卡死</button>
+        <span id="clients-count" class="muted"></span>
+      </div>
+      <main>
+        <table id="clients-table" class="hidden">
+          <thead>
+            <tr>
+              <th>地址</th>
+              <th>状态</th>
+              <th class="num">playerId</th>
+              <th>角色</th>
+              <th class="num">上次收包</th>
+              <th class="num">收包数</th>
+              <th class="num">字节数</th>
+            </tr>
+          </thead>
+          <tbody id="clients-tbody"></tbody>
+        </table>
+        <div id="clients-empty" class="empty">暂无客户端连接</div>
+      </main>
+    </div>
   </section>
 </div>
 

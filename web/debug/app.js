@@ -20,9 +20,10 @@ const state = {
   lastSnapshot: null,
   lastSeq: null,          // 用于丢弃重复快照，避免误判「卡住」
   prevPositions: new Map(),
-  filterText: '',
-  onlySuspect: false,
-  view: 'map',        // 'map' | 'table'
+  objectFilter: 'all',    // 对象快速筛选按钮：all / moving / stuck / abnormal / enemy / mario
+  clientFilter: 'all',    // 客户端快速筛选按钮：all / connected / disconnected / unverified / stale
+  view: 'map',          // 'map' | 'table'
+  subView: 'objects',   // 表格子页：'objects' | 'clients'
 };
 
 function escapeHtml(value) {
@@ -80,13 +81,16 @@ function switchView(view) {
   el('view-map').classList.toggle('hidden', view !== 'map');
   el('view-table').classList.toggle('hidden', view !== 'table');
   el('map-toolbar').classList.toggle('hidden', view !== 'map');
-  el('table-toolbar').classList.toggle('hidden', view !== 'table');
 
   if (view === 'map') {
     mapOnShow();
   } else {
     mapStopLoop();   // 切走就别再占着一帧一次的 rAF
-    if (state.lastSnapshot) renderTable(state.lastSnapshot);
+    if (state.lastSnapshot) {
+      // 恢复到上次的子页，两个表都刷一遍成本低
+      renderTable(state.lastSnapshot);
+      renderClients(state.lastSnapshot);
+    }
   }
 }
 
@@ -190,14 +194,18 @@ function render(snap) {
   }
 
   const meta = snap.meta;
+  // 数字全部补零到固定位数：位数变化会让字符串忽宽忽窄，
+  // 右上角这一行就会左右跳。配合 tabular-nums 字符数恒定 ⇒ 宽度恒定。
+  const pad = (n, w) => String(n).padStart(w, '0');
   el('meta').textContent =
-    `seq ${meta.seq} · 帧 ${meta.frame} · 运行 ${meta.uptimeSec.toFixed(0)}s · 构建 ${meta.buildCostUs}µs`;
+    `seq ${pad(meta.seq, 6)} · 帧 ${pad(meta.frame, 8)} · 运行 ${pad(meta.uptimeSec.toFixed(0), 4)}s · 构建 ${pad(meta.buildCostUs, 5)}µs`;
 
   renderCards(snap);
-  renderClients(snap);
 
   if (state.view === 'map') {
     mapRender(snap);
+  } else if (state.subView === 'clients') {
+    renderClients(snap);
   } else {
     renderTable(snap);
   }
@@ -217,24 +225,12 @@ function renderCards(snap) {
     .map(([name, n]) => `${escapeHtml(name)} ${n}`)
     .join(' · ');
 
-  // 物理统计：物理子系统未接入时 bodyCount 恒为 0，此时不要拿 0 去误导人
-  const phys = snap.physics || { enabled: false };
-  const physCard = phys.enabled
-    ? {
-      label: '物理',
-      value: `${phys.bodyCount} body`,
-      cls: phys.nonFiniteBodies > 0 ? 'bad' : '',
-    }
-    : { label: '物理', value: '未启用', cls: '' };
-
   const cards = [
     { label: '对象总数', value: objs.length, cls: '' },
     { label: '可疑', value: suspect, cls: suspect > 0 ? 'warn' : '' },
     { label: '非有限值', value: snap.meta.nonFiniteObjects, cls: snap.meta.nonFiniteObjects > 0 ? 'bad' : '' },
     { label: '平均帧耗时', value: snap.meta.avgFrameMs.toFixed(2) + ' ms', cls: '' },
     { label: '快照频率', value: snap.meta.snapshotHz + ' Hz', cls: '' },
-    physCard,
-    { label: '场景', value: snap.meta.scene, cls: '' },
   ];
 
   const html = cards.map((c) => `
@@ -243,63 +239,117 @@ function renderCards(snap) {
       <div class="card-value">${escapeHtml(c.value)}</div>
     </div>`).join('');
 
-  // 物理启用后把明细补在类型分布旁边，未启用就只显示一行说明
-  const physDetail = phys.enabled
-    ? `静 ${phys.staticBodies} · 动 ${phys.dynamicBodies} · 运动学 ${phys.kinematicBodies}`
-      + ` · 唤醒 ${phys.awakeBodies} · 睡眠 ${phys.sleepingBodies}`
-      + ` · 接触 ${phys.touchingContacts}/${phys.contactCount}`
-      + (phys.nonFiniteBodies > 0 ? ` · 坐标非有限 ${phys.nonFiniteBodies}` : '')
-    : '场景 usePhysics=false，未创建 b2World（统计全 0 是真实状态）';
-
   el('cards').innerHTML =
     html + `<div class="card wide"><div class="card-label">类型分布</div>
-            <div class="card-value small">${dist || '—'}</div></div>
-            <div class="card wide"><div class="card-label">物理明细</div>
-            <div class="card-value small">${escapeHtml(physDetail)}</div></div>`;
+            <div class="card-value small">${dist || '—'}</div></div>`;
 }
 
-// ── 客户端列表 ──────────────────────────────────────────────────────
+// ── 客户端列表（同样走行 DOM 复用，原因同对象表） ───────────────────
 
-function clientRowHtml(c) {
-  // 超过 2s 没收到包就标黄：TCP 还连着但对方可能已经卡死
+const CLI_CELL_CLS = ['mono', 'state', 'num', 'mono cls', 'num', 'num', 'num'];
+// 行 key 用 playerId：已验证客户端的 playerId 就是角色 networkId，天然唯一。
+// 未验证客户端没有 id，退回用列表下标——那只是验证前的短暂状态。
+const cliRowCache = new Map();
+
+function cliRowKey(c, i) {
+  return c.playerId != null ? 'p' + c.playerId : 'u' + i;
+}
+
+function ensureCliRow(key, c) {
+  let entry = cliRowCache.get(key);
+  if (entry) return entry;
+
+  const tr = document.createElement('tr');
+  const cells = CLI_CELL_CLS.map((cls) => {
+    const td = document.createElement('td');
+    td.className = cls;
+    tr.appendChild(td);
+    return td;
+  });
+  entry = { tr, cells };
+  cliRowCache.set(key, entry);
+  return entry;
+}
+
+function updateCliRow(entry, c) {
+  const cc = entry.cells;
   const stale = c.lastRecvAgeMs !== null && c.lastRecvAgeMs > 2000;
-  const rowCls = !c.connected ? 'row-inactive' : (stale ? 'row-stuck' : '');
-
-  const status = [];
-  status.push(c.connected ? '已连接' : '已断开');
-  status.push(c.verified ? '已验证' : '未验证');
-
+  const status = [
+    c.connected ? '已连接' : '已断开',
+    c.verified ? '已验证' : '未验证',
+  ].join(' · ');
   // 刚收过包时显示毫秒，避免「0.0s 前」这种看不出差别的写法
   const age = c.lastRecvAgeMs === null
     ? '从未'
     : (c.lastRecvAgeMs < 1000 ? `${c.lastRecvAgeMs}ms 前` : `${(c.lastRecvAgeMs / 1000).toFixed(1)}s 前`);
 
-  return `<tr class="${rowCls}">
-    <td class="mono">${escapeHtml(c.address)}</td>
-    <td class="state">${status.join(' · ')}</td>
-    <td class="num">${c.playerId === null ? '—' : c.playerId}</td>
-    <td class="mono cls">${escapeHtml(c.playerClass || '—')}</td>
-    <td class="num">${age}</td>
-    <td class="num">${c.packetsRecv}</td>
-    <td class="num">${c.bytesRecv}</td>
-  </tr>`;
+  setCellHtml(cc[0], escapeHtml(c.address));
+  setCellText(cc[1], status);
+  setCellText(cc[2], c.playerId === null ? '—' : String(c.playerId));
+  setCellHtml(cc[3], escapeHtml(c.playerClass || '—'));
+  setCellText(cc[4], age);
+  setCellText(cc[5], String(c.packetsRecv));
+  setCellText(cc[6], String(c.bytesRecv));
+
+  const rowCls = !c.connected ? 'row-inactive' : (stale ? 'row-stuck' : '');
+  if (entry.tr.className !== rowCls) entry.tr.className = rowCls;
 }
+
+const CLIENT_FILTERS = {
+  all:          () => true,
+  connected:    (c) => c.connected === true,
+  disconnected: (c) => c.connected !== true,
+  unverified:   (c) => c.verified !== true,
+  stale:        (c) => c.connected === true && c.lastRecvAgeMs !== null && c.lastRecvAgeMs > 2000,
+};
 
 function renderClients(snap) {
   const clients = snap.clients || { count: 0, unverified: 0, list: [] };
   const countNode = el('clients-count');
   const table = el('clients-table');
+  const empty = el('clients-empty');
+  const tbody = el('clients-tbody');
 
   if (clients.count === 0) {
     countNode.textContent = '无连接';
     table.classList.add('hidden');
+    empty.textContent = '暂无客户端连接';
+    empty.classList.remove('hidden');
+    for (const entry of cliRowCache.values()) entry.tr.remove();
+    cliRowCache.clear();
     return;
   }
 
+  const cPred = CLIENT_FILTERS[state.clientFilter] || CLIENT_FILTERS.all;
+  const list = clients.list.filter(cPred);
+
   const unverified = clients.unverified > 0 ? `（${clients.unverified} 个未通过验证）` : '';
   countNode.textContent = `${clients.count} 个${unverified}`;
+
+  if (list.length === 0) {
+    table.classList.add('hidden');
+    empty.textContent = '没有匹配的客户端';
+    empty.classList.remove('hidden');
+    return;
+  }
+
   table.classList.remove('hidden');
-  el('clients-tbody').innerHTML = clients.list.map(clientRowHtml).join('');
+  empty.classList.add('hidden');
+  const seen = new Set();
+  for (let i = 0; i < list.length; i++) {
+    const c = list[i];
+    const key = cliRowKey(c, i);
+    seen.add(key);
+    const entry = ensureCliRow(key, c);
+    updateCliRow(entry, c);
+    tbody.appendChild(entry.tr);
+  }
+  for (const [key, entry] of cliRowCache) {
+    if (!seen.has(key)) {
+      entry.tr.remove();
+      cliRowCache.delete(key);
+    }
+  }
 }
 
 function compsHtml(c) {
@@ -341,13 +391,42 @@ function typeHtml(t) {
   return parts.join('');
 }
 
-function rowHtml(obj) {
-  const rowCls = [];
-  if (!obj.active) rowCls.push('row-inactive');
-  if (!obj.started) rowCls.push('row-nostart');
-  if (!obj.finite) rowCls.push('row-nonfinite');
-  if (obj.destroyed) rowCls.push('row-destroyed');
-  if (obj._stuck) rowCls.push('row-stuck');
+// ── 表格渲染：行 DOM 复用 ───────────────────────────────────────────
+// 之前每 100ms 用 innerHTML 全量重建 tbody，两个恶果：
+//   1. 重建后 :hover 状态丢失 → 鼠标放上去闪来闪去
+//   2. 两次点击之间元素被替换，click/dblclick 派发不出来 → 双击没反应
+// 现在行节点常驻（按 id 缓存），只更新单元格内容，DOM 稳定后
+// 原生 dblclick 和 hover 都正常。
+
+function setCellText(td, text) {
+  if (td._text !== text) { td.textContent = text; td._text = text; }
+}
+
+function setCellHtml(td, html) {
+  if (td._html !== html) { td.innerHTML = html; td._html = html; }
+}
+
+const OBJ_CELL_CLS = ['mono', 'mono cls', 'tag', 'state', 'type', 'num', 'num', 'num', 'num', 'comps', 'num'];
+const objRowCache = new Map();   // id -> { tr, cells }
+
+function ensureObjRow(obj) {
+  let entry = objRowCache.get(obj.id);
+  if (entry) return entry;
+
+  const tr = document.createElement('tr');
+  const cells = OBJ_CELL_CLS.map((cls) => {
+    const td = document.createElement('td');
+    td.className = cls;
+    tr.appendChild(td);
+    return td;
+  });
+  entry = { tr, cells };
+  objRowCache.set(obj.id, entry);
+  return entry;
+}
+
+function updateObjRow(entry, obj) {
+  const c = entry.cells;
 
   const flags = [];
   if (obj.destroyed) flags.push('已销毁');
@@ -357,38 +436,63 @@ function rowHtml(obj) {
   if (!obj.finite) flags.push('NaN');
   const stateText = flags.length > 0 ? flags.join(' ') : 'ok';
 
-  return `<tr class="${rowCls.join(' ')}">
-    <td class="mono">${obj.id}</td>
-    <td class="mono cls">${escapeHtml(obj.class)}</td>
-    <td class="tag">${escapeHtml(obj.tag)}</td>
-    <td class="state">${stateText}</td>
-    <td class="type">${typeHtml(obj.typeData)}</td>
-    <td class="num">${num(obj.x)}</td>
-    <td class="num">${num(obj.y)}</td>
-    <td class="num">${num(obj.vx)}</td>
-    <td class="num">${num(obj.vy)}</td>
-    <td class="comps">${compsHtml(obj.components)}</td>
-    <td class="num">${obj.networkId === null ? '—' : obj.networkId}</td>
-  </tr>`;
+  setCellText(c[0], String(obj.id));
+  setCellHtml(c[1], escapeHtml(obj.class));
+  setCellHtml(c[2], escapeHtml(obj.tag));
+  setCellText(c[3], stateText);
+  setCellHtml(c[4], typeHtml(obj.typeData));
+  setCellText(c[5], num(obj.x));
+  setCellText(c[6], num(obj.y));
+  setCellText(c[7], num(obj.vx));
+  setCellText(c[8], num(obj.vy));
+  setCellHtml(c[9], compsHtml(obj.components));
+  setCellText(c[10], obj.networkId === null ? '—' : String(obj.networkId));
+
+  const rowCls = [];
+  if (!obj.active) rowCls.push('row-inactive');
+  if (!obj.started) rowCls.push('row-nostart');
+  if (!obj.finite) rowCls.push('row-nonfinite');
+  if (obj.destroyed) rowCls.push('row-destroyed');
+  if (obj._stuck) rowCls.push('row-stuck');
+  const cls = rowCls.join(' ');
+  if (entry.tr.className !== cls) entry.tr.className = cls;
 }
 
+// 快速筛选按钮的谓词。isMoving 看「想要动」（速度非零），比看位移更准——
+// 刚重生还没走第一步的对象也算移动中。
+const OBJECT_FILTERS = {
+  all:      () => true,
+  moving:   (o) => Math.abs(o.vx) > 1 || Math.abs(o.vy) > 1,
+  stuck:    (o) => o._stuck === true,
+  abnormal: (o) => !o.started || !o.active || !o.finite || o.destroyed,
+  enemy:    (o) => o.class === 'Goomba' || o.class === 'Koopa' || o.class === 'Bowser',
+  mario:    (o) => o.class === 'Mario',
+};
+
 function renderTable(snap) {
-  const q = state.filterText.trim().toLowerCase();
-  const rows = [];
+  const pred = OBJECT_FILTERS[state.objectFilter] || OBJECT_FILTERS.all;
+  const tbody = el('tbody');
   let visible = 0;
+  const seen = new Set();
 
   for (const obj of snap.objects) {
-    if (state.onlySuspect && !isSuspect(obj)) continue;
-    if (q !== '') {
-      const hay = `${obj.id} ${obj.class} ${obj.tag}`.toLowerCase();
-      if (!hay.includes(q)) continue;
-    }
+    if (!pred(obj)) continue;
     visible++;
-    rows.push(rowHtml(obj));
+    seen.add(obj.id);
+    const entry = ensureObjRow(obj);
+    updateObjRow(entry, obj);
+    tbody.appendChild(entry.tr);   // 已在 tbody 里就只是挪到正确顺序，成本低
+  }
+
+  // 被筛掉/已销毁的行摘掉
+  for (const [id, entry] of objRowCache) {
+    if (!seen.has(id)) {
+      entry.tr.remove();
+      objRowCache.delete(id);
+    }
   }
 
   el('visible-count').textContent = `${visible} / ${snap.objects.length}`;
-  el('tbody').innerHTML = rows.join('');
   el('empty').classList.toggle('hidden', visible > 0);
 }
 
@@ -427,14 +531,61 @@ el('btn-logout').addEventListener('click', () => {
   showAuth('');
 });
 
-el('filter-text').addEventListener('input', (event) => {
-  state.filterText = event.target.value;
-  if (state.lastSnapshot) renderTable(state.lastSnapshot);
+// 对象快速筛选按钮组（单选）
+document.querySelectorAll('#sub-objects .filter-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    state.objectFilter = btn.dataset.filter;
+    document.querySelectorAll('#sub-objects .filter-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    if (state.lastSnapshot) renderTable(state.lastSnapshot);
+  });
 });
 
-el('filter-suspect').addEventListener('change', (event) => {
-  state.onlySuspect = event.target.checked;
-  if (state.lastSnapshot) renderTable(state.lastSnapshot);
+// 客户端快速筛选按钮组（单选）
+document.querySelectorAll('#sub-clients .filter-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    state.clientFilter = btn.dataset.cfilter;
+    document.querySelectorAll('#sub-clients .filter-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    if (state.lastSnapshot) renderClients(state.lastSnapshot);
+  });
+});
+
+// 表格子页切换：对象 / 客户端
+function switchSubView(sub) {
+  state.subView = sub;
+  el('subtab-objects').classList.toggle('active', sub === 'objects');
+  el('subtab-clients').classList.toggle('active', sub === 'clients');
+  el('sub-objects').classList.toggle('hidden', sub !== 'objects');
+  el('sub-clients').classList.toggle('hidden', sub !== 'clients');
+  if (state.lastSnapshot) {
+    if (sub === 'objects') renderTable(state.lastSnapshot);
+    else renderClients(state.lastSnapshot);
+  }
+}
+el('subtab-objects').addEventListener('click', () => switchSubView('objects'));
+el('subtab-clients').addEventListener('click', () => switchSubView('clients'));
+
+// 表格行双击 → 跳到地图并跟随该对象（再点地图空白处解除）。
+// 行 DOM 已常驻，原生 dblclick 可以直接用。
+el('tbody').addEventListener('dblclick', (event) => {
+  const tr = event.target.closest('tr');
+  if (!tr) return;
+  const id = Number(tr.querySelector('td')?.textContent);
+  if (!Number.isFinite(id)) return;
+  switchView('map');
+  mapFollowById(id);
+});
+
+// 客户端表：双击跟随该客户端的角色。playerId 就是角色对象的 networkId，
+// 用它反查地图对象；角色不在场景里（未进入/已断开）就不跳转。
+el('clients-tbody').addEventListener('dblclick', (event) => {
+  const tr = event.target.closest('tr');
+  if (!tr || !state.lastSnapshot) return;
+  const pid = Number(tr.querySelectorAll('td')[2]?.textContent);
+  if (!Number.isFinite(pid)) return;
+  const obj = state.lastSnapshot.objects.find((o) => o.networkId === pid);
+  if (!obj) return;
+  switchView('map');
+  mapFollowById(obj.id);
 });
 
 // ── 标签页与地图控件 ────────────────────────────────────────────────
