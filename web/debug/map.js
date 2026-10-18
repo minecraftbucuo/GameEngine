@@ -38,6 +38,16 @@ const mapState = {
   drag: null,
   dpr: 1,
   overlays: { velocity: true, boxes: true, grid: true, centers: false },
+
+  // ── 平滑插值 ────────────────────────────────────────────────────
+  // 服务端 10Hz 采样、前端按同样节奏轮询，直接画就是 10fps 的跳帧。
+  // 保留最近两份快照，按时间在两份之间插值，再用 rAF 以 60fps 重绘。
+  frames: [],          // [{ snap, at }]，最多两份，at = 到达时刻(performance.now)
+  lastSeq: null,       // 去重：轮询快于采样时同一份快照会重复到达
+  renderObjects: null, // 本帧实际画出来的对象（插值后的副本），命中测试用它
+  rafId: null,
+  frozenAt: null,      // 暂停时冻结的渲染时刻
+
   last: null,
   now: 0,
 };
@@ -93,13 +103,13 @@ function mapBounds(objects) {
 //   cover   —— 铺满视口（宽关卡按高度算），对象看得清，横向靠平移
 //   contain —— 整个关卡装进视口，能看全局但对象会小到看不清
 // 横版关卡通常是十几比一的长条（本关卡 15822×960），默认用 cover 才有可读性。
-function mapFit(mode) {
-  if (!mapState.canvas || !mapState.last) return;
+function mapFit(mode, objects) {
+  if (!mapState.canvas || !objects) return;
   const cw = mapState.canvas.clientWidth;
   const ch = mapState.canvas.clientHeight;
   if (cw < 10 || ch < 10) return;
 
-  const b = mapBounds(mapState.last.objects);
+  const b = mapBounds(objects);
   const pad = 24;
   const sx = (cw - pad * 2) / b.w;
   const sy = (ch - pad * 2) / b.h;
@@ -113,7 +123,7 @@ function mapFit(mode) {
     mapState.offsetY = b.y - (ch / scale - b.h) / 2;
   } else {
     // 铺满模式：有马里奥就以它为中心，否则从关卡左端开始（横向居中会落到中间段）
-    const mario = mapState.last.objects.find((o) => o.class === 'Mario');
+    const mario = objects.find((o) => o.class === 'Mario');
     const centerX = mario
       ? mario.x + mario.w / 2
       : b.x + Math.min(b.w, cw / scale) / 2;
@@ -339,9 +349,84 @@ function mapDrawObject(ctx, obj, time) {
   }
 }
 
+// 按时间把最近两份快照插值成当前该画的一帧。
+//
+// 关键点：渲染时刻固定落后一个采样周期。因为「最新那份」永远是 t=1，
+// 只有往回退一个周期，t 才会从 0 平滑走到 1，并在下一份快照到达时无缝接上。
+// 代价是画面滞后一个周期（10Hz 下 100ms，肉眼基本无感）。
+//
+// 不用「按速度外推」：500ms 周期下，100px/s 的敌人会外推 50px，
+// 一旦它中途掉头就会明显回弹，比卡顿更难受。位置插值不会过冲。
+function mapBuildRenderList() {
+  const frames = mapState.frames;
+  if (frames.length === 0) return null;
+
+  const newest = frames[frames.length - 1];
+
+  // 只有一份快照：直接显示，无从插值
+  if (frames.length === 1) return newest.snap.objects;
+
+  const older = frames[frames.length - 2];
+  const span = newest.at - older.at;
+  if (span <= 0) return newest.snap.objects;
+
+  const now = mapState.frozenAt !== null ? mapState.frozenAt : performance.now();
+  const renderAt = now - span;
+  const t = Math.min(1, Math.max(0, (renderAt - older.at) / span));
+
+  const prevById = new Map();
+  for (const o of older.snap.objects) prevById.set(o.id, o);
+
+  const out = [];
+  for (const cur of newest.snap.objects) {
+    const prev = prevById.get(cur.id);
+
+    // 新生成的对象没有上一帧位置，或坐标本身不可用：原样画
+    if (!prev || !Number.isFinite(prev.x) || !Number.isFinite(cur.x)
+        || !Number.isFinite(prev.y) || !Number.isFinite(cur.y)) {
+      out.push(cur);
+      continue;
+    }
+
+    const dx = cur.x - prev.x;
+    const dy = cur.y - prev.y;
+
+    // 位移过大多半是重生/传送/掉落穿出场景，插值会拖出一条横穿地图的线
+    if (Math.abs(dx) > 400 || Math.abs(dy) > 400) {
+      out.push(cur);
+      continue;
+    }
+
+    const nx = prev.x + dx * t;
+    const ny = prev.y + dy * t;
+
+    // 碰撞箱必须跟着插值后的位置走。直接 ...cur 会把最新快照的碰撞箱原样带过来，
+    // 而 x/y 是插值后的 —— 移动中的对象两者会错开最多一个采样周期的位移。
+    // 这里只让锚点跟随，相对偏移保留（Bowser 的 128×128 精灵对 80×100 碰撞体，
+    // offset 不是 0，硬对齐反而会把它压到实体左上角）。
+    let box = cur.collisionBox;
+    if (box && Number.isFinite(box.x) && Number.isFinite(box.y)) {
+      box = { ...box, x: nx + (box.x - cur.x), y: ny + (box.y - cur.y) };
+    }
+
+    out.push({
+      ...cur,
+      x: nx,
+      y: ny,
+      cx: prev.cx + (cur.cx - prev.cx) * t,
+      cy: prev.cy + (cur.cy - prev.cy) * t,
+      collisionBox: box,
+    });
+  }
+
+  return out;
+}
+
 function mapDraw() {
-  const snap = mapState.last;
-  if (!snap || !mapState.ctx) return;
+  if (!mapState.ctx) return;
+
+  const objects = mapBuildRenderList();
+  if (!objects) return;
 
   // 每次重绘前都对齐后备缓冲与 CSS 尺寸。
   // 「客户端」区块展开/收起、卡片文字换行都会改变画布高度，但这些布局变化
@@ -355,14 +440,15 @@ function mapDraw() {
   const ch = mapState.canvas.clientHeight;
   if (cw < 10 || ch < 10) return;
 
-  if (mapState.fitPending) mapFit(mapState.fitMode);
+  if (mapState.fitPending) mapFit(mapState.fitMode, objects);
 
   if (mapState.followId !== null) {
-    const target = snap.objects.find((o) => o.id === mapState.followId);
+    const target = objects.find((o) => o.id === mapState.followId);
     if (target) mapCenterOn(target);
     else mapState.followId = null;   // 跟随对象没了就自动解除
   }
 
+  mapState.renderObjects = objects;
   mapState.now = performance.now();
 
   // 用恒等变换清满整个后备缓冲。按 CSS 尺寸清的话，dpr 非整数时
@@ -377,19 +463,20 @@ function mapDraw() {
 
   if (mapState.overlays.grid) mapDrawGrid(ctx, cw, ch);
 
-  const sorted = snap.objects.slice().sort((a, b) => drawOrderIndex(a.class) - drawOrderIndex(b.class));
+  const sorted = objects.slice().sort((a, b) => drawOrderIndex(a.class) - drawOrderIndex(b.class));
   for (const obj of sorted) mapDrawObject(ctx, obj, mapState.now);
 }
 
 // ── 命中测试与交互 ──────────────────────────────────────────────────
 
 function mapHitTest(sx, sy) {
-  const snap = mapState.last;
-  if (!snap) return null;
+  // 用「本帧实际画出来的位置」判定，否则插值期间点击会对不上眼睛看到的位置
+  const objects = mapState.renderObjects;
+  if (!objects) return null;
 
   // 反向遍历：后画的在上层，先命中
-  for (let i = snap.objects.length - 1; i >= 0; i--) {
-    const o = snap.objects[i];
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const o = objects[i];
     if (!Number.isFinite(o.x) || !Number.isFinite(o.y)) continue;
     const x = mapW2SX(o.x);
     const y = mapW2SY(o.y);
@@ -400,12 +487,16 @@ function mapHitTest(sx, sy) {
   return null;
 }
 
-function mapShowTooltip(obj, sx, sy) {
+function mapShowTooltip(hit, sx, sy) {
   const tip = mapEl('map-tooltip');
-  if (!obj) {
+  if (!hit) {
     tip.classList.add('hidden');
     return;
   }
+
+  // 位置是按插值画的，但数值要显示最新快照里的真实值——
+  // 调试时看到一堆插出来的小数尾数会分不清哪个是真的。
+  const obj = (mapState.last && mapState.last.objects.find((o) => o.id === hit.id)) || hit;
 
   const lines = [
     `<b>${escapeHtml(obj.class)}</b> #${obj.id}`,
@@ -571,13 +662,58 @@ function mapInit() {
   window.__map = mapState;
 }
 
-// app.js 每拿到一份快照就调一次。obj._stuck 已在那里算好。
+// app.js 每拿到一份「新」快照就调一次。obj._stuck 已在那里算好。
+// 这里只负责入帧缓冲，真正的绘制交给 rAF 循环，这样 10Hz 的数据也能画成 60fps。
 function mapRender(snap) {
   mapState.last = snap;
-  if (!mapState.canvas) return;
-  if (mapState.canvas.clientWidth < 10) return;   // 地图标签页还没显示出来
-  mapDraw();
+
+  if (mapState.lastSeq !== snap.meta.seq) {
+    mapState.lastSeq = snap.meta.seq;
+    mapState.frames.push({ snap, at: performance.now() });
+    // 只留两份：插值只需要前后两帧，多了反而会把 t 拉得不准
+    while (mapState.frames.length > 2) mapState.frames.shift();
+  }
+
+  if (!mapState.canvas || mapState.canvas.clientWidth < 10) return;   // 地图标签页还没显示
   mapUpdateFollowHint();
+  mapStartLoop();
+}
+
+// ── 动画循环 ────────────────────────────────────────────────────────
+
+function mapStartLoop() {
+  if (mapState.rafId !== null) return;
+  mapState.rafId = requestAnimationFrame(mapLoopStep);
+}
+
+function mapStopLoop() {
+  if (mapState.rafId !== null) {
+    cancelAnimationFrame(mapState.rafId);
+    mapState.rafId = null;
+  }
+}
+
+function mapLoopStep() {
+  mapState.rafId = null;
+
+  // 标签页切走 / 浏览器切到后台就不再续帧，回来时由 mapOnShow / mapRender 重启
+  const c = mapState.canvas;
+  if (!c || c.clientWidth < 10 || document.hidden) return;
+
+  mapDraw();
+  mapState.rafId = requestAnimationFrame(mapLoopStep);
+}
+
+// 暂停：冻结插值时刻，否则画面还会自己往前滑一小段才停
+function mapFreeze() {
+  mapState.frozenAt = performance.now();
+  mapStopLoop();
+  mapDraw();
+}
+
+function mapUnfreeze() {
+  mapState.frozenAt = null;
+  mapStartLoop();
 }
 
 function mapSetOverlay(name, on) {
@@ -601,14 +737,9 @@ function mapFitAll() {
   mapDraw();
 }
 
-function mapClearFollow() {
-  mapState.followId = null;
-  mapUpdateFollowHint();
-  mapDraw();
-}
-
 // 切换到地图标签页时画布尺寸才从 0 变成实际值，必须重新适配
 function mapOnShow() {
   mapResize();
+  mapStartLoop();
   mapDraw();
 }

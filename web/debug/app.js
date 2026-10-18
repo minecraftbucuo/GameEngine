@@ -1,9 +1,13 @@
 'use strict';
 
-// 面板前端：2Hz 轮询 /api/snapshot，渲染对象表。
+// 面板前端：轮询 /api/snapshot，渲染地图与表格。
 // 无第三方依赖——局域网里可能没有外网，CDN 不可靠。
+//
+// 轮询间隔是自适应的：跟着服务端 meta.snapshotHz 走。
+// 比它快只会拿到重复快照（靠 seq 去重），比它慢地图就会一卡一卡。
 
-const POLL_MS = 500;
+const POLL_MIN_MS = 80;
+const POLL_MAX_MS = 500;
 const TOKEN_KEY = 'ge-panel-token';
 
 const el = (id) => document.getElementById(id);
@@ -14,6 +18,7 @@ const state = {
   inFlight: false,
   paused: false,
   lastSnapshot: null,
+  lastSeq: null,          // 用于丢弃重复快照，避免误判「卡住」
   prevPositions: new Map(),
   filterText: '',
   onlySuspect: false,
@@ -79,8 +84,9 @@ function switchView(view) {
 
   if (view === 'map') {
     mapOnShow();
-  } else if (state.lastSnapshot) {
-    renderTable(state.lastSnapshot);
+  } else {
+    mapStopLoop();   // 切走就别再占着一帧一次的 rAF
+    if (state.lastSnapshot) renderTable(state.lastSnapshot);
   }
 }
 
@@ -92,11 +98,32 @@ function setConn(text, cls) {
 
 // ── 轮询 ────────────────────────────────────────────────────────────
 
+// 跟着服务端实际采样频率走。服务端被自动降级过的话 meta.snapshotHz 会变小，
+// 这里也跟着放慢，不会做无用请求。
+function pollInterval() {
+  const hz = state.lastSnapshot && state.lastSnapshot.meta
+    ? state.lastSnapshot.meta.snapshotHz
+    : 0;
+  if (!hz || hz < 1) return POLL_MAX_MS;
+  return Math.min(POLL_MAX_MS, Math.max(POLL_MIN_MS, Math.round(1000 / hz)));
+}
+
 async function tick() {
-  if (state.paused || state.inFlight) return;
+  if (state.paused) return;
+
   state.inFlight = true;
   try {
     const snap = await api('/api/snapshot');
+
+    // 轮询可能比服务端采样快，同一份快照会重复到达。
+    // 重复帧既没必要重绘，更关键的是会让「卡住」判定误报
+    // （两次相同位置 + 速度非零 = 看起来没动）。
+    if (state.lastSeq === snap.meta.seq) {
+      setConn('已连接', 'ok');
+      return;
+    }
+
+    state.lastSeq = snap.meta.seq;
     state.lastSnapshot = snap;
     setConn('已连接', 'ok');
     render(snap);
@@ -104,6 +131,7 @@ async function tick() {
     if (err.code === 401) {
       sessionStorage.removeItem(TOKEN_KEY);
       state.token = '';
+      state.lastSeq = null;
       stopPolling();
       showAuth('token 无效，请重新输入');
       return;
@@ -115,24 +143,30 @@ async function tick() {
     setConn('连接断开', 'bad');
   } finally {
     state.inFlight = false;
+    scheduleNext();
   }
+}
+
+function scheduleNext() {
+  if (state.timer !== null) clearTimeout(state.timer);
+  state.timer = state.paused ? null : setTimeout(tick, pollInterval());
 }
 
 function startPolling() {
   stopPolling();
   tick();
-  state.timer = setInterval(tick, POLL_MS);
 }
 
 function stopPolling() {
-  if (state.timer !== null) clearInterval(state.timer);
+  if (state.timer !== null) clearTimeout(state.timer);
   state.timer = null;
 }
 
 // ── 可疑判定 ────────────────────────────────────────────────────────
 
-// 「速度不为 0 但位置没变」——两次快照之间（500ms）理论上一定有位移。
+// 「速度不为 0 但位置没变」——两次不同快照之间理论上一定有位移。
 // 这是排查"敌人卡住不动"最直接的信号。
+// 注意：只在 seq 变化时调用，重复快照会误报（见 tick 里的去重）。
 function computeStuck(obj) {
   const prev = state.prevPositions.get(obj.id);
   state.prevPositions.set(obj.id, { x: obj.x, y: obj.y });
@@ -375,6 +409,15 @@ el('btn-pause').addEventListener('click', () => {
   state.paused = !state.paused;
   el('btn-pause').textContent = state.paused ? '继续' : '暂停';
   el('btn-pause').classList.toggle('active', state.paused);
+
+  if (state.paused) {
+    // 冻结在当前插值时刻，否则暂停后画面还会自己往前滑一小段
+    stopPolling();
+    mapFreeze();
+  } else {
+    mapUnfreeze();
+    startPolling();
+  }
 });
 
 el('btn-logout').addEventListener('click', () => {
