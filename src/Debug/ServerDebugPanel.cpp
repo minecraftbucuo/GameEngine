@@ -24,12 +24,15 @@
 
 #include "ServerDebugPanel.h"
 
+#include "DebugSnapshot.h"
 #include "Logger.h"
 #include "PanelAuth.h"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <mutex>
 #include <thread>
 #include <nlohmann/json.hpp>
 
@@ -60,6 +63,20 @@ struct ServerDebugPanel::Impl {
     std::atomic<std::int64_t> last_request_ms{0};   // 供 B4 的 idleSkip 使用
     std::atomic<std::uint64_t> frame_count{0};
 
+    // ── 快照（主线程写，HTTP 线程读）──────────────────────────────
+    // 锁只保护一次 shared_ptr 交换；旧快照在最后一个读者释放后自动回收，
+    // 等价于双缓冲，不需要手写两个槽位。
+    std::mutex snapshot_mutex;
+    std::shared_ptr<const std::string> snapshot;
+    std::atomic<std::int64_t> snapshot_built_ms{0};
+    std::atomic<std::uint64_t> build_cost_us{0};
+    std::atomic<std::uint64_t> seq{0};
+
+    // 仅主线程访问
+    steady_clock::time_point last_build{};
+    milliseconds build_interval{100};
+    float avg_frame_ms = 0.f;
+
     steady_clock::time_point started_at{};
 
     [[nodiscard]] bool authorized(const httplib::Request& req) const {
@@ -86,6 +103,9 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
     impl_->cfg = cfg;
     // 空 token 绝不放行：自动生成并打印到控制台
     impl_->token = cfg.token.empty() ? panel_auth::generateToken() : cfg.token;
+
+    const int hz = std::clamp(cfg.snapshotHz, 1, 60);
+    impl_->build_interval = milliseconds(1000 / hz);
 
     Impl* impl = impl_.get();
 
@@ -114,10 +134,32 @@ bool ServerDebugPanel::start(const ConfigManager::DebugPanelConfig& cfg) {
         j["uptimeSec"] = uptime;
         j["frames"] = impl->frame_count.load(std::memory_order_relaxed);
         j["port"] = impl->cfg.port;
-        j["snapshotAgeMs"] = nullptr;   // B3 接入快照后回填
+        const auto built = impl->snapshot_built_ms.load(std::memory_order_relaxed);
+        if (built == 0) {
+            j["snapshotAgeMs"] = nullptr;   // 第一份快照还没产出
+        } else {
+            j["snapshotAgeMs"] = nowMs() - built;
+        }
 
         applyApiHeaders(res);
         res.set_content(j.dump(), "application/json");
+    });
+
+    impl->server.Get("/api/snapshot", [impl](const httplib::Request&, httplib::Response& res) {
+        // 锁窗口只有一次 shared_ptr 拷贝，之后在锁外读取内容
+        std::shared_ptr<const std::string> snap;
+        {
+            std::lock_guard<std::mutex> lock(impl->snapshot_mutex);
+            snap = impl->snapshot;
+        }
+
+        applyApiHeaders(res);
+        if (!snap) {
+            res.status = 503;
+            res.set_content(R"({"error":"snapshot_not_ready"})", "application/json");
+            return;
+        }
+        res.set_content(*snap, "application/json");
     });
 
 #ifdef _WIN32
@@ -173,10 +215,38 @@ bool ServerDebugPanel::isRunning() const {
 void ServerDebugPanel::onFrame(Scene* scene, float dtSec) {
     if (!impl_->running.load(std::memory_order_relaxed)) return;
 
-    // B2 只累计帧数；B3 起在这里限频构建快照并发布
     impl_->frame_count.fetch_add(1, std::memory_order_relaxed);
-    (void)scene;
-    (void)dtSec;
+
+    // 指数平均：面板开启前后的 avgFrameMs 差值就是它自己的开销
+    const float dtMs = dtSec * 1000.f;
+    impl_->avg_frame_ms = impl_->avg_frame_ms * 0.95f + dtMs * 0.05f;
+
+    // 限频：主循环 165Hz，快照 10Hz 就够人看了
+    const auto now = steady_clock::now();
+    if (now - impl_->last_build < impl_->build_interval) return;
+    impl_->last_build = now;
+
+    if (scene == nullptr) return;
+
+    DebugSnapshotContext ctx;
+    ctx.seq = impl_->seq.fetch_add(1, std::memory_order_relaxed) + 1;
+    ctx.frame = impl_->frame_count.load(std::memory_order_relaxed);
+    ctx.uptimeSec = duration<double>(now - impl_->started_at).count();
+    ctx.dtMs = dtMs;
+    ctx.avgFrameMs = impl_->avg_frame_ms;
+    ctx.lastBuildCostUs = impl_->build_cost_us.load(std::memory_order_relaxed);
+    ctx.snapshotHz = impl_->cfg.snapshotHz;
+    ctx.maxObjects = impl_->cfg.maxObjects;
+
+    std::uint64_t cost = 0;
+    std::string json = buildDebugSnapshot(scene, ctx, &cost);
+
+    {
+        std::lock_guard<std::mutex> lock(impl_->snapshot_mutex);
+        impl_->snapshot = std::make_shared<const std::string>(std::move(json));
+    }
+    impl_->build_cost_us.store(cost, std::memory_order_relaxed);
+    impl_->snapshot_built_ms.store(nowMs(), std::memory_order_relaxed);
 }
 
 #endif // SERVER_BUILD

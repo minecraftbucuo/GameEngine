@@ -103,6 +103,15 @@ public:
         return nullptr;
     }
 
+    // 与 getComponent 的唯一区别：未命中时返回 nullptr 且**不写日志**。
+    // 调试面板每帧按固定表探测多个组件，用 getComponent 会把 log.txt 刷爆。
+    template <typename T>
+    std::shared_ptr<T> tryGetComponent() const {
+        const auto it = components.find(std::type_index(typeid(T)));
+        if (it == components.end()) return nullptr;
+        return std::static_pointer_cast<T>(it->second);
+    }
+
     template <typename T>
     bool removeComponent() {
         if (const std::type_index componentId(typeid(T));
@@ -133,6 +142,11 @@ public:
 
     const eng::Vec2f& getSpeed() const {
         return speed;
+    }
+
+    // 旋转角（度）。字段是 protected，调试面板要读，补一个只读 getter
+    float getRotation() const {
+        return rotation;
     }
 
     const std::string& getTag() const {

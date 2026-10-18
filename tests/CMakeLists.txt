@@ -10,6 +10,7 @@ add_executable(GameEngineTests
         test_configmanager.cpp
         test_collision_geometry.cpp
         test_panel_auth.cpp
+        test_debug_snapshot.cpp
 
         # 被测源码（纯逻辑）
         ${CMAKE_SOURCE_DIR}/src/Network/Packet.cpp
