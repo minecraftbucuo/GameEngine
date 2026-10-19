@@ -22,6 +22,13 @@ public:
 
     bool needGravity();
 
+    // 当前是否踩在实体上：update 里 needGravity() 的结果缓存。
+    // 供 MarioController 判断"按住跳跃的残余推力能不能施加"——踩地时重力已被
+    // 落地碰撞关掉，此时再加速度没有任何东西抵消，会把角色顶离地面。
+    [[nodiscard]] bool isOnGround() const {
+        return on_ground;
+    }
+
     void handleCollision(const CollisionEvent& event);
 
     bool getIsPlayer() const;
@@ -65,5 +72,6 @@ private:
     bool isPlayer = true;
     bool is_big = false;
     bool transforming = false;
+    bool on_ground = false;
     Timer transform_timer;
 };

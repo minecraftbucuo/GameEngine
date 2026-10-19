@@ -19,6 +19,15 @@
 #include <SDL3_mixer/SDL_mixer.h>
 #endif
 
+namespace {
+    // 按住跳跃时额外施加的上升加速度（可变跳跃高度）
+    constexpr float HOLD_JUMP_ACCEL = 1815.f;
+    // 按住跳跃的有效时长：超过之后按不按住都不再增加跳跃高度
+    constexpr int HOLD_JUMP_WINDOW_MS = 500;
+    // 起跳缓冲窗口（毫秒）：网络输入到达时若只差一点落地，允许延后这么久执行
+    constexpr int JUMP_BUFFER_MS = 150;
+}
+
 MarioController::~MarioController() {
 #ifndef SERVER_BUILD
     if (jump_track) MIX_DestroyTrack(jump_track);
@@ -83,50 +92,91 @@ void MarioController::handleEvent(const eng::EngineEvent& event) {
 }
 
 void MarioController::update(const eng::Time& deltaTime) {
-    auto state = owner->getComponent<StateMachine>();
-    if (state && state->getCurrentStateName() == "MarioJumpState" && w_is_pressed) {
+    // 起跳缓冲：网络输入在"还差一两帧才落地"时先存着，落地立刻执行。
+    // 不做这个缓冲，服务端会把这次起跳丢掉，而客户端本地已经跳了，
+    // 随后到达的服务端快照会把角色强行拉回地面。
+    if (jump_buffered) {
+        jump_buffer_timer.update(deltaTime);
+        if (!jump_buffer_timer.isActive()) {
+            jump_buffered = false;
+        } else if (canJumpNow()) {
+            jump_buffered = false;
+            jump(jump_buffer_play_sound);
+        }
+    }
+
+    // 按住时长从起跳开始算，且不依赖当前状态：落地后状态会切回 Idle，
+    // 若只在跳跃状态里计时，计时器会永远停住，w_is_pressed 就一直挂着。
+    if (w_is_pressed) {
         jump_timer.update(deltaTime);
     }
-    if (w_is_pressed) {
-        const auto& move_component = owner->getComponent<MoveComponent>();
-        move_component->addSpeed(eng::Vec2f(0.f, -1815.f * deltaTime.asSeconds()));
+
+    // 踩在地面上时不施加按住推力。落地那一刻碰撞已经把重力关掉了，
+    // 这点残余推力没有任何东西抵消，会把马里奥顶离地面 1px 以上；
+    // needGravity() 随即返回 true、状态机被切回 MarioJumpState，
+    // 服务端于是认为玩家还在空中，接下来收到的跳跃输入全被状态闸门丢掉
+    //（表现为：本地跳成功，服务端不跳，快照把角色拉回地面）。
+    const auto* mario = dynamic_cast<const Mario*>(owner);
+    const bool grounded = mario && mario->isOnGround();
+    if (w_is_pressed && !grounded) {
+        if (const auto& move_component = owner->getComponent<MoveComponent>()) {
+            move_component->addSpeed(eng::Vec2f(0.f, -HOLD_JUMP_ACCEL * deltaTime.asSeconds()));
+        }
     }
 
     shoot_timer.update(deltaTime);
 }
 
-// play_sound 只在非 SERVER_BUILD 分支（音效播放）里使用，服务端构建下必须
-// 保留形参以对齐调用签名，故用 [[maybe_unused]] 抑制该构建下的未使用警告。
-void MarioController::jump([[maybe_unused]] const bool play_sound) {
+// 此刻能不能起跳：只看物理（踩在实体上、且没有在上升），不看状态机名字。
+// 状态名是渲染/动画的产物：服务端刚落地那一帧、或被残余推力顶起来的瞬间，
+// 名字都可能还是 MarioJumpState，用它当闸门会吞掉合法的起跳输入。
+bool MarioController::canJumpNow() {
+    const auto state = owner->getComponent<StateMachine>();
+    if (!state) return false;
+    if (state->getCurrentStateName() == "MarioDeadState") return false;
+    // 正在上升说明已经在跳跃中，禁止二段跳
+    if (owner->getSpeed().y < 0.f) return false;
+    if (auto* mario = dynamic_cast<Mario*>(owner)) return !mario->needGravity();
+    return state->getCurrentStateName() != "MarioJumpState";
+}
+
+// play_sound 只在非 SERVER_BUILD 分支（音效播放）里使用，服务端构建下靠
+// jump_buffer_play_sound 的赋值保住引用，不会触发未使用告警。
+void MarioController::jump(const bool play_sound, const bool allow_buffer) {
+    if (!canJumpNow()) {
+        // 网络输入：此刻还差一点落地，先缓存，落地后立刻补上（见 update）
+        if (allow_buffer) {
+            jump_buffered = true;
+            jump_buffer_play_sound = play_sound;
+            jump_buffer_timer.start(JUMP_BUFFER_MS);
+        }
+        return;
+    }
     std::shared_ptr<MoveComponent> moveComponent = owner->getComponent<MoveComponent>();
     if (!moveComponent) {
         moveComponent = owner->addComponent<MoveComponent>();
     }
-    auto state = owner->getComponent<StateMachine>();
-    if (state && state->getCurrentStateName() != "MarioJumpState") {
-        if (state->getCurrentStateName() == "MarioDeadState") return;
-        moveComponent->setSpeedY(-CONFIG.game.jumpForce);
+    moveComponent->setSpeedY(-CONFIG.game.jumpForce);
 #ifndef SERVER_BUILD
-        if (play_sound) {
-            // 大小马里奥跳跃音效不同：按当前形态选 track
-            MIX_Track* track = jump_track;
-            if (const auto mario = dynamic_cast<Mario*>(owner); mario && mario->getIsBig())
-                track = big_jump_track;
-            if (track) { MIX_StopTrack(track, 0); MIX_PlayTrack(track, 0); }
-            LOG_TRACE("jump sound play!");
-        }
+    if (play_sound) {
+        // 大小马里奥跳跃音效不同：按当前形态选 track
+        MIX_Track* track = jump_track;
+        if (const auto mario = dynamic_cast<Mario*>(owner); mario && mario->getIsBig())
+            track = big_jump_track;
+        if (track) { MIX_StopTrack(track, 0); MIX_PlayTrack(track, 0); }
+        LOG_TRACE("jump sound play!");
+    }
 #endif
-        state->setState("MarioJumpState");
-        w_is_pressed = true;
-        jump_timer.start(500);
+    owner->getComponent<StateMachine>()->setState("MarioJumpState");
+    w_is_pressed = true;
+    jump_timer.start(HOLD_JUMP_WINDOW_MS);
 
-        auto* nm = owner->getScene()->getNetworkManager();
-        if (nm && nm->isClient()) {
-            eng::Packet packet;
-            packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
-            packet << InputType::Jump;
-            nm->getClientSocket().append(packet);
-        }
+    auto* nm = owner->getScene()->getNetworkManager();
+    if (nm && nm->isClient()) {
+        eng::Packet packet;
+        packet << NetworkMsg::ClientInput << NetworkMsg::ClientInput;
+        packet << InputType::Jump;
+        nm->getClientSocket().append(packet);
     }
 }
 

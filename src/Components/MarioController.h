@@ -21,7 +21,9 @@ public:
 
     void update(const eng::Time& deltaTime) override;
 
-    void jump(bool play_sound = true);
+    // play_sound：本地按键时播放音效（服务端构建里无音效）
+    // allow_buffer：网络来的起跳请求允许短暂缓冲（见 update 里的起跳缓冲）
+    void jump(bool play_sound = true, bool allow_buffer = false);
 
     void runLeft() const;
 
@@ -36,6 +38,9 @@ public:
     void shoot(bool play_sound = true);
 
 private:
+    // 此刻能不能起跳：只看物理（踩在实体上、且没在上升），不看状态机名字
+    bool canJumpNow();
+
 #ifndef SERVER_BUILD
     // 一次性音效 = 常驻 track（绑预解码 MIX_Audio，play 时 restart）
     MIX_Track* jump_track = nullptr;
@@ -46,6 +51,12 @@ private:
     bool a_held = false;    // A 键按住状态（供松键时判断另一方向是否仍按住）
     bool d_held = false;    // D 键按住状态（供松键时判断另一方向是否仍按住）
     Timer jump_timer;
+    // 起跳缓冲：服务端收到起跳输入时可能只差一两帧才落地，先存着、落地立刻补跳。
+    // 不做这个缓冲，服务端会把这次起跳丢掉，而客户端本地已经跳了，
+    // 随后到达的服务端快照会把角色强行拉回地面。
+    bool jump_buffered = false;
+    bool jump_buffer_play_sound = false;
+    Timer jump_buffer_timer;
     bool could_shoot = true;
     Timer shoot_timer;
     bool is_player = true;

@@ -96,7 +96,9 @@ void Mario::handleEvent(const eng::EngineEvent& e) {
 void Mario::update(eng::Time deltaTime) {
     // 变身闪烁计时：到时后结束无敌并停止形态交替
     this->transform_timer.update(deltaTime);
-    if (needGravity()) {
+    // 落地探测只做一次，结果缓存给 MarioController 用（按住推力不能施加在踩地状态）
+    on_ground = !needGravity();
+    if (!on_ground) {
         this->getComponent<GravityComponent>()->setActive(true);
         if (this->getComponent<StateMachine>()->getCurrentStateName() != "MarioJumpState")
             this->getComponent<StateMachine>()->setState("MarioJumpState");
@@ -517,7 +519,9 @@ void Mario::deserialize(eng::Packet& packet) {
         InputType type;
         if (!(packet >> type)) return;
         if (type == InputType::Jump) {
-            marioController->jump(false);
+            // allow_buffer = true：服务端可能比客户端晚一两帧才落地，
+            // 这一帧拒绝掉的起跳要缓存下来，落地立刻补跳，否则会被快照拉回
+            marioController->jump(false, true);
         } else if (type == InputType::RunLeft) {
             marioController->runLeft();
         } else if (type == InputType::RunRight) {
